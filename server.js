@@ -26,6 +26,7 @@ import userProfileRoutes from "./src/routes/userProfile.routes.js";
 import locationRoutes from "./src/routes/location.routes.js";
 import notificationRoutes from "./src/routes/notification.routes.js";
 const app = express();
+app.set("trust proxy", 1);
 app.use(cookieParser());
 app.use(cors({
   // origin: process.env.FRONTEND_URL
