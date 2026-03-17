@@ -65,7 +65,7 @@ export const createSurvey = async (req, res) => {
       trackingParam: req.body.trackingParam || null,
 
       // ✅ AUTO SET BASE URL
-      returnBaseUrl: process.env.FRONTEND_URL || "http://localhost:5173",
+      returnBaseUrl: process.env.FRONTEND_URL || "https://inputify.io",
       createdBy: req.user._id || req.user.userId || req.user.id,
     });
 
