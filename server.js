@@ -30,7 +30,11 @@ app.set("trust proxy", 1);
 app.use(cookieParser());
 app.use(cors({
   // origin: process.env.FRONTEND_URL
-  origin: process.env.FRONTEND_URL,
+  origin: [
+    "https://inputify.io",
+    "https://www.inputify.io",
+    "https://frontend-eld6db4vs-cfrsolutions-projects.vercel.app"
+  ],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"]
