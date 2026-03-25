@@ -28,6 +28,7 @@ import notificationRoutes from "./src/routes/notification.routes.js";
 const app = express();
 app.set("trust proxy", 1);
 app.use(cookieParser());
+app.options("*", cors());
 app.use(cors({
   // origin: process.env.FRONTEND_URL
   origin: [
@@ -36,10 +37,13 @@ app.use(cors({
     "https://frontend-eld6db4vs-cfrsolutions-projects.vercel.app"
   ],
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
-app.use(helmet());
+app.use(helmet({
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: false,
+  }));
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000, // 15 min
