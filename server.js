@@ -28,7 +28,6 @@ import notificationRoutes from "./src/routes/notification.routes.js";
 const app = express();
 app.set("trust proxy", 1);
 app.use(cookieParser());
-app.options("*", cors());
 app.use(cors({
   // origin: process.env.FRONTEND_URL
   origin: [
