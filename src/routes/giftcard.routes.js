@@ -58,6 +58,12 @@ router.post("/redeem/:id", authMiddleware, async (req, res) => {
 
   const card = await GiftCardV2.findById(req.params.id);
   if (!card) return res.status(404).json({ message: "Card not found" });
+  // ⭐ MINIMUM REDEMPTION RULE
+if (card.value < 5) {
+  return res.status(400).json({
+    message: "Minimum ₹100 redemption allowed"
+  });
+}
 console.log("REDEEM CARD DEBUG", {
   id: card._id,
   title: card.title,
@@ -82,9 +88,14 @@ if (!wallet) {
 }
 
 // 🔐 NOW SAFE
-if (wallet.balance < card.pointsRequired) {
+const processingFee = 200;
+const totalDeduction = card.pointsRequired + processingFee;
+if (wallet.balance < totalDeduction) {
   return res.status(400).json({ message: "Insufficient points" });
-}
+} 
+// if (wallet.balance < card.pointsRequired) {
+//   return res.status(400).json({ message: "Insufficient points" });
+// }
 let order;
 try {
   order = await sendTremendousReward({
@@ -106,13 +117,19 @@ try {
 }
 
   // 🔻 Deduct points
-  wallet.balance -= card.pointsRequired;
-  wallet.totalRedeemed += card.pointsRequired;
+  // wallet.balance -= card.pointsRequired;
+  // wallet.totalRedeemed += card.pointsRequired;
+
+  wallet.balance -= totalDeduction;
+  wallet.totalRedeemed += totalDeduction;
+
   await wallet.save();
 const redemption = await GiftCardRedemption.create({
     user: userId,
     giftCard: card._id,
-   pointsUsed: card.pointsRequired, // ✅ REQUIRED
+    faceValue: card.value,
+   pointsUsed: totalDeduction,
+   feePoints: processingFee,
   status: "PENDING", // ✅ VALID ENUM
   rewardId: order.order.id,
   providerResponse: order,

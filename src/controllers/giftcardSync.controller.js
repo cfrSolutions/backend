@@ -197,6 +197,14 @@ const logo = `https://testflight.tremendous.com/product_images/${p.id}/logo`;
     //   },
     //   { upsert: true, new: true }
     // );
+// ⭐ PROFIT MARGIN ENGINE
+let margin = 1.12;
+
+if (type === "PREPAID") margin = 1.25;
+if (type === "PAYPAL") margin = 1.30;
+
+// ⭐ INTERNAL POINT ECONOMY
+const pointsRequired = Math.ceil(sku.min * 100 * margin);
 
     await GiftCardV2.findOneAndUpdate(
   { skuId: generatedSkuId },
@@ -211,7 +219,7 @@ const logo = `https://testflight.tremendous.com/product_images/${p.id}/logo`;
       currency: p.currency_codes?.[0],
       type,
       countries: p.countries?.map(c => c.abbr) || [],
-      pointsRequired: sku.min * 10,
+      pointsRequired: pointsRequired,
       isActive: true,
     },
   },

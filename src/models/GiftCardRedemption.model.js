@@ -19,6 +19,15 @@ const giftCardRedemptionSchema = new mongoose.Schema(
       required: true,
     },
 
+    feePoints: {
+  type: Number,
+  default: 0,
+},
+
+faceValue: {
+  type: Number,
+},
+
     status: {
       type: String,
       enum: ["PENDING", "SUCCESS", "FAILED","PROCESSING"],
