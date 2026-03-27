@@ -515,7 +515,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { sendEmail } from "../utils/sendEmail.js";
-import { generateEmailToken } from "../utils/generateToken.js";
+// import { generateEmailToken } from "../utils/generateToken.js";
 import UserSession from "../models/UserSession.js";
 import Wallet from "../models/Wallet.model.js";
 import WalletTransaction from "../models/WalletTransaction.model.js";
@@ -555,7 +555,7 @@ if (!password || password.trim() === "") {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const { token, hashedToken } = generateEmailToken();
+    // const { token, hashedToken } = generateEmailToken();
 const newUser = new User({
       name,
       email,

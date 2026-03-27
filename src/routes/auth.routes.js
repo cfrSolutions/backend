@@ -47,7 +47,6 @@ import { authMiddleware } from "../middleware/auth.middleware.js";
 import {
   registerUser,
   login,
-  verifyEmail,
 } from "../controllers/auth.controller.js";
 import User from "../models/User.model.js";
 import passport from "passport";
@@ -61,7 +60,7 @@ const router = express.Router();
 
 router.post("/register", registerUser);
 router.post("/login", login);
-router.get("/verify-email/:token", verifyEmail);
+// router.get("/verify-email/:token", verifyEmail);
 // router.get(
 //   "/google",
 //   passport.authenticate("google",{scope: ["profile", "email"]})
