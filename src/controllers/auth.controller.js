@@ -591,6 +591,9 @@ if (referralCode) {
 
 
     await newUser.save();
+    return res.status(201).json({
+  message: "Signup successful",
+});
     /* ================= REFERRAL REWARD ================= */
 
 if (refUser) {
@@ -616,21 +619,21 @@ if (refUser) {
   );
 }
 
-    const verifyURL = `${process.env.FRONTEND_URL}/verify-email/${token}`;
-if (process.env.NODE_ENV !== "development") {
-   await sendEmail({
-        to: email,
-        subject: "Verify your email",
-        html: `<h2>Email Verification</h2>
-  <p>Please click the link below to verify your account:</p>
-  <a href="${verifyURL}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; display: inline-block;">Verify Email</a>`,
-      });
-} else {
-  console.log("📩 EMAIL VERIFICATION LINK:", verifyURL);
-}
-      return res.status(201).json({
-        message: "Signup successful. Please check your email.",
-      });
+//     const verifyURL = `${process.env.FRONTEND_URL}/verify-email/${token}`;
+// if (process.env.NODE_ENV !== "development") {
+//    await sendEmail({
+//         to: email,
+//         subject: "Verify your email",
+//         html: `<h2>Email Verification</h2>
+//   <p>Please click the link below to verify your account:</p>
+//   <a href="${verifyURL}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; display: inline-block;">Verify Email</a>`,
+//       });
+// } else {
+//   console.log("📩 EMAIL VERIFICATION LINK:", verifyURL);
+// }
+      // return res.status(201).json({
+      //   message: "Signup successful. Please check your email.",
+      // });
 
   } catch (err) {
     console.error("REGISTER ERROR:", err);
@@ -744,36 +747,36 @@ res.json({ role: user.role });
 /* ======================
    VERIFY EMAIL
 ====================== */
-export const verifyEmail = async (req, res) => {
-  try {
-    const hashedToken = crypto
-      .createHash("sha256")
-      .update(req.params.token)
-      .digest("hex");
+// export const verifyEmail = async (req, res) => {
+//   try {
+//     const hashedToken = crypto
+//       .createHash("sha256")
+//       .update(req.params.token)
+//       .digest("hex");
 
-    const user = await User.findOne({
-      emailVerificationToken: hashedToken,
-      emailVerificationExpires: { $gt: Date.now() },
-    });
+//     const user = await User.findOne({
+//       emailVerificationToken: hashedToken,
+//       emailVerificationExpires: { $gt: Date.now() },
+//     });
 
-    if (!user) {
-      return res.status(400).json({ message: "Invalid or expired token" });
-    }
+//     if (!user) {
+//       return res.status(400).json({ message: "Invalid or expired token" });
+//     }
 
-    user.isEmailVerified = true;
-    user.status = "ACTIVE";
-    user.emailVerificationToken = undefined;
-    user.emailVerificationExpires = undefined;
+//     user.isEmailVerified = true;
+//     user.status = "ACTIVE";
+//     user.emailVerificationToken = undefined;
+//     user.emailVerificationExpires = undefined;
 
-    await user.save();
+//     await user.save();
 
-    res.json({ message: "Email verified successfully" });
+//     res.json({ message: "Email verified successfully" });
 
-  } catch (err) {
-    console.error("VERIFY EMAIL ERROR:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-};
+//   } catch (err) {
+//     console.error("VERIFY EMAIL ERROR:", err);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
 
 
 /* ======================
