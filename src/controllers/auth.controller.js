@@ -562,10 +562,10 @@ const newUser = new User({
       password: hashedPassword,
       walletNumber: generateWalletNumber(),
       referralCode: generateReferralCode(name),
-      isEmailVerified: false,
-      status: "PENDING",
-      emailVerificationToken: hashedToken,
-      emailVerificationExpires: Date.now() + 24 * 60 * 60 * 1000,
+      isEmailVerified: true,
+      status: "ACTIVE",
+      // emailVerificationToken: hashedToken,
+      // emailVerificationExpires: Date.now() + 24 * 60 * 60 * 1000,
     });
     // await User.create({
     //   name,
@@ -659,10 +659,10 @@ export const login = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // 3. Email + status check
-    if (!user.isEmailVerified) {
-      return res.status(403).json({ message: "Please verify your email first" });
-    }
+    // // 3. Email + status check
+    // if (!user.isEmailVerified) {
+    //   return res.status(403).json({ message: "Please verify your email first" });
+    // }
 
     if (user.status !== "ACTIVE") {
       return res.status(403).json({ message: "Account not active" });
