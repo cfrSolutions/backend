@@ -55,7 +55,7 @@ import { changePassword } from "../controllers/auth.controller.js";
 import { me } from "../controllers/auth.controller.js";
 import UserSession from "../models/UserSession.js";
 import { logout } from "../controllers/auth.controller.js";
-import { requestDeleteAccount, confirmDeleteAccount } from "../controllers/auth.controller.js";
+import { deleteAccount } from "../controllers/auth.controller.js";
 const router = express.Router();
 
 router.post("/register", registerUser);
@@ -145,8 +145,9 @@ router.get(
 router.put("/change-password", authMiddleware, changePassword);
 
 router.post("/logout", authMiddleware, logout);
-router.post("/request-delete", authMiddleware, requestDeleteAccount);
-router.get("/confirm-delete/:token", confirmDeleteAccount);
+// router.post("/request-delete", authMiddleware, requestDeleteAccount);
+// router.get("/confirm-delete/:token", confirmDeleteAccount);
+router.delete("/delete-account", authMiddleware, deleteAccount);
 // router.get("/me", authMiddleware, (req, res) => {
 //   res.json(req.user);
 // });

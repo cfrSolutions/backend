@@ -856,79 +856,107 @@ export const logout = async (req, res)=>{
 /* ======================
    REQUEST DELETE ACCOUNT
 ====================== */
-export const requestDeleteAccount = async (req, res) => {
+// export const requestDeleteAccount = async (req, res) => {
+//   try {
+//     const user = await User.findById(req.user.userId);
+//     if (!user) return res.status(404).json({ message: "User not found" });
+
+//     const rawToken = crypto.randomBytes(32).toString("hex");
+//     const hashedToken = crypto
+//       .createHash("sha256")
+//       .update(rawToken)
+//       .digest("hex");
+
+//     user.deleteAccountToken = hashedToken;
+//     user.deleteAccountExpires = Date.now() + 15 * 60 * 1000; // 15 min expiry
+
+//     await user.save();
+
+//     const deleteURL = `${process.env.FRONTEND_URL}/confirm-delete/${rawToken}`;
+
+//     await sendEmail({
+//       to: user.email,
+//       subject: "Confirm Account Deletion",
+//       html: `
+//         <h2>Confirm Account Deletion</h2>
+//         <p>This action is permanent.</p>
+//         <a href="${deleteURL}" 
+//            style="background:red;color:white;padding:10px 20px;text-decoration:none;">
+//            Confirm Delete
+//         </a>
+//         <p>This link expires in 15 minutes.</p>
+//       `,
+//     });
+
+//     res.json({ message: "Confirmation email sent" });
+
+//   } catch (err) {
+//     console.error("REQUEST DELETE ERROR:", err);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+// /* ======================
+//    CONFIRM DELETE ACCOUNT
+// ====================== */
+// export const confirmDeleteAccount = async (req, res) => {
+//   try {
+//     const hashedToken = crypto
+//       .createHash("sha256")
+//       .update(req.params.token)
+//       .digest("hex");
+
+//     const user = await User.findOne({
+//       deleteAccountToken: hashedToken,
+//       deleteAccountExpires: { $gt: Date.now() },
+//     });
+
+//     if (!user) {
+//       return res.status(400).json({ message: "Invalid or expired token" });
+//     }
+
+//     const userId = user._id;
+
+//     // delete related data
+//     await UserSession.deleteMany({ userId });
+//     await Wallet.deleteOne({ user: userId });
+//     await WalletTransaction.deleteMany({ user: userId });
+
+//     await User.findByIdAndDelete(userId);
+
+//     res.json({ message: "Account deleted permanently" });
+
+//   } catch (err) {
+//     console.error("CONFIRM DELETE ERROR:", err);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+export const deleteAccount = async (req, res) => {
   try {
-    const user = await User.findById(req.user.userId);
-    if (!user) return res.status(404).json({ message: "User not found" });
+    const userId = req.user.userId;
+    const { reason, feedback } = req.body;
 
-    const rawToken = crypto.randomBytes(32).toString("hex");
-    const hashedToken = crypto
-      .createHash("sha256")
-      .update(rawToken)
-      .digest("hex");
+    console.log("Delete Reason:", reason);
+    console.log("Feedback:", feedback);
 
-    user.deleteAccountToken = hashedToken;
-    user.deleteAccountExpires = Date.now() + 15 * 60 * 1000; // 15 min expiry
-
-    await user.save();
-
-    const deleteURL = `${process.env.FRONTEND_URL}/confirm-delete/${rawToken}`;
-
-    await sendEmail({
-      to: user.email,
-      subject: "Confirm Account Deletion",
-      html: `
-        <h2>Confirm Account Deletion</h2>
-        <p>This action is permanent.</p>
-        <a href="${deleteURL}" 
-           style="background:red;color:white;padding:10px 20px;text-decoration:none;">
-           Confirm Delete
-        </a>
-        <p>This link expires in 15 minutes.</p>
-      `,
-    });
-
-    res.json({ message: "Confirmation email sent" });
-
-  } catch (err) {
-    console.error("REQUEST DELETE ERROR:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-/* ======================
-   CONFIRM DELETE ACCOUNT
-====================== */
-export const confirmDeleteAccount = async (req, res) => {
-  try {
-    const hashedToken = crypto
-      .createHash("sha256")
-      .update(req.params.token)
-      .digest("hex");
-
-    const user = await User.findOne({
-      deleteAccountToken: hashedToken,
-      deleteAccountExpires: { $gt: Date.now() },
-    });
-
-    if (!user) {
-      return res.status(400).json({ message: "Invalid or expired token" });
-    }
-
-    const userId = user._id;
-
-    // delete related data
     await UserSession.deleteMany({ userId });
     await Wallet.deleteOne({ user: userId });
     await WalletTransaction.deleteMany({ user: userId });
 
     await User.findByIdAndDelete(userId);
 
-    res.json({ message: "Account deleted permanently" });
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+
+    return res.json({ message: "Account deleted successfully" });
 
   } catch (err) {
-    console.error("CONFIRM DELETE ERROR:", err);
-    res.status(500).json({ message: "Server error" });
+    console.error("DELETE ACCOUNT ERROR:", err);
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
