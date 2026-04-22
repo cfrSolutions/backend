@@ -84,6 +84,9 @@ router.get("/google", (req, res, next) => {
     req.session.referralCode = req.query.ref;
   }
 
+ if (req.query.role) {
+    req.session.role = req.query.role; // USER or BUSINESS
+  }
   passport.authenticate("google", {
     scope: ["profile", "email"],
   })(req, res, next);
@@ -94,6 +97,13 @@ router.get(
   "/google/callback",
   passport.authenticate("google", {session:false}),
   async (req, res)=>{
+     const roleFromFrontend =
+      req.session.role === "BUSINESS" ? "BUSINESS" : "USER";
+
+   // 🔥 ALWAYS update role from frontend
+      req.user.role = roleFromFrontend;
+      await req.user.save();
+
     const userAgent = req.headers["user-agent"] || "";
     const ip =
       req.headers["x-forwarded-for"]?.split(",")[0] ||
@@ -153,4 +163,23 @@ router.delete("/delete-account", authMiddleware, deleteAccount);
 // });
 router.get("/me", authMiddleware, me);
 
+router.put("/update-role", authMiddleware, async (req, res) => {
+  try {
+    const { role } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      req.user.userId,
+      { role },
+      { new: true }
+    );
+
+    res.json({
+      message: "Role updated",
+      role: user.role
+    });
+  } catch (err) {
+    console.log("UPDATE ROLE ERROR:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 export default router;

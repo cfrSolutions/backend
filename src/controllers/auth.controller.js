@@ -535,7 +535,7 @@ export const registerUser = async (req, res) => {
 };
 
   try {
-    const { name, email, password, referralCode } = req.body;
+    const { name, email, password, referralCode, role } = req.body;
 if (!password || password.trim() === "") {
       return res.status(400).json({ message: "Password is required" });
     }
@@ -560,6 +560,7 @@ const newUser = new User({
       name,
       email,
       password: hashedPassword,
+      role: role || "USER",
       walletNumber: generateWalletNumber(),
       referralCode: generateReferralCode(name),
       isEmailVerified: true,
@@ -736,7 +737,7 @@ res.cookie("token", token, {
   maxAge: 7 * 24 * 60 * 60 * 1000,
 });
 
-res.json({ role: user.role });
+res.json({ token, role: user.role });
 
   } catch (err) {
     console.error("LOGIN ERROR:", err);

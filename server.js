@@ -25,6 +25,8 @@ import session from "express-session";
 import userProfileRoutes from "./src/routes/userProfile.routes.js";
 import locationRoutes from "./src/routes/location.routes.js";
 import notificationRoutes from "./src/routes/notification.routes.js";
+//import businessRoutes from "./src/routes/business.routes.js";
+
 const app = express();
 app.set("trust proxy", 1);
 app.use(cookieParser());
@@ -33,7 +35,8 @@ app.use(cors({
   origin: [
     "https://inputify.io",
     "https://www.inputify.io",
-    "https://frontend-eld6db4vs-cfrsolutions-projects.vercel.app"
+    "https://frontend-eld6db4vs-cfrsolutions-projects.vercel.app",
+    "http://localhost:5173",
   ],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -118,6 +121,8 @@ app.use("/api/users", userRoutes);
 app.use("/api/users/profile", userProfileRoutes);
 app.use("/api/location", locationRoutes);
 app.use("/api/notifications", notificationRoutes);
+// app.use("/api/business", businessRoutes);
+app.use("/api/auth", authRoutes);
 /* -------------------- SERVER -------------------- */
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
