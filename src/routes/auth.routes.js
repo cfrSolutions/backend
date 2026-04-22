@@ -97,6 +97,9 @@ router.get(
   "/google/callback",
   passport.authenticate("google", {session:false}),
   async (req, res)=>{
+    console.log("EMAIL:", req.user.email);
+console.log("ROLE FROM DB:", req.user.role);
+console.log("SESSION ROLE:", req.session.role);
      const roleFromFrontend =
       req.session.role === "BUSINESS" ? "BUSINESS" : "USER";
 
