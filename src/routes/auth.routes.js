@@ -104,7 +104,8 @@ router.get(
       // req.user.role = roleFromFrontend;
       // await req.user.save();
       // Only set role if user is NEW (no role yet)
-if (!["ADMIN", "SUPERADMIN"].includes(req.user.role)) {
+// Only assign role if user is NEW (no role set)
+if (!req.user.role) {
   req.user.role =
     req.session.role === "BUSINESS" ? "BUSINESS" : "USER";
   await req.user.save();
