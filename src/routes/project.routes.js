@@ -1,20 +1,40 @@
 import express from "express";
-import Project from "../models/Project.js";
+import Project from "../models/Project.model.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 router.post("/create", authMiddleware, async(req, res)=>{
     try{
+        const surveyId = "SURV-" + Date.now(); 
         const project = await Project.create({
             ...req.body,
             surveyId,
+            cpi: 0,
+  totalResponses: 0,
+  disqualified: 0,
+  quotaFull: 0,
             business: req.user._id,
         });
+         console.log("FINAL DATA:", {
+  ...req.body,
+  surveyId,
+});
         res.json(project);
+       
     }
     catch(err){
         res.status(500).json({message: err.message});
     }
+});
+
+router.get("/business/projects", authMiddleware, async (req, res) => {
+  try {
+    const projects = await Project.find({ business: req.user._id });
+    res.json(projects);
+  } catch (err) {
+    console.log("FETCH PROJECT ERROR:", err);
+    res.status(500).json({ message: err.message });
+  }
 });
 
 export default router;

@@ -160,9 +160,9 @@ if (!req.user.role) {
       `${process.env.FRONTEND_URL}/oauth-success?role=${req.user.role}`
     );
 
-    // res.redirect(
-    //   `http://localhost:5173/oauth-success?role=${req.user.role}`
-    // );
+    res.redirect(
+      `http://localhost:5173/oauth-success?role=${req.user.role}`
+    );
   }
 );
 
