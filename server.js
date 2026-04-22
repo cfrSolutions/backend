@@ -25,6 +25,7 @@ import session from "express-session";
 import userProfileRoutes from "./src/routes/userProfile.routes.js";
 import locationRoutes from "./src/routes/location.routes.js";
 import notificationRoutes from "./src/routes/notification.routes.js";
+import projectRoutes from "./src/routes/project.routes.js";
 //import businessRoutes from "./src/routes/business.routes.js";
 
 const app = express();
@@ -123,6 +124,8 @@ app.use("/api/location", locationRoutes);
 app.use("/api/notifications", notificationRoutes);
 // app.use("/api/business", businessRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/projects", projectRoutes);
+
 /* -------------------- SERVER -------------------- */
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

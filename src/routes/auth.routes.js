@@ -101,8 +101,14 @@ router.get(
       req.session.role === "BUSINESS" ? "BUSINESS" : "USER";
 
    // 🔥 ALWAYS update role from frontend
-      req.user.role = roleFromFrontend;
-      await req.user.save();
+      // req.user.role = roleFromFrontend;
+      // await req.user.save();
+      // Only set role if user is NEW (no role yet)
+if (!["ADMIN", "SUPERADMIN"].includes(req.user.role)) {
+  req.user.role =
+    req.session.role === "BUSINESS" ? "BUSINESS" : "USER";
+  await req.user.save();
+}
 
     const userAgent = req.headers["user-agent"] || "";
     const ip =
@@ -145,9 +151,13 @@ router.get(
 });
 
 
-    // ✅ only role in URL (not token)
+    // ✅ only role in URL (not token) i Need to change thiss
     res.redirect(
       `${process.env.FRONTEND_URL}/oauth-success?role=${req.user.role}`
+    );
+
+    res.redirect(
+      `http://localhost:5173/oauth-success?role=${req.user.role}`
     );
   }
 );
