@@ -123,7 +123,6 @@ app.use("/api/users/profile", userProfileRoutes);
 app.use("/api/location", locationRoutes);
 app.use("/api/notifications", notificationRoutes);
 // app.use("/api/business", businessRoutes);
-app.use("/api/auth", authRoutes);
 app.use("/api/projects", projectRoutes);
 
 /* -------------------- SERVER -------------------- */

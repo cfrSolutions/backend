@@ -28,7 +28,7 @@ router.post("/create", authMiddleware, async(req, res)=>{
     }
 });
 
-router.get("/business/projects", authMiddleware, async (req, res) => {
+router.get("/", authMiddleware, async (req, res) => {
   try {
     const projects = await Project.find({ business: req.user._id });
     res.json(projects);
