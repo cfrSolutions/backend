@@ -4,16 +4,17 @@ import { authMiddleware } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 router.post("/create", authMiddleware, async(req, res)=>{
+      console.log("🚀🚀🚀 NEW CREATE PROJECT CODE RUNNING 🚀🚀🚀");
+      console.log("USER 👉", req.user);
     try{
         const surveyId = "SURV-" + Date.now(); 
         const project = await Project.create({
             ...req.body,
             surveyId,
-            cpi: 0,
   totalResponses: 0,
   disqualified: 0,
   quotaFull: 0,
-            business: req.user._id,
+            business: req.user._id || req.user.id || req.user.userId,
         });
          console.log("FINAL DATA:", {
   ...req.body,
