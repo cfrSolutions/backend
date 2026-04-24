@@ -1,4 +1,18 @@
 import mongoose from "mongoose";
+
+const RedirectSchema = new mongoose.Schema({
+  token: {
+    type: String,
+    required: true,
+    index: true, // 🔥 important for fast lookup
+  },
+  url: {
+    type: String,
+    default: "",
+  },
+}, { _id: false });
+
+
 const ProjectSchema = new mongoose.Schema({
     business: {
         type: mongoose.Schema.Types.ObjectId,
@@ -44,6 +58,7 @@ const ProjectSchema = new mongoose.Schema({
     disqualified: { type: Number, default: 0 },
     quotaFull: { type: Number, default: 0 },
 
+    
     loi: {
         type: Number,
         required: true,
@@ -90,6 +105,12 @@ const ProjectSchema = new mongoose.Schema({
         enum: ["DRAFT", "LIVE", "HOLD", "CLOSED"],
         default: "DRAFT",
     },
+
+    redirects: {
+    complete: RedirectSchema,
+    disqualified: RedirectSchema,
+    quotaFull: RedirectSchema,
+  },
 },
 { timestamps: true }
 );
