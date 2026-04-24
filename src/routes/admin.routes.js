@@ -162,17 +162,17 @@ router.put("/project/:id/accept", authMiddleware, async (req, res) => {
         message: "Project already accepted",
         projectId: project._id,
         redirects: {
-          complete: `${process.env.BASE_URL}/api/survey/c?tk=${project.redirects.complete.token}`,
-          disqualified: `${process.env.BASE_URL}/api/survey/dq?tk=${project.redirects.disqualified.token}`,
-          quotaFull: `${process.env.BASE_URL}/api/survey/qf?tk=${project.redirects.quotaFull.token}`,
+          complete: `${process.env.BACKEND_URL}/api/survey/c?tk=${project.redirects.complete.token}`,
+          disqualified: `${process.env.BACKEND_URL}/api/survey/dq?tk=${project.redirects.disqualified.token}`,
+          quotaFull: `${process.env.BACKEND_URL}/api/survey/qf?tk=${project.redirects.quotaFull.token}`,
         },
       });
     }
 
     // 🔥 Generate tokens
-    const completeToken = generateRedirectToken ();
-    const dqToken = generateRedirectToken ();
-    const quotaToken = generateRedirectToken ();
+    const completeToken = generateRedirectToken();
+    const dqToken = generateRedirectToken();
+    const quotaToken = generateRedirectToken();
 
     // 🔥 Update project
     project.status = "LIVE";
