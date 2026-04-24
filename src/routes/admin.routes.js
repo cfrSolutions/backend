@@ -223,6 +223,13 @@ router.put("/project/:id/reject", authMiddleware, async (req, res) => {
   }
 });
 
+router.get("/project/:id", authMiddleware, async (req, res) => {
+  const project = await Project.findById(req.params.id)
+    .populate("business", "email name");
+
+  res.json(project);
+});
+
 router.get("/projects", authMiddleware, async (req, res) => {
   try {
     if (!["ADMIN", "SUPERADMIN"].includes(req.user.role)) {
