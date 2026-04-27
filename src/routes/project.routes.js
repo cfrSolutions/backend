@@ -1,11 +1,16 @@
 import express from "express";
 import Project from "../models/Project.model.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
-import mongoose from "mongoose";
+
 const router = express.Router();
 router.post("/create", authMiddleware, async(req, res)=>{
       console.log("🚀🚀🚀 NEW CREATE PROJECT CODE RUNNING 🚀🚀🚀");
       console.log("USER 👉", req.user);
+      const userId = req.user._id || req.user.id || req.user.userId;
+
+if (!userId) {
+  return res.status(401).json({ message: "User not found in token" });
+}
     try{
         const surveyId = "SURV-" + Date.now(); 
         const project = await Project.create({
@@ -14,8 +19,7 @@ router.post("/create", authMiddleware, async(req, res)=>{
   totalResponses: 0,
   disqualified: 0,
   quotaFull: 0,
-            // business: req.user._id || req.user.id || req.user.userId,
-            business: req.user._id,
+            business: userId,
         });
          console.log("FINAL DATA:", {
   ...req.body,
@@ -41,11 +45,6 @@ router.get("/", authMiddleware, async (req, res) => {
 
 router.get("/:id", authMiddleware, async (req, res) => {
   try {
-     const { id } = req.params;
-
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return res.status(400).json({ message: "Invalid ID" });
-  }
     const project = await Project.findById(req.params.id);
 
     if (!project) {
