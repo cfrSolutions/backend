@@ -2,7 +2,7 @@ import express from "express";
 import Project from "../models/Project.model.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import multer from "multer";
-import cloudinary from "../utils/cloudinary.js";
+import cloudinary from "../config/cloudinary.js";
 
 const router = express.Router();
 router.post("/create", authMiddleware, async(req, res)=>{
