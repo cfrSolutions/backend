@@ -1,7 +1,7 @@
 import express from "express";
 import Project from "../models/Project.model.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
-
+import mongoose from "mongoose";
 const router = express.Router();
 router.post("/create", authMiddleware, async(req, res)=>{
       console.log("🚀🚀🚀 NEW CREATE PROJECT CODE RUNNING 🚀🚀🚀");
@@ -41,6 +41,11 @@ router.get("/", authMiddleware, async (req, res) => {
 
 router.get("/:id", authMiddleware, async (req, res) => {
   try {
+     const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ message: "Invalid ID" });
+  }
     const project = await Project.findById(req.params.id);
 
     if (!project) {
