@@ -97,9 +97,9 @@ router.get(
   "/google/callback",
   passport.authenticate("google", {session:false}),
   async (req, res)=>{
-//     console.log("EMAIL:", req.user.email);
-// console.log("ROLE FROM DB:", req.user.role);
-// console.log("SESSION ROLE:", req.session.role);
+    console.log("EMAIL:", req.user.email);
+console.log("ROLE FROM DB:", req.user.role);
+console.log("SESSION ROLE:", req.session.role);
      const roleFromFrontend =
       req.session.role === "BUSINESS" ? "BUSINESS" : "USER";
 
@@ -193,7 +193,7 @@ router.put("/update-role", authMiddleware, async (req, res) => {
       role: user.role
     });
   } catch (err) {
-    //console.log("UPDATE ROLE ERROR:", err);
+    console.log("UPDATE ROLE ERROR:", err);
     res.status(500).json({ message: "Server error" });
   }
 });

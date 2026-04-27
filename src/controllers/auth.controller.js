@@ -938,8 +938,8 @@ export const deleteAccount = async (req, res) => {
     const userId = req.user.userId;
     const { reason, feedback } = req.body;
 
-    // console.log("Delete Reason:", reason);
-    // console.log("Feedback:", feedback);
+    console.log("Delete Reason:", reason);
+    console.log("Feedback:", feedback);
 
     await UserSession.deleteMany({ userId });
     await Wallet.deleteOne({ user: userId });

@@ -2,7 +2,7 @@ import express from "express";
 import Project from "../models/Project.model.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import multer from "multer";
-import cloudinary from "../config/cloudinary.js";
+import cloudinary from "../utils/cloudinary.js";
 
 const router = express.Router();
 router.post("/create", authMiddleware, async(req, res)=>{
@@ -121,8 +121,8 @@ router.put("/:id/upload-keys", authMiddleware, upload.single("file"), async(req,
     result.end(req.file.buffer);
   }
   catch(err){
-    res.status(500).json({message: err.message});
+    res.status(500).json({message: err})
   }
-});
+})
 
 export default router;
