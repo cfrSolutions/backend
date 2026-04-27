@@ -64,16 +64,16 @@ if (card.value < 5) {
     message: "Minimum ₹100 redemption allowed"
   });
 }
-console.log("REDEEM CARD DEBUG", {
-  id: card._id,
-  title: card.title,
-  tremendousProductId: card.tremendousProductId,
-  // skuId: card.skuId,
-  // value: card.value,
-  value: card.value,
-  currency: card.currency,
+// console.log("REDEEM CARD DEBUG", {
+//   id: card._id,
+//   title: card.title,
+//   tremendousProductId: card.tremendousProductId,
+//   // skuId: card.skuId,
+//   // value: card.value,
+//   value: card.value,
+//   currency: card.currency,
 
-});
+// });
 
   let wallet = await Wallet.findOne({ user: userId });
 

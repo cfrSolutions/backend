@@ -100,6 +100,14 @@ const ProjectSchema = new mongoose.Schema({
         required: true,
     },
 
+    surveyLinks: {
+  test: { type: String },
+  live: { type: String },
+},
+
+clientKeysFile: {
+  type: String,
+},
     status: {
         type: String,
         enum: ["DRAFT", "LIVE", "HOLD", "CLOSED"],
