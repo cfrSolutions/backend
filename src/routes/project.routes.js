@@ -4,8 +4,8 @@ import { authMiddleware } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 router.post("/create", authMiddleware, async(req, res)=>{
-      console.log("🚀🚀🚀 NEW CREATE PROJECT CODE RUNNING 🚀🚀🚀");
-      console.log("USER 👉", req.user);
+      // console.log("🚀🚀🚀 NEW CREATE PROJECT CODE RUNNING 🚀🚀🚀");
+      // console.log("USER 👉", req.user);
       const userId = req.user._id || req.user.id || req.user.userId;
 
 if (!userId) {
@@ -21,10 +21,10 @@ if (!userId) {
   quotaFull: 0,
             business: userId,
         });
-         console.log("FINAL DATA:", {
-  ...req.body,
-  surveyId,
-});
+//          console.log("FINAL DATA:", {
+//   ...req.body,
+//   surveyId,
+// });
         res.json(project);
        
     }
@@ -35,10 +35,12 @@ if (!userId) {
 
 router.get("/", authMiddleware, async (req, res) => {
   try {
-    const projects = await Project.find({ business: req.user._id });
+    const userId = req.user._id || req.user.id || req.user.userId;
+    const projects = await Project.find({ business: userId });
+
     res.json(projects);
   } catch (err) {
-    console.log("FETCH PROJECT ERROR:", err);
+    // console.log("FETCH PROJECT ERROR:", err);
     res.status(500).json({ message: err.message });
   }
 });
