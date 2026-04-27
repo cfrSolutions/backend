@@ -14,7 +14,8 @@ router.post("/create", authMiddleware, async(req, res)=>{
   totalResponses: 0,
   disqualified: 0,
   quotaFull: 0,
-            business: req.user._id || req.user.id || req.user.userId,
+            // business: req.user._id || req.user.id || req.user.userId,
+            business: req.user._id,
         });
          console.log("FINAL DATA:", {
   ...req.body,
