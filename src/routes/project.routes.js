@@ -56,9 +56,9 @@ router.get("/:id", authMiddleware, async (req, res) => {
       return res.status(404).json({ message: "Not found" });
     }
 
-    if (project.business.toString() !== req.userId.toString()) {
-      return res.status(403).json({ message: "Unauthorized" });
-    }
+    // if (project.business.toString() !== req.userId.toString()) {
+    //   return res.status(403).json({ message: "Unauthorized" });
+    // }
 
     res.json(project);
   } catch (err) {
