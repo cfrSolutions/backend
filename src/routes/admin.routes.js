@@ -143,9 +143,69 @@ router.get(
   }
 );
 
+// router.put("/project/:id/accept", authMiddleware, async (req, res) => {
+//   try {
+//     // 🔒 Role check
+//     if (!["ADMIN", "SUPERADMIN"].includes(req.user.role)) {
+//       return res.status(403).json({ message: "Access denied" });
+//     }
+
+//     const project = await Project.findById(req.params.id);
+
+//     if (!project) {
+//       return res.status(404).json({ message: "Project not found" });
+//     }
+
+//     // ⚠️ Already accepted
+//     if (project.redirects?.complete?.token) {
+//       return res.json({
+//         message: "Project already accepted",
+//         projectId: project._id,
+//         redirects: {
+//           complete: `${process.env.BACKEND_URL}/api/survey/c?tk=${project.redirects.complete.token}`,
+//           disqualified: `${process.env.BACKEND_URL}/api/survey/dq?tk=${project.redirects.disqualified.token}`,
+//           quotaFull: `${process.env.BACKEND_URL}/api/survey/qf?tk=${project.redirects.quotaFull.token}`,
+//         },
+//       });
+//     }
+
+//     // 🔥 Generate tokens
+//     const completeToken = generateRedirectToken();
+//     const dqToken = generateRedirectToken();
+//     const quotaToken = generateRedirectToken();
+
+//     // 🔥 Update project
+//     project.status = "LIVE";
+
+//     project.redirects = {
+//       complete: { token: completeToken, url: "" },
+//       disqualified: { token: dqToken, url: "" },
+//       quotaFull: { token: quotaToken, url: "" },
+//     };
+
+//     await project.save();
+
+//     // 🔥 Build URLs
+//     const base = process.env.BACKEND_URL;
+
+//     res.json({
+//       message: "Project accepted successfully",
+//       projectId: project._id,
+//       redirects: {
+//         complete: `${base}/api/survey/c?tk=${completeToken}`,
+//         disqualified: `${base}/api/survey/dq?tk=${dqToken}`,
+//         quotaFull: `${base}/api/survey/qf?tk=${quotaToken}`,
+//       },
+//     });
+
+//   } catch (err) {
+//     console.log("ADMIN ACCEPT ERROR:", err);
+//     res.status(500).json({ message: err.message });
+//   }
+// });
+
 router.put("/project/:id/accept", authMiddleware, async (req, res) => {
   try {
-    // 🔒 Role check
     if (!["ADMIN", "SUPERADMIN"].includes(req.user.role)) {
       return res.status(403).json({ message: "Access denied" });
     }
@@ -156,45 +216,23 @@ router.put("/project/:id/accept", authMiddleware, async (req, res) => {
       return res.status(404).json({ message: "Project not found" });
     }
 
-    // ⚠️ Already accepted
-    if (project.redirects?.complete?.token) {
-      return res.json({
-        message: "Project already accepted",
-        projectId: project._id,
-        redirects: {
-          complete: `${process.env.BACKEND_URL}/api/survey/c?tk=${project.redirects.complete.token}`,
-          disqualified: `${process.env.BACKEND_URL}/api/survey/dq?tk=${project.redirects.disqualified.token}`,
-          quotaFull: `${process.env.BACKEND_URL}/api/survey/qf?tk=${project.redirects.quotaFull.token}`,
-        },
-      });
+    // 🔥 Update status ONLY if not already live
+    if (project.status !== "LIVE") {
+      project.status = "LIVE";
+      await project.save();
     }
 
-    // 🔥 Generate tokens
-    const completeToken = generateRedirectToken();
-    const dqToken = generateRedirectToken();
-    const quotaToken = generateRedirectToken();
-
-    // 🔥 Update project
-    project.status = "LIVE";
-
-    project.redirects = {
-      complete: { token: completeToken, url: "" },
-      disqualified: { token: dqToken, url: "" },
-      quotaFull: { token: quotaToken, url: "" },
-    };
-
-    await project.save();
-
-    // 🔥 Build URLs
+    // 🔥 Always return redirects (for business panel)
     const base = process.env.BACKEND_URL;
 
     res.json({
-      message: "Project accepted successfully",
+      message: "Project accepted",
       projectId: project._id,
       redirects: {
-        complete: `${base}/api/survey/c?tk=${completeToken}`,
-        disqualified: `${base}/api/survey/dq?tk=${dqToken}`,
-        quotaFull: `${base}/api/survey/qf?tk=${quotaToken}`,
+        complete: `${base}/api/redirect/c?tk=${project.redirects.complete.token}`,
+        disqualified: `${base}/api/redirect/dq?tk=${project.redirects.disqualified.token}`,
+        quotaFull: `${base}/api/redirect/qf?tk=${project.redirects.quotaFull.token}`,
+        start: `${base}/api/redirect/start?tk=${project.redirects.complete.token}`, // 🔥 IMPORTANT
       },
     });
 
