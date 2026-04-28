@@ -3,74 +3,82 @@ import Project from "../models/Project.model.js";
 
 const router = express.Router();
 
-router.get("/start", async (req, res)=>{
-    const {tk} = req.query;
-    const project = await Project.findOne({
-        "redirects.complete.token" : tk,
-    });
+router.get("/start", async (req, res) => {
+  const { tk } = req.query;
 
-    if(!project) return res.send("Invalid link");
+  const project = await Project.findOne({
+    "redirects.complete.token": tk,
+  });
 
-    if(project.status !== "LIVE"){
-        return res.send("Survey not Live");
-    }
+  if (!project) return res.send("Invalid link");
 
-    if(project.completes >= project.targetCompletes){
-        return res.redirect(`/api/survey/qf?tk=${tk}`);
-    }
-    
-    const surveyLink = project.surveyLinks?.live;
-    if(!surveyLink) return res.send("Survey not Set");
+  if (project.status !== "LIVE") {
+    return res.send("Survey not Live");
+  }
 
-    res.redirect(surveyLink);
+  if (project.completes >= project.targetCompletes) {
+    return res.redirect(`/api/redirect/qf?tk=${project.redirects.quotaFull.token}`);
+  }
+
+  const surveyLink = project.surveyLinks?.live;
+  if (!surveyLink) return res.send("Survey not Set");
+
+  res.redirect(surveyLink);
 });
 
-router.get("/c", async (req, res)=>{
-    const {tk} = req.query;
-    const project = await Project.findOne({
-        "redirects.complete.token" : tk,
-    });
+router.get("/c", async (req, res) => {
+  const { tk } = req.query;
 
-    if(!project) return res.send("Invalid");
-    if(project.completes >= project.targetCompletes){
-        return res.redirect(`/api/survey/qf?tk=${project.redirects.quotaFull.token}`);
-    }
-    await Project.updateOne(
-        { _id: project._id},
-        {$inc: {complete: 1}}
-    );
+  const project = await Project.findOne({
+    "redirects.complete.token": tk,
+  });
 
-    res.send("Completed");
+  if (!project) return res.send("Invalid");
+
+  if (project.completes >= project.targetCompletes) {
+    return res.redirect(`/api/redirect/qf?tk=${project.redirects.quotaFull.token}`);
+  }
+
+  await Project.updateOne(
+    { _id: project._id },
+    { $inc: { completes: 1 } }
+  );
+
+  res.send("Completed");
 });
 
-router.get("/dq", async (req, res)=>{
-    const {tk} = req.query;
-    const project = await Project.findOne({
-        "redirects.disqualified.token" : tk,
-    });
+router.get("/dq", async (req, res) => {
+  const { tk } = req.query;
 
-    if(!project) return res.send("Invalid");
-    await Project.updateOne(
-        { _id: project._id},
-        {$inc: {disqualified: 1}}
-    );
+  const project = await Project.findOne({
+    "redirects.disqualified.token": tk,
+  });
 
-    res.send("Disqualified");
+  if (!project) return res.send("Invalid");
+
+  await Project.updateOne(
+    { _id: project._id },
+    { $inc: { disqualified: 1 } }
+  );
+
+  res.send("Disqualified");
 });
 
-router.get("/qf", async (req, res)=>{
-    const {tk} = req.query;
-    const project = await Project.findOne({
-        "redirects.quotaFull.token": tk,
-    });
+router.get("/qf", async (req, res) => {
+  const { tk } = req.query;
 
-    if(!project) return res.send("invalid");
-    await Project.updateOne(
-        {_id: project._id},
-        {$inc: {quotaFull: 1}}
-    );
+  const project = await Project.findOne({
+    "redirects.quotaFull.token": tk,
+  });
 
-    res.send("Quota Full");
+  if (!project) return res.send("Invalid");
+
+  await Project.updateOne(
+    { _id: project._id },
+    { $inc: { quotaFull: 1 } }
+  );
+
+  res.send("Quota Full");
 });
 
 export default router;
