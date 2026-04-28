@@ -45,7 +45,8 @@ router.post("/create", authMiddleware, async (req, res) => {
     
     const project = await Project.create({
       ...req.body,
-      targetCompletes: req.body.completes,
+      targetCompletes: req.body.targetCompletes,
+      completes: 0, 
       surveyId: "SURV-" + Date.now(),
 
       redirects: {
