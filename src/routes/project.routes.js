@@ -42,9 +42,10 @@ router.post("/create", authMiddleware, async (req, res) => {
 
   try {
     const generateToken = () => crypto.randomBytes(24).toString("hex");
-
+    
     const project = await Project.create({
       ...req.body,
+      targetCompletes: req.body.completes,
       surveyId: "SURV-" + Date.now(),
 
       redirects: {
