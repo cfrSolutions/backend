@@ -53,8 +53,9 @@ const ProjectSchema = new mongoose.Schema({
 
     completes: {
         type: Number,
-        required: true,
+        default: 0, 
     },
+    targetCompletes: { type: Number, required: true },
     disqualified: { type: Number, default: 0 },
     quotaFull: { type: Number, default: 0 },
 

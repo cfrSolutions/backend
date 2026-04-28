@@ -5,34 +5,64 @@ import multer from "multer";
 import cloudinary from "../config/cloudinary.js";
 
 const router = express.Router();
-router.post("/create", authMiddleware, async(req, res)=>{
-      // console.log("🚀🚀🚀 NEW CREATE PROJECT CODE RUNNING 🚀🚀🚀");
-      // console.log("USER 👉", req.user);
-      const userId = req.user._id || req.user.id || req.user.userId;
+// router.post("/create", authMiddleware, async(req, res)=>{
+//       // console.log("🚀🚀🚀 NEW CREATE PROJECT CODE RUNNING 🚀🚀🚀");
+//       // console.log("USER 👉", req.user);
+//       const userId = req.user._id || req.user.id || req.user.userId;
 
-if (!userId) {
-  return res.status(401).json({ message: "User not found in token" });
-}
-    try{
-        const surveyId = "SURV-" + Date.now(); 
-        const project = await Project.create({
-            ...req.body,
-            surveyId,
-  totalResponses: 0,
-  disqualified: 0,
-  quotaFull: 0,
-            business: userId,
-        });
-//          console.log("FINAL DATA:", {
-//   ...req.body,
-//   surveyId,
-// });
-        res.json(project);
+// if (!userId) {
+//   return res.status(401).json({ message: "User not found in token" });
+// }
+//     try{
+//         const surveyId = "SURV-" + Date.now(); 
+//         const project = await Project.create({
+//             ...req.body,
+//             surveyId,
+//   totalResponses: 0,
+//   disqualified: 0,
+//   quotaFull: 0,
+//             business: userId,
+//         });
+// //          console.log("FINAL DATA:", {
+// //   ...req.body,
+// //   surveyId,
+// // });
+//         res.json(project);
        
-    }
-    catch(err){
-        res.status(500).json({message: err.message});
-    }
+//     }
+//     catch(err){
+//         res.status(500).json({message: err.message});
+//     }
+// });
+
+import crypto from "crypto";
+
+router.post("/create", authMiddleware, async (req, res) => {
+  const userId = req.user._id || req.user.id || req.user.userId;
+
+  try {
+    const generateToken = () => crypto.randomBytes(24).toString("hex");
+
+    const project = await Project.create({
+      ...req.body,
+      surveyId: "SURV-" + Date.now(),
+
+      redirects: {
+        complete: { token: generateToken() },
+        disqualified: { token: generateToken() },
+        quotaFull: { token: generateToken() },
+      },
+
+      disqualified: 0,
+      quotaFull: 0,
+      totalResponses: 0,
+      business: userId,
+    });
+
+    res.json(project);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
 router.get("/", authMiddleware, async (req, res) => {
