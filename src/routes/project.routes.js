@@ -143,6 +143,7 @@ router.put("/:id/survey-links", authMiddleware, async(req, res)=>{
     
     const {test, live} = req.body;
     project.surveyLinks = {test, live};
+    project.status = "TESTING";
     await project.save();
     res.json({message: "Links saved successfully"});
   }
@@ -202,5 +203,20 @@ router.put(
     }
   }
 );
+
+// ADMIN → GO LIVE
+router.put("/admin/project/:id/go-live", async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id);
+
+    project.status = "LIVE";
+
+    await project.save();
+
+    res.json({ message: "Project moved to LIVE" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
 export default router;
