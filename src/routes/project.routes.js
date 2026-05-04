@@ -45,11 +45,13 @@ router.post("/create", authMiddleware, async (req, res) => {
     
     const project = await Project.create({
       ...req.body,
+      status: "DRAFT",
       targetCompletes: req.body.targetCompletes,
       completes: 0, 
       surveyId: "SURV-" + Date.now(),
 
       redirects: {
+        start: { token: generateToken() },
         complete: { token: generateToken() },
         disqualified: { token: generateToken() },
         quotaFull: { token: generateToken() },

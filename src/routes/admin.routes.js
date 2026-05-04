@@ -204,6 +204,44 @@ router.get(
 //   }
 // });
 
+// router.put("/project/:id/accept", authMiddleware, async (req, res) => {
+//   try {
+//     if (!["ADMIN", "SUPERADMIN"].includes(req.user.role)) {
+//       return res.status(403).json({ message: "Access denied" });
+//     }
+
+//     const project = await Project.findById(req.params.id);
+
+//     if (!project) {
+//       return res.status(404).json({ message: "Project not found" });
+//     }
+
+//     // 🔥 Update status ONLY if not already live
+//     if (project.status !== "LIVE") {
+//       project.status = "LIVE";
+//       await project.save();
+//     }
+
+//     // 🔥 Always return redirects (for business panel)
+//     const base = process.env.BACKEND_URL;
+
+//     res.json({
+//       message: "Project accepted",
+//       projectId: project._id,
+//       redirects: {
+//         complete: `${base}/api/redirect/c?tk=${project.redirects.complete.token}`,
+//         disqualified: `${base}/api/redirect/dq?tk=${project.redirects.disqualified.token}`,
+//         quotaFull: `${base}/api/redirect/qf?tk=${project.redirects.quotaFull.token}`,
+//         start: `${base}/api/redirect/start?tk=${project.redirects.complete.token}`, // 🔥 IMPORTANT
+//       },
+//     });
+
+//   } catch (err) {
+//     console.log("ADMIN ACCEPT ERROR:", err);
+//     res.status(500).json({ message: err.message });
+//   }
+// });
+
 router.put("/project/:id/accept", authMiddleware, async (req, res) => {
   try {
     if (!["ADMIN", "SUPERADMIN"].includes(req.user.role)) {
@@ -216,23 +254,23 @@ router.put("/project/:id/accept", authMiddleware, async (req, res) => {
       return res.status(404).json({ message: "Project not found" });
     }
 
-    // 🔥 Update status ONLY if not already live
-    if (project.status !== "LIVE") {
-      project.status = "LIVE";
-      await project.save();
+    // ✅ Only allow accept from DRAFT
+    if (project.status !== "DRAFT") {
+      return res.status(400).json({ message: "Already processed" });
     }
+    project.status = "TESTING";
+    await project.save();
 
-    // 🔥 Always return redirects (for business panel)
     const base = process.env.BACKEND_URL;
 
     res.json({
-      message: "Project accepted",
+      message: "Project accepted (Testing phase)",
       projectId: project._id,
       redirects: {
+        start: `${base}/api/redirect/start?tk=${project.redirects.start.token}`, // ✅ FIXED
         complete: `${base}/api/redirect/c?tk=${project.redirects.complete.token}`,
         disqualified: `${base}/api/redirect/dq?tk=${project.redirects.disqualified.token}`,
         quotaFull: `${base}/api/redirect/qf?tk=${project.redirects.quotaFull.token}`,
-        start: `${base}/api/redirect/start?tk=${project.redirects.complete.token}`, // 🔥 IMPORTANT
       },
     });
 
