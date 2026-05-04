@@ -280,21 +280,47 @@ router.put("/project/:id/accept", authMiddleware, async (req, res) => {
   }
 });
 
+// router.put("/project/:id/reject", authMiddleware, async (req, res) => {
+//   try {
+//     if (!["ADMIN", "SUPERADMIN"].includes(req.user.role)) {
+//       return res.status(403).json({ message: "Forbidden" });
+//     }
+
+//     const project = await Project.findById(req.params.id);
+
+//     project.status = "CLOSED";
+
+//     await project.save();
+
+//     res.json({ message: "Project rejected" });
+
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// });
 router.put("/project/:id/reject", authMiddleware, async (req, res) => {
   try {
     if (!["ADMIN", "SUPERADMIN"].includes(req.user.role)) {
-      return res.status(403).json({ message: "Forbidden" });
+      return res.status(403).json({ message: "Access denied" });
     }
 
     const project = await Project.findById(req.params.id);
 
-    project.status = "CLOSED";
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
 
+    if (project.status !== "DRAFT") {
+      return res.status(400).json({ message: "Already processed" });
+    }
+
+    project.status = "REJECTED";
     await project.save();
 
     res.json({ message: "Project rejected" });
 
   } catch (err) {
+    console.log("ADMIN REJECT ERROR:", err);
     res.status(500).json({ message: err.message });
   }
 });

@@ -116,6 +116,7 @@ clientKeysFile: {
     },
 
     redirects: {
+    start: RedirectSchema, 
     complete: RedirectSchema,
     disqualified: RedirectSchema,
     quotaFull: RedirectSchema,
