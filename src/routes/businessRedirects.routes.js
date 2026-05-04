@@ -7,7 +7,7 @@ router.get("/start", async (req, res) => {
   const { tk } = req.query;
 
   const project = await Project.findOne({
-    "redirects.complete.token": tk,
+    "redirects.start.token": tk,
   });
 
   if (!project) return res.send("Invalid link");
