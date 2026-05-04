@@ -284,4 +284,33 @@ router.get("/projects", authMiddleware, async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
+router.put("/project/:id/move-testing", async(req, res)=>{
+  try{
+    const project = await Project.findById(req.params.id);
+    if(!project) return res.status(404).send("Project not found");
+    project.status="TESTING";
+    await project.save();
+    res.send({message: "Moved to TESTING"});
+  }
+  catch(err){
+    console.err(err);
+    res.status(500).send("Server error");
+  }
+});
+
+router.put("/project/:id/go-live", async (req, res)=>{
+  try{
+    const project = await Project.findById(req.params.id);
+    if(!project) return res.status(404).send("Project not found");
+    project.status = "LIVE";
+    await project.save();
+    res.send({message: "Proect is LIVE"});
+  }
+  catch(err){
+    console.log(err);
+    res.status(500).send("Sever error");
+  }
+});
+
 export default router;
