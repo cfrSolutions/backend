@@ -44,7 +44,8 @@ router.get("/c", async (req, res) => {
     { $inc: { completes: 1 } }
   );
 
-  res.send("Completed");
+  // res.send("Completed");
+  res.redirect("https://inputify.io/thank-you");
 });
 
 router.get("/dq", async (req, res) => {
@@ -61,7 +62,8 @@ router.get("/dq", async (req, res) => {
     { $inc: { disqualified: 1 } }
   );
 
-  res.send("Disqualified");
+  // res.send("Disqualified");
+  res.redirect("https://inputify.io/disqualified");
 });
 
 router.get("/qf", async (req, res) => {
@@ -78,7 +80,8 @@ router.get("/qf", async (req, res) => {
     { $inc: { quotaFull: 1 } }
   );
 
-  res.send("Quota Full");
+  // res.send("Quota Full");
+  res.redirect("https://inputify.io/quota-full");
 });
 
 export default router;
