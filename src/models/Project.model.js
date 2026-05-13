@@ -67,7 +67,7 @@ const ProjectSchema = new mongoose.Schema({
 
     cpi: {
   type: Number,
-  default: 0,   // ✅ add this
+  default: 0,   
 },
     totalResponses: { type: Number, default: 0 },
     incidence:{

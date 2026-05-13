@@ -15,7 +15,7 @@ router.post("/start", authMiddleware, async (req, res) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    // ✅ CHECK IF ALREADY COMPLETED
+   
   const existingCompleted = await SurveyResponse.findOne({
     survey: surveyId,
     user: userId,
@@ -28,7 +28,7 @@ router.post("/start", authMiddleware, async (req, res) => {
     });
   }
 
-  // ✅ CHECK IF ALREADY STARTED (resume instead)
+  
   const existingStarted = await SurveyResponse.findOne({
     survey: surveyId,
     user: userId,
@@ -41,7 +41,7 @@ router.post("/start", authMiddleware, async (req, res) => {
         `${existingStarted.survey.companySurveyUrl}?uid=${existingStarted._id}`
     });
   }
-    // ✅ CREATE RESPONSE (THIS IS THE UID)
+    // CREATE RESPONSE (THIS IS THE UID)
     const response = await SurveyResponse.create({
       survey: surveyId,
       user: userId,
@@ -58,14 +58,14 @@ router.post("/start", authMiddleware, async (req, res) => {
       return res.status(400).send("Response has no user attached");
     }
 
-    // ✅ INTERNAL SURVEY → YOUR FORM
+    // INTERNAL SURVEY → YOUR FORM
     if (survey.surveyType === "INTERNAL") {
       return res.json({
         redirectUrl: `${process.env.FRONTEND_URL}/user/survey/${surveyId}?uid=${response._id}`,
       });
     }
 
-    // ✅ EXTERNAL SURVEY → COMPANY FORM
+    // EXTERNAL SURVEY COMPANY FORM
     let redirectUrl = survey.companySurveyUrl;
 
     if (!survey.trackingParam) {
@@ -74,7 +74,7 @@ router.post("/start", authMiddleware, async (req, res) => {
       });
     }
 
-    // // 🔥 REPLACE COMPANY PLACEHOLDER WITH RESPONSE ID
+    // //  REPLACE COMPANY PLACEHOLDER WITH RESPONSE ID
     // redirectUrl = redirectUrl.replace(
     //   survey.trackingParam,
     //   response._id.toString()
