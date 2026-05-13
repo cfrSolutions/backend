@@ -12,9 +12,15 @@ router.get("/start", async (req, res) => {
 
   if (!project) return res.send("Invalid link");
 
+
+  if(project.status == "COMPLETED"){
+    return res.send("survey completed");
+  }
+  
   if (project.status !== "LIVE") {
     return res.send("Survey not Live");
   }
+
 
   if (project.completes >= project.targetCompletes) {
     return res.redirect(`/api/redirect/qf?tk=${project.redirects.quotaFull.token}`);
