@@ -50,13 +50,27 @@ app.use(helmet({
     crossOriginEmbedderPolicy: false,
     crossOriginResourcePolicy: false,
   }));
-app.use(
-  rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 min
-    max: 300, // 300 requests per IP
-  })
-);
+// app.use(
+//   rateLimit({
+//     windowMs: 15 * 60 * 1000, // 15 min
+//     max: 300, // 300 requests per IP
+//   })
+// );
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5000,
+});
 
+app.use((req, res, next) => {
+
+  // SKIP SOCKET.IO
+  if (req.path.startsWith("/socket.io/")) {
+    return next();
+  }
+
+  globalLimiter(req, res, next);
+
+});
 // 🔐 Login brute-force protection
 app.use(
   "/api/auth/login",
@@ -138,9 +152,9 @@ const io = new Server(server, {
   cors: {
     origin: [
       "https://inputify.io",
-      "https://www.inputify.io",
-      "https://frontend-eld6db4vs-cfrsolutions-projects.vercel.app",
-      "http://localhost:5173",
+    "https://www.inputify.io",
+    "https://frontend-eld6db4vs-cfrsolutions-projects.vercel.app",
+    "http://localhost:5173",
     ],
     credentials: true,
   },
