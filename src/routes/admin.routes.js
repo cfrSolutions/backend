@@ -389,34 +389,82 @@ router.put("/project/:id/start-negotiation", async (req, res) => {
 
 });
 
-router.put("/project/:id/negotiate", async (req, res) => {
+// router.put("/project/:id/negotiate", async (req, res) => {
 
-  const {
-    sender,
-    message,
-    proposedCpi,
+//   const {
+//     sender,
+//     message,
+//     proposedCpi,
     
-  } = req.body;
+//   } = req.body;
 
-  const project = await Project.findById(req.params.id);
+//   const project = await Project.findById(req.params.id);
 
-  if (!project.negotiations) {
-    project.negotiations = [];
+//   if (!project.negotiations) {
+//     project.negotiations = [];
+//   }
+
+//   project.status = "NEGOTIATION";
+
+//   project.negotiations.push({
+//     sender,
+//     message,
+//     proposedCpi,
+//     createdAt: new Date(),
+//   });
+
+//   await project.save();
+
+//   res.json(project);
+// });
+
+router.put(
+  "/project/:id/negotiate",
+  async (req, res) => {
+
+    try {
+
+      const { id } = req.params;
+
+      const {
+        sender,
+        message,
+        proposedCpi,
+      } = req.body;
+
+      const project = await Project.findById(id);
+
+      if (!project) {
+        return res.status(404).json({
+          message: "Project not found",
+        });
+      }
+
+      project.negotiations.push({
+        sender,
+        message,
+        proposedCpi,
+        createdAt: new Date(),
+      });
+
+      await project.save();
+
+      res.json({
+        success: true,
+        negotiations: project.negotiations,
+      });
+
+    } catch (err) {
+
+      console.log(err);
+
+      res.status(500).json({
+        message: "Server Error",
+      });
+
+    }
   }
-
-  project.status = "NEGOTIATION";
-
-  project.negotiations.push({
-    sender,
-    message,
-    proposedCpi,
-    createdAt: new Date(),
-  });
-
-  await project.save();
-
-  res.json(project);
-});
+);
 
 router.put(
   "/project/:id/accept-negotiation",
