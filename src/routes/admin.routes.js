@@ -377,6 +377,18 @@ router.put("/project/:id/go-live", async (req, res)=>{
   }
 });
 
+router.put("/project/:id/start-negotiation", async (req, res) => {
+
+  const project = await Project.findById(req.params.id);
+
+  project.status = "NEGOTIATION";
+
+  await project.save();
+
+  res.json(project);
+
+});
+
 router.put("/project/:id/negotiate", async (req, res) => {
 
   const {
