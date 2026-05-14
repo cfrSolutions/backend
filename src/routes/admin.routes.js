@@ -393,8 +393,9 @@ router.put("/project/:id/negotiate", async (req, res) => {
 
   const {
     sender,
-    text,
-    offerAmount,
+    message,
+    proposedCpi,
+    
   } = req.body;
 
   const project = await Project.findById(req.params.id);
@@ -407,8 +408,8 @@ router.put("/project/:id/negotiate", async (req, res) => {
 
   project.negotiations.push({
     sender,
-    text,
-    offerAmount,
+    message,
+    proposedCpi,
     createdAt: new Date(),
   });
 
@@ -416,5 +417,45 @@ router.put("/project/:id/negotiate", async (req, res) => {
 
   res.json(project);
 });
+
+router.put(
+  "/project/:id/accept-negotiation",
+  async (req, res) => {
+
+    try {
+
+      const project = await Project.findById(
+        req.params.id
+      );
+
+      if (!project) {
+        return res.status(404).json({
+          message: "Project not found",
+        });
+      }
+
+      project.status = "ACCEPTED";
+
+      // update final agreed amount
+      project.budget = req.body.amount;
+
+      // optional
+      project.cpi = req.body.amount;
+
+      await project.save();
+
+      res.json(project);
+
+    } catch (err) {
+
+      console.log(err);
+
+      res.status(500).json({
+        message: "Server error",
+      });
+
+    }
+  }
+);
 
 export default router;
