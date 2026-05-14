@@ -377,4 +377,32 @@ router.put("/project/:id/go-live", async (req, res)=>{
   }
 });
 
+router.put("/project/:id/negotiate", async (req, res) => {
+
+  const {
+    sender,
+    text,
+    offerAmount,
+  } = req.body;
+
+  const project = await Project.findById(req.params.id);
+
+  if (!project.negotiations) {
+    project.negotiations = [];
+  }
+
+  project.status = "NEGOTIATION";
+
+  project.negotiations.push({
+    sender,
+    text,
+    offerAmount,
+    createdAt: new Date(),
+  });
+
+  await project.save();
+
+  res.json(project);
+});
+
 export default router;
