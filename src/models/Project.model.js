@@ -111,7 +111,7 @@ clientKeysFile: {
 },
     status: {
         type: String,
-        enum: ["DRAFT", "TESTING", "LIVE", "HOLD", "COMPLETED", "CLOSED"],
+        enum: ["DRAFT", "TESTING", "LIVE", "HOLD", "COMPLETED", "CLOSED", "NEGOTIATION"],
         default: "DRAFT",
     },
 
@@ -121,6 +121,24 @@ clientKeysFile: {
     disqualified: RedirectSchema,
     quotaFull: RedirectSchema,
   },
+
+  negotiations: [
+  {
+    sender: {
+      type: String,
+      enum: ["ADMIN", "BUSINESS"],
+    },
+
+    message: String,
+
+    proposedCpi: Number,
+
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+],
 },
 { timestamps: true }
 );
