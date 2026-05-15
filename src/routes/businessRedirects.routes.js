@@ -4,10 +4,11 @@ import Project from "../models/Project.model.js";
 
 const router = express.Router();
 global.sessions = global.sessions || {};
+global.completedUsers = global.completedUsers || {};
 
 router.get("/start", async (req, res) => {
   const { tk } = req.query;
-
+  const fingerprint = `${req.ip}-${req.headers["user-agent"]}`;
   const project = await Project.findOne({
     "redirects.start.token": tk,
   });
@@ -31,6 +32,13 @@ if (
   global.sessions[existingSid].projectId === project._id.toString()
 ) {
   return res.redirect(project.surveyLinks.live);
+}
+
+
+  const key = `${project._id}-${fingerprint}`;
+
+if (global.completedUsers[key]) {
+  return res.send("You already completed this survey");
 }
    const sid = crypto.randomBytes(16).toString("hex");
 
@@ -124,6 +132,11 @@ res.clearCookie("sid");
       }
     );
   }
+  const fingerprint = `${req.ip}-${req.headers["user-agent"]}`;
+
+const key = `${project._id}-${fingerprint}`;
+
+global.completedUsers[key] = true;
   // res.send("Completed");
   res.redirect("https://inputify.io/thank-you");
 });
@@ -155,7 +168,11 @@ session.used = true;
     { _id: project._id },
     { $inc: { disqualified: 1, totalResponses: 1, } }
   );
+const fingerprint = `${req.ip}-${req.headers["user-agent"]}`;
 
+const key = `${project._id}-${fingerprint}`;
+
+global.completedUsers[key] = true;
   // res.send("Disqualified");
   res.redirect("https://inputify.io/disqualified");
 });
@@ -186,7 +203,11 @@ session.used = true;
     { _id: project._id },
     { $inc: { quotaFull: 1, totalResponses: 1, } }
   );
+const fingerprint = `${req.ip}-${req.headers["user-agent"]}`;
 
+const key = `${project._id}-${fingerprint}`;
+
+global.completedUsers[key] = true;
   // res.send("Quota Full");
   res.redirect("https://inputify.io/quota-full");
 });
