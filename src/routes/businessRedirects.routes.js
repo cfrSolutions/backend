@@ -106,6 +106,10 @@ router.get("/c", async (req, res) => {
 
   session.used = true;
 
+delete global.sessions[sid];
+
+res.clearCookie("sid");
+
   await Project.updateOne(
     { _id: project._id },
     { $inc: { completes: 1, totalResponses: 1, }, }
@@ -146,6 +150,8 @@ if (!session || session.used) {
   return res.send("Session mismatch");
 }
 session.used = true;
+delete global.sessions[sid];
+res.clearCookie("sid");
   await Project.updateOne(
     { _id: project._id },
     { $inc: { disqualified: 1, totalResponses: 1, } }
@@ -177,6 +183,8 @@ if (!session || session.used) {
   return res.send("Session mismatch");
 }
 session.used = true;
+delete global.sessions[sid];
+res.clearCookie("sid");
   await Project.updateOne(
     { _id: project._id },
     { $inc: { quotaFull: 1, totalResponses: 1, } }
