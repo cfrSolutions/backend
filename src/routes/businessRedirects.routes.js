@@ -40,6 +40,9 @@ if (
 // if (global.completedUsers[key]) {
 //   return res.send("You already completed this survey");
 // }
+if (req.cookies[`completed_${project._id}`]) {
+  return res.send("You already completed this survey");
+}
    const sid = crypto.randomBytes(16).toString("hex");
 
  
@@ -60,9 +63,7 @@ if (
   if (project.completes >= project.targetCompletes) {
     return res.redirect(`/api/redirect/qf?tk=${project.redirects.quotaFull.token}`);
   }
-  if (req.cookies[`completed_${project._id}`]) {
-  return res.send("You already completed this survey");
-}
+  
 
   const surveyLink = project.surveyLinks?.live;
   if (!surveyLink) return res.send("Survey not Set");
@@ -91,10 +92,13 @@ router.get("/c", async (req, res) => {
   if (session.projectId !== project._id.toString()) {
     return res.send("Session mismatch");
   }
+
 res.cookie(`completed_${project._id}`, "true", {
   httpOnly: true,
-  maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
+  maxAge: 1000 * 60 * 60 * 24 * 30,
   sameSite: "lax",
+  secure: true,
+  domain: ".inputify.io",
 });
   
 //   if (session.ip !== req.ip) {
