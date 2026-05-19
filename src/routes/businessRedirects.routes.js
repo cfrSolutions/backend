@@ -4,7 +4,7 @@ import Project from "../models/Project.model.js";
 
 const router = express.Router();
 global.sessions = global.sessions || {};
-global.completedUsers = global.completedUsers || {};
+//global.completedUsers = global.completedUsers || {};
 
 router.get("/start", async (req, res) => {
   const { tk } = req.query;
@@ -35,11 +35,11 @@ if (
 }
 
 
-  const key = `${project._id}-${fingerprint}`;
+  //const key = `${project._id}-${fingerprint}`;
 
-if (global.completedUsers[key]) {
-  return res.send("You already completed this survey");
-}
+// if (global.completedUsers[key]) {
+//   return res.send("You already completed this survey");
+// }
    const sid = crypto.randomBytes(16).toString("hex");
 
  
@@ -60,6 +60,9 @@ if (global.completedUsers[key]) {
   if (project.completes >= project.targetCompletes) {
     return res.redirect(`/api/redirect/qf?tk=${project.redirects.quotaFull.token}`);
   }
+  if (req.cookies[`completed_${project._id}`]) {
+  return res.send("You already completed this survey");
+}
 
   const surveyLink = project.surveyLinks?.live;
   if (!surveyLink) return res.send("Survey not Set");
@@ -88,11 +91,15 @@ router.get("/c", async (req, res) => {
   if (session.projectId !== project._id.toString()) {
     return res.send("Session mismatch");
   }
-
+res.cookie(`completed_${project._id}`, "true", {
+  httpOnly: true,
+  maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
+  sameSite: "lax",
+});
   
-  if (session.ip !== req.ip) {
-  console.log("IP changed:", session.ip, req.ip);
-}
+//   if (session.ip !== req.ip) {
+//   console.log("IP changed:", session.ip, req.ip);
+// }
 
   // if (project.completes >= project.targetCompletes) {
   //   return res.redirect(`/api/redirect/qf?tk=${project.redirects.quotaFull.token}`);
@@ -132,11 +139,11 @@ res.clearCookie("sid");
       }
     );
   }
-  const fingerprint = `${req.ip}-${req.headers["user-agent"]}`;
+//   const fingerprint = `${req.ip}-${req.headers["user-agent"]}`;
 
-const key = `${project._id}-${fingerprint}`;
+// const key = `${project._id}-${fingerprint}`;
 
-global.completedUsers[key] = true;
+// global.completedUsers[key] = true;
   // res.send("Completed");
   res.redirect("https://inputify.io/thank-you");
 });
@@ -170,9 +177,9 @@ session.used = true;
   );
 const fingerprint = `${req.ip}-${req.headers["user-agent"]}`;
 
-const key = `${project._id}-${fingerprint}`;
+//const key = `${project._id}-${fingerprint}`;
 
-global.completedUsers[key] = true;
+// global.completedUsers[key] = true;
   // res.send("Disqualified");
   res.redirect("https://inputify.io/disqualified");
 });
@@ -203,11 +210,11 @@ session.used = true;
     { _id: project._id },
     { $inc: { quotaFull: 1, totalResponses: 1, } }
   );
-const fingerprint = `${req.ip}-${req.headers["user-agent"]}`;
+// const fingerprint = `${req.ip}-${req.headers["user-agent"]}`;
 
-const key = `${project._id}-${fingerprint}`;
+// const key = `${project._id}-${fingerprint}`;
 
-global.completedUsers[key] = true;
+// global.completedUsers[key] = true;
   // res.send("Quota Full");
   res.redirect("https://inputify.io/quota-full");
 });
