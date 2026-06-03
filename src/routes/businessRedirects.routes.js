@@ -57,7 +57,9 @@ if (req.cookies[`completed_${project._id}`]) {
   res.cookie("sid", sid, {
     httpOnly: true,
     maxAge: 1000 * 60 * 60, 
-    sameSite: "lax",
+    sameSite: "none",
+  secure: true,
+  domain: ".inputify.io",
   });
 
   if (project.completes >= project.targetCompletes) {
@@ -96,9 +98,9 @@ router.get("/c", async (req, res) => {
 res.cookie(`completed_${project._id}`, "true", {
   httpOnly: true,
   maxAge: 1000 * 60 * 60 * 24 * 30,
-  sameSite: "lax",
-  secure: true,
-  domain: ".inputify.io",
+ sameSite: "none",
+secure: true,
+domain: ".inputify.io",
 });
   
 //   if (session.ip !== req.ip) {
@@ -128,7 +130,9 @@ res.cookie(`completed_${project._id}`, "true", {
 delete global.sessions[sid];
 
 
-res.clearCookie("sid");
+res.clearCookie("sid", {
+  domain: ".inputify.io",
+});
 
   await Project.updateOne(
     { _id: project._id },
