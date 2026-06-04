@@ -266,31 +266,18 @@ router.get("/start", async (req, res) => {
   if (project.status !== "LIVE") {
     return res.send("Survey not Live");
   }
+  
 
-  const existingSid = req.cookies.sid;
-
-if (existingSid) {
-  const existingSession = await SurveySession.findOne({
-    sid: existingSid,
-    used: false,
-  });
-
-  if (
-    existingSession &&
-    existingSession.projectId.toString() === project._id.toString()
-  ) {
-    return res.redirect(project.surveyLinks.live);
-  }
-}
+// s
 
   //const key = `${project._id}-${fingerprint}`;
 
 // if (global.completedUsers[key]) {
 //   return res.send("You already completed this survey");
 // }
-if (req.cookies[`completed_${project._id}`]) {
-  return res.send("You already completed this survey");
-}
+// if (req.cookies[`completed_${project._id}`]) {
+//   return res.send("You already completed this survey");
+// }
 
 const sid = crypto.randomBytes(16).toString("hex");
 
@@ -303,28 +290,33 @@ await SurveySession.create({
 });
    
 
-  res.cookie("sid", sid, {
-    httpOnly: true,
-    maxAge: 1000 * 60 * 60, 
-    sameSite: "none",
-  secure: true,
-  domain: ".inputify.io",
-  });
+  // res.cookie("sid", sid, {
+  //   httpOnly: true,
+  //   maxAge: 1000 * 60 * 60, 
+  //   sameSite: "none",
+  // secure: true,
+  // domain: ".inputify.io",
+  // });
 
   if (project.completes >= project.targetCompletes) {
     return res.redirect(`/api/redirect/qf?tk=${project.redirects.quotaFull.token}`);
   }
   
 
-  const surveyLink = project.surveyLinks?.live;
-  if (!surveyLink) return res.send("Survey not Set");
+  const separator =
+  project.surveyLinks.live.includes("?")
+    ? "&"
+    : "?";
 
-  res.redirect(surveyLink);
+const surveyLink =
+  `${project.surveyLinks.live}${separator}pid=${sid}`;
+
+return res.redirect(surveyLink);
 });
 
 router.get("/c", async (req, res) => {
   const { tk } = req.query;
-  const sid = req.cookies.sid;
+  const sid = req.query.pid;
   if(!sid){
     return res.send("No Session");
   }
@@ -346,13 +338,13 @@ if (!session || session.used) {
     return res.send("Session mismatch");
   }
 
-res.cookie(`completed_${project._id}`, "true", {
-  httpOnly: true,
-  maxAge: 1000 * 60 * 60 * 24 * 30,
- sameSite: "none",
-secure: true,
-domain: ".inputify.io",
-});
+// res.cookie(`completed_${project._id}`, "true", {
+//   httpOnly: true,
+//   maxAge: 1000 * 60 * 60 * 24 * 30,
+//  sameSite: "none",
+// secure: true,
+// domain: ".inputify.io",
+// });
   
 //   if (session.ip !== req.ip) {
 //   console.log("IP changed:", session.ip, req.ip);
@@ -381,11 +373,11 @@ await session.save();
 
 
 
-res.clearCookie("sid", {
-  domain: ".inputify.io",
-   sameSite: "none",
-  secure: true,
-});
+// res.clearCookie("sid", {
+//   domain: ".inputify.io",
+//    sameSite: "none",
+//   secure: true,
+// });
 
   await Project.updateOne(
     { _id: project._id },
@@ -406,12 +398,12 @@ res.clearCookie("sid", {
 
 // global.completedUsers[key] = true;
   // res.send("Completed");
-  res.redirect("https://inputify.io/thank-you");
+  return res.redirect("https://inputify.io/thank-you");
 });
 
 router.get("/dq", async (req, res) => {
   const { tk } = req.query;
-  const sid = req.cookies.sid;
+ const sid = req.query.pid;
 
 if (!sid) {
   return res.send("No Session");
@@ -440,21 +432,21 @@ await session.save();
     { $inc: { disqualified: 1, totalResponses: 1, } }
   );
 // const fingerprint = `${req.ip}-${req.headers["user-agent"]}`;
-res.clearCookie("sid", {
-  domain: ".inputify.io",
-  sameSite: "none",
-  secure: true,
-});
+// res.clearCookie("sid", {
+//   domain: ".inputify.io",
+//   sameSite: "none",
+//   secure: true,
+// });
 //const key = `${project._id}-${fingerprint}`;
 
 // global.completedUsers[key] = true;
   // res.send("Disqualified");
-  res.redirect("https://inputify.io/disqualified");
+  return res.redirect("https://inputify.io/disqualified");
 });
 
 router.get("/qf", async (req, res) => {
   const { tk } = req.query;
-const sid = req.cookies.sid;
+const sid = req.query.sid;
 
 if (!sid) {
   return res.send("No Session");
@@ -482,18 +474,18 @@ await session.save();
     { $inc: { quotaFull: 1, totalResponses: 1, } }
   );
 
-  res.clearCookie("sid", {
-  domain: ".inputify.io",
-  sameSite: "none",
-  secure: true,
-});
+//   res.clearCookie("sid", {
+//   domain: ".inputify.io",
+//   sameSite: "none",
+//   secure: true,
+// });
 // const fingerprint = `${req.ip}-${req.headers["user-agent"]}`;
 
 // const key = `${project._id}-${fingerprint}`;
 
 // global.completedUsers[key] = true;
   // res.send("Quota Full");
-  res.redirect("https://inputify.io/quota-full");
+  return res.redirect("https://inputify.io/quota-full");
 });
 
 export default router;
