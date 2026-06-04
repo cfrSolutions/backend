@@ -306,29 +306,12 @@ router.get("/start", async (req, res) => {
 router.get("/c", async (req, res) => {
   const { tk } = req.query;
 
-  // IMPORTANT: get pid from URL
-  const sid = req.query.pid;
-
-  if (!sid) {
-    return res.send("No Session");
-  }
-
-  const session = global.sessions[sid];
-
-  if (!session || session.used) {
-    return res.send("Invalid or reused session");
-  }
-
   const project = await Project.findOne({
     "redirects.complete.token": tk,
   });
 
   if (!project) {
     return res.send("Invalid");
-  }
-
-  if (session.projectId !== project._id.toString()) {
-    return res.send("Session mismatch");
   }
 
   if (project.completes >= project.targetCompletes) {
@@ -344,10 +327,6 @@ router.get("/c", async (req, res) => {
 
     return res.redirect("https://inputify.io/quota-full");
   }
-
-  session.used = true;
-
-  delete global.sessions[sid];
 
   await Project.updateOne(
     { _id: project._id },
