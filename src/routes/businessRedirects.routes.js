@@ -302,12 +302,7 @@ router.get("/start", async (req, res) => {
 
   const sid = crypto.randomBytes(16).toString("hex");
 
-let surveyLink = project.surveyLinks.live;
-
-surveyLink = surveyLink.replace(
-  "pid=",
-  `pid=${sid}`
-);
+const trackingParam = getTrackingParam(originalSurveyLink);
 
 global.sessions[sid] = {
   projectId: project._id.toString(),
@@ -315,36 +310,23 @@ global.sessions[sid] = {
   createdAt: Date.now(),
 };
 
+let surveyLink = originalSurveyLink;
+
+// replace placeholders
+surveyLink = surveyLink
+  .replace("[[PANELIST IDENTIFIER]]", sid)
+  .replace("{{PANELIST IDENTIFIER}}", sid)
+  .replace("{{SID}}", sid)
+  .replace("{{TID}}", sid)
+  .replace("{{RID}}", sid);
+
+// replace empty param
+surveyLink = surveyLink.replace(
+  `${trackingParam}=`,
+  `${trackingParam}=${sid}`
+);
+
 return res.redirect(surveyLink);
-
-  // Detect parameter automatically
-  const trackingParam = getTrackingParam(originalSurveyLink);
-
-  // Store session
-  global.sessions[sid] = {
-    projectId: project._id.toString(),
-    used: false,
-    createdAt: Date.now(),
-    trackingParam,
-  };
-
-  let surveyLink = originalSurveyLink;
-
-  // Replace placeholder styles automatically
-  surveyLink = surveyLink
-    .replace("[[PANELIST IDENTIFIER]]", sid)
-    .replace("{{PANELIST IDENTIFIER}}", sid)
-    .replace("{{SID}}", sid)
-    .replace("{{TID}}", sid)
-    .replace("{{RID}}", sid);
-
-  // If parameter exists but empty
-  surveyLink = surveyLink.replace(
-    `${trackingParam}=`,
-    `${trackingParam}=${sid}`
-  );
-
-  return res.redirect(surveyLink);
 });
 
 router.get("/c", async (req, res) => {
