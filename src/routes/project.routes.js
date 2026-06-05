@@ -281,4 +281,12 @@ router.post(
   }
 );
 
+router.get("/check-cpi", async (req, res) => {
+
+  const data = await CPI.find().limit(5);
+
+  res.json(data);
+
+});
+
 export default router;
