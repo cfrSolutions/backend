@@ -113,6 +113,14 @@ router.get("/", authMiddleware, async (req, res) => {
   }
 });
 
+router.get("/check-cpi", async (req, res) => {
+
+  const data = await CPI.find().limit(5);
+
+  res.json(data);
+
+});
+
 router.get("/:id", authMiddleware, async (req, res) => {
   try {
     const userId = req.user._id || req.user.id || req.user.userId;
@@ -281,12 +289,6 @@ router.post(
   }
 );
 
-router.get("/check-cpi", async (req, res) => {
 
-  const data = await CPI.find().limit(5);
-
-  res.json(data);
-
-});
 
 export default router;
