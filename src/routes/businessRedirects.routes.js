@@ -308,7 +308,9 @@ router.get("/c", async (req, res) => {
 
   const { pid } = req.query;
 
+  console.log("PID:", pid);
   const response = await SurveyResponse.findById(pid);
+  console.log("RESPONSE:", response);
 
 if (response && response.status !== "COMPLETED") {
   response.status = "COMPLETED";
