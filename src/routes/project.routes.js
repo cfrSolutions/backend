@@ -221,6 +221,27 @@ router.put("/admin/project/:id/go-live", async (req, res) => {
   }
 });
 
+router.post("/calculate-cpi", async (req, res) => {
 
+  const {
+    country,
+    ir,
+    loi,
+  } = req.body;
+
+  const rate = await CPI.findOne({
+    country,
+    ir,
+    loi,
+  });
+
+  if (!rate) {
+    return res.status(404).json({
+      message: "No CPI found",
+    });
+  }
+
+  res.json(rate);
+});
 
 export default router;

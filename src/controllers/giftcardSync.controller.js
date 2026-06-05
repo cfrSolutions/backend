@@ -147,7 +147,7 @@ import GiftCardV2 from "../models/GiftCardV2.model.js";
 import axios from "axios";
 
 const tremendous = axios.create({
-  baseURL: "https://testflight.tremendous.com/api/v2",
+  baseURL: "https://api.tremendous.com/api/v2",
   headers: {
     Authorization: `Bearer ${process.env.TREMENDOUS_API_KEY}`,
     "Content-Type": "application/json",
