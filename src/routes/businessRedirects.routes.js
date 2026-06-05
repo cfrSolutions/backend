@@ -254,6 +254,7 @@ global.sessions = global.sessions || {};
 router.get("/start", async (req, res) => {
   const { tk } = req.query;
 
+  
   const project = await Project.findOne({
     "redirects.start.token": tk,
   });
@@ -282,8 +283,16 @@ router.get("/start", async (req, res) => {
     return res.send("Survey not Set");
   }
 
-  // Generate unique session id
-  const sid = crypto.randomBytes(16).toString("hex");
+
+  const trackingParam =
+  project.trackingParam || "pid";
+
+surveyLink = surveyLink.replace(
+  `${trackingParam}=`,
+  `${trackingParam}=${rid}`
+);
+  // // Generate unique session id
+  // const sid = crypto.randomBytes(16).toString("hex");
 
   // Store session
   global.sessions[sid] = {
