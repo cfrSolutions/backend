@@ -4,6 +4,7 @@ import { authMiddleware } from "../middleware/auth.middleware.js";
 import multer from "multer";
 import cloudinary from "../config/cloudinary.js";
 import crypto from "crypto";
+import CPI from "../models/CPI.model.js";
 
 const router = express.Router();
 // router.post("/create", authMiddleware, async(req, res)=>{
@@ -221,27 +222,58 @@ router.put("/admin/project/:id/go-live", async (req, res) => {
   }
 });
 
-router.post("/calculate-cpi", async (req, res) => {
+router.post(
+  "/calculate-cpi",
+  async (req, res) => {
 
-  const {
-    country,
-    ir,
-    loi,
-  } = req.body;
+    try {
 
-  const rate = await CPI.findOne({
-    country,
-    ir,
-    loi,
-  });
+      const {
+        country,
+        ir,
+        loi,
+      } = req.body;
 
-  if (!rate) {
-    return res.status(404).json({
-      message: "No CPI found",
-    });
+      const rates = await CPI.find({
+        country,
+      });
+
+      if (!rates.length) {
+        return res.status(404).json({
+          message: "No CPI found",
+        });
+      }
+
+      let bestRate = null;
+      let bestScore = Infinity;
+
+      rates.forEach(rate => {
+
+        const score =
+          Math.abs(rate.ir - ir) +
+          Math.abs(rate.loi - loi);
+
+        if(score < bestScore){
+
+          bestScore = score;
+          bestRate = rate;
+
+        }
+      });
+
+      res.json({
+        cpi: bestRate.cpi,
+      });
+
+    } catch(err){
+
+      console.log(err);
+
+      res.status(500).json({
+        message: err.message,
+      });
+    }
   }
-
-  res.json(rate);
-});
+);
 
 export default router;
