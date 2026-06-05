@@ -234,9 +234,14 @@ router.post(
         loi,
       } = req.body;
 
-      const rates = await CPI.find({
-        country,
-      });
+     const rates = await CPI.find({
+  country: {
+    $regex: new RegExp(
+      `^${country.trim()}$`,
+      "i"
+    ),
+  },
+});
 
       if (!rates.length) {
         return res.status(404).json({
