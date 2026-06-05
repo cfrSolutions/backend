@@ -246,7 +246,7 @@
 import crypto from "crypto";
 import express from "express";
 import Project from "../models/Project.model.js";
-
+import SurveyResponse from "../models/SurveyResponse.model.js";
 const router = express.Router();
 
 global.sessions = global.sessions || {};
@@ -306,6 +306,16 @@ router.get("/start", async (req, res) => {
 router.get("/c", async (req, res) => {
   const { tk } = req.query;
 
+  const { pid } = req.query;
+
+  const response = await SurveyResponse.findById(pid);
+
+if (response && response.status !== "COMPLETED") {
+  response.status = "COMPLETED";
+  response.completedAt = new Date();
+
+  await response.save();
+}
   const project = await Project.findOne({
     "redirects.complete.token": tk,
   });
@@ -349,6 +359,89 @@ router.get("/c", async (req, res) => {
 
   return res.redirect("https://inputify.io/thank-you");
 });
+
+
+// router.get("/c", async (req, res) => {
+//   const { tk } = req.query;
+
+//   const project = await Project.findOne({
+//     "redirects.complete.token": tk,
+//   });
+
+//   if (!project) {
+//     return res.send("Invalid");
+//   }
+
+//   // DYNAMIC PARAM SUPPORT
+//   const trackingParam =
+//     project.trackingParam || "pid";
+
+//   const id = req.query[trackingParam];
+
+//   if (!id) {
+//     return res.send("Missing tracking id");
+//   }
+
+//   const response =
+//     await SurveyResponse.findById(id);
+
+//   if (
+//     response &&
+//     response.status !== "COMPLETED"
+//   ) {
+//     response.status = "COMPLETED";
+//     response.completedAt = new Date();
+
+//     await response.save();
+//   }
+
+//   if (
+//     project.completes >=
+//     project.targetCompletes
+//   ) {
+//     await Project.updateOne(
+//       { _id: project._id },
+//       {
+//         $inc: {
+//           quotaFull: 1,
+//           totalResponses: 1,
+//         },
+//       }
+//     );
+
+//     return res.redirect(
+//       "https://inputify.io/quota-full"
+//     );
+//   }
+
+//   await Project.updateOne(
+//     { _id: project._id },
+//     {
+//       $inc: {
+//         completes: 1,
+//         totalResponses: 1,
+//       },
+//     }
+//   );
+
+//   if (
+//     project.completes + 1 >=
+//     project.targetCompletes
+//   ) {
+//     await Project.updateOne(
+//       { _id: project._id },
+//       {
+//         status: "COMPLETED",
+//       }
+//     );
+//   }
+
+//   return res.redirect(
+//     "https://inputify.io/user/dashboard?st=com"
+//   );
+// });
+
+
 
 router.get("/dq", async (req, res) => {
   const { tk } = req.query;
