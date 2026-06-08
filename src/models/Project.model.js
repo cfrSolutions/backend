@@ -117,7 +117,7 @@ clientKeysFile: {
 },
     status: {
         type: String,
-        enum: ["DRAFT", "TESTING", "LIVE", "HOLD", "COMPLETED","ACCEPTED", "CLOSED", "NEGOTIATION"],
+        enum: ["DRAFT", "TESTING", "LIVE", "HOLD", "COMPLETED","ACCEPTED", "CLOSED", "NEGOTIATION", "REJECTED"],
         default: "DRAFT",
     },
 
