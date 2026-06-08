@@ -102,10 +102,10 @@ totalCost: {
         maxlength: 1000,
     },
 
-    budget: {
-        type: Number,
-        required: true,
-    },
+    // budget: {
+    //     type: Number,
+    //     required: true,
+    // },
 
     surveyLinks: {
   test: { type: String },
