@@ -69,6 +69,12 @@ const ProjectSchema = new mongoose.Schema({
   type: Number,
   default: 0,   
 },
+
+totalCost: {
+  type: Number,
+  default: 0,
+},
+
     totalResponses: { type: Number, default: 0 },
     incidence:{
         type: Number,
