@@ -44,7 +44,32 @@ const ProjectSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
-
+    advancedCalendar: {
+  timezone: {
+    type: String,
+    default: null,
+  },
+  marketTimezone: {
+    type: String,
+    default: null,
+  },
+  startDate: {
+    type: Date,
+    default: null,
+  },
+  endDate: {
+    type: Date,
+    default: null,
+  },
+  startTime: {
+    type: String,
+    default: null,
+  },
+  endTime: {
+    type: String,
+    default: null,
+  },
+},
     gender:{
         type: String,
         enum: ["Male", "Female", "All"],
