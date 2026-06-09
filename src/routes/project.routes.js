@@ -326,4 +326,32 @@ router.post(
   }
 );
 
+router.get(
+  "/:projectId/target-group/:targetGroupId",
+  authMiddleware,
+  async (req, res) => {
+
+    const project =
+      await Project.findById(
+        req.params.projectId
+      );
+
+    const group =
+      project.targetGroups.id(
+        req.params.targetGroupId
+      );
+
+    if (!group) {
+      return res
+        .status(404)
+        .json({
+          message:
+            "Target group not found",
+        });
+    }
+
+    res.json(group);
+  }
+);
+
 export default router;
