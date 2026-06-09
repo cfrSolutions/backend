@@ -307,7 +307,7 @@ router.post(
       );
 
     project.targetGroups.push({
-
+       ...req.body,
       name:
         `Target Group ${
           project.targetGroups.length + 1
