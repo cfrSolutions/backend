@@ -52,6 +52,16 @@ const TargetGroupSchema = new mongoose.Schema({
     type: String,
     default: "DRAFT",
   },
+  timeline: {
+  type: Number,
+  default: 0,
+},
+
+openEnded: {
+  type: Number,
+  default: 0,
+},
+
 });
 
 export default TargetGroupSchema;

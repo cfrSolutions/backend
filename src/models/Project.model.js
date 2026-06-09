@@ -26,25 +26,25 @@ const ProjectSchema = new mongoose.Schema({
       unique: true,
     },
 
-    sector: {
-        type: String,
-        required: true,
-    },
+    // sector: {
+    //     type: String,
+    //     required: true,
+    // },
 
-    market: {
-        type: String,
-        required: true,
-    },
+    // market: {
+    //     type: String,
+    //     required: true,
+    // },
 
-    ageFrom: {
-        type: Number,
-        required: true,
-    },
+    // ageFrom: {
+    //     type: Number,
+    //     required: true,
+    // },
 
-    ageTo: {
-        type: Number,
-        required: true,
-    },
+    // ageTo: {
+    //     type: Number,
+    //     required: true,
+    // },
     advancedCalendar: {
   timezone: {
     type: String,
@@ -71,62 +71,68 @@ const ProjectSchema = new mongoose.Schema({
     default: null,
   },
 },
-    gender:{
-        type: String,
-        enum: ["Male", "Female", "All"],
-        default: "All",
-    },
+    // gender:{
+    //     type: String,
+    //     enum: ["Male", "Female", "All"],
+    //     default: "All",
+    // },
 
     completes: {
         type: Number,
         default: 0, 
     },
-    targetCompletes: { type: Number, required: true },
+    // targetCompletes: { type: Number, required: true },
     disqualified: { type: Number, default: 0 },
     quotaFull: { type: Number, default: 0 },
 
     
-    loi: {
-        type: Number,
-        required: true,
-    },
+//     loi: {
+//         type: Number,
+//         required: true,
+//     },
 
-    cpi: {
-  type: Number,
-  default: 0,   
-},
+//     cpi: {
+//   type: Number,
+//   default: 0,   
+// },
 
-totalCost: {
-  type: Number,
-  default: 0,
-},
+// totalCost: {
+//   type: Number,
+//   default: 0,
+// },
 
     totalResponses: { type: Number, default: 0 },
-    incidence:{
-        type: Number,
-        required: true,
-    },
 
-    timeline: {
-        type: Number,
-        required: true,
-    },
+    // incidence:{
+    //     type: Number,
+    //     required: true,
+    // },
 
-    devices: {
-      mobile: { type: Boolean, default: true },
-      desktop: { type: Boolean, default: true },
-      tablet: { type: Boolean, default: true },
-    },
+    // timeline: {
+    //     type: Number,
+    //     required: true,
+    // },
 
-    openEnded: {
-        type: Number,
-        default: 0,
-    },
+    // devices: {
+    //   mobile: { type: Boolean, default: true },
+    //   desktop: { type: Boolean, default: true },
+    //   tablet: { type: Boolean, default: true },
+    // },
+
+    // openEnded: {
+    //     type: Number,
+    //     default: 0,
+    // },
 
      name: {
     type: String,
     required: true,
   },
+
+  projectManager: {
+  type: String,
+  default: "",
+},
 
     description: {
         type: String,
