@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import TargetGroupSchema from "./TargetGroupSchema.js";
 
 const RedirectSchema = new mongoose.Schema({
   token: {
@@ -122,6 +123,11 @@ totalCost: {
         default: 0,
     },
 
+     name: {
+    type: String,
+    required: true,
+  },
+
     description: {
         type: String,
         maxlength: 1000,
@@ -145,6 +151,9 @@ clientKeysFile: {
         enum: ["DRAFT", "TESTING", "LIVE", "HOLD", "COMPLETED","ACCEPTED", "CLOSED", "NEGOTIATION", "REJECTED"],
         default: "DRAFT",
     },
+
+    targetGroups: [TargetGroupSchema],
+
 
     redirects: {
     start: RedirectSchema, 

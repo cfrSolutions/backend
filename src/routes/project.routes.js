@@ -46,7 +46,14 @@ router.post("/create", authMiddleware, async (req, res) => {
     
     const project = await Project.create({
       ...req.body,
+       name: req.body.name,
+
+      description:
+        req.body.description || "",
+
+      business: userId,
       status: "DRAFT",
+      targetGroups: [],
       targetCompletes: req.body.targetCompletes,
       completes: 0, 
       surveyId: "SURV-" + Date.now(),
@@ -289,6 +296,34 @@ router.post(
   }
 );
 
+router.post(
+  "/:projectId/target-groups",
+  authMiddleware,
+  async (req, res) => {
 
+    const project =
+      await Project.findById(
+        req.params.projectId
+      );
+
+    project.targetGroups.push({
+
+      name:
+        `Target Group ${
+          project.targetGroups.length + 1
+        }`,
+
+      status: "DRAFT",
+    });
+
+    await project.save();
+
+    res.json(
+      project.targetGroups[
+        project.targetGroups.length - 1
+      ]
+    );
+  }
+);
 
 export default router;
