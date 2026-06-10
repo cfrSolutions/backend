@@ -65,6 +65,11 @@ openEnded: {
   default: 0,
 },
 
+containsPII: {
+  type: Boolean,
+  default: false,
+},
+
 });
 
 export default TargetGroupSchema;

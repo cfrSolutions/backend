@@ -29,6 +29,7 @@ import locationRoutes from "./src/routes/location.routes.js";
 import notificationRoutes from "./src/routes/notification.routes.js";
 import projectRoutes from "./src/routes/project.routes.js";
 import businessRedirects from "./src/routes/businessRedirects.routes.js";
+import profileRoutes from "./src/routes/profile.routes.js";
 //import businessRoutes from "./src/routes/business.routes.js";
 
 const app = express();
@@ -142,7 +143,7 @@ app.use("/api/notifications", notificationRoutes);
 // app.use("/api/business", businessRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/redirect", businessRedirects);
-
+app.use("/api/profiles", profileRoutes);
 
 /* -------------------- SOCKET SERVER -------------------- */
 
