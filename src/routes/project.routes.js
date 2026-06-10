@@ -331,7 +331,7 @@ router.put(
   authMiddleware,
   async (req, res) => {
 
-    console.log("PROFILES:", req.body.profiles);
+    console.log("BODY:", req.body);
 
     const project = await Project.findById(
       req.params.projectId
@@ -341,12 +341,6 @@ router.put(
       project.targetGroups.id(
         req.params.targetGroupId
       );
-
-    if (!group) {
-      return res.status(404).json({
-        message: "Target group not found",
-      });
-    }
 
     Object.assign(group, req.body);
 
