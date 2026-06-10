@@ -331,6 +331,8 @@ router.put(
   authMiddleware,
   async (req, res) => {
 
+    console.log("PROFILES:", req.body.profiles);
+
     const project = await Project.findById(
       req.params.projectId
     );

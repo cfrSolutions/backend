@@ -51,6 +51,8 @@ const TargetGroupSchema = new mongoose.Schema({
     endTime: String,
   },
 
+  profiles: [Object],
+
   status: {
     type: String,
     default: "DRAFT",
