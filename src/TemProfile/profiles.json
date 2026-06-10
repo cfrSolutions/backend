@@ -1,0 +1,397 @@
+// [
+//   {
+//     "code": "AGE",
+//     "category": "Demographic",
+//     "question": "What is your age?",
+//     "type": "single",
+//     "answerType": "range"
+//   },
+//   {
+//     "code": "GENDER",
+//     "category": "Demographic",
+//     "question": "Are you...?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "MARITAL_STATUS",
+//     "category": "Demographic",
+//     "question": "What is your relationship status?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "HOUSEHOLD_SIZE",
+//     "category": "Demographic",
+//     "question": "How many people live in your household?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "CHILDREN",
+//     "category": "Demographic",
+//     "question": "Do you have children under 18?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "EDUCATION",
+//     "category": "Education",
+//     "question": "What is your highest level of education?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "EMPLOYMENT",
+//     "category": "Employment",
+//     "question": "What is your employment status?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "JOB_TITLE",
+//     "category": "Employment",
+//     "question": "What is your job title?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "INCOME",
+//     "category": "Demographic",
+//     "question": "What is your annual household income?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "ETHNICITY",
+//     "category": "Demographic",
+//     "question": "Which ethnicity best describes you?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+
+//   {
+//     "code": "CAR_OWNER",
+//     "category": "Automotive",
+//     "question": "Do you own a vehicle?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "CAR_BRAND",
+//     "category": "Automotive",
+//     "question": "Which vehicle brand do you own?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "AUTO_PURCHASE_INTENT",
+//     "category": "Automotive",
+//     "question": "Are you planning to buy a vehicle?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "MOTORCYCLE_OWNER",
+//     "category": "Automotive",
+//     "question": "Do you own a motorcycle?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+
+//   {
+//     "code": "BANK_ACCOUNT",
+//     "category": "Financial",
+//     "question": "Do you have a bank account?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "CREDIT_CARD",
+//     "category": "Financial",
+//     "question": "Do you own a credit card?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "INVESTMENTS",
+//     "category": "Financial",
+//     "question": "Do you have investment products?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "INSURANCE_OWNER",
+//     "category": "Financial",
+//     "question": "Do you have insurance products?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+
+//   {
+//     "code": "SMARTPHONE_BRAND",
+//     "category": "Technology",
+//     "question": "Which smartphone brand do you use?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "MOBILE_OS",
+//     "category": "Technology",
+//     "question": "Which mobile operating system do you use?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "TABLET_OWNER",
+//     "category": "Technology",
+//     "question": "Do you own a tablet?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "LAPTOP_OWNER",
+//     "category": "Technology",
+//     "question": "Do you own a laptop?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+
+//   {
+//     "code": "GAMER",
+//     "category": "Gaming",
+//     "question": "Do you play video games?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "GAMING_PLATFORM",
+//     "category": "Gaming",
+//     "question": "Which gaming platform do you use?",
+//     "type": "multi",
+//     "answerType": "multi"
+//   },
+//   {
+//     "code": "GAMING_FREQUENCY",
+//     "category": "Gaming",
+//     "question": "How often do you play games?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+
+//   {
+//     "code": "STREAMING_SERVICE",
+//     "category": "Media",
+//     "question": "Which streaming services do you use?",
+//     "type": "multi",
+//     "answerType": "multi"
+//   },
+//   {
+//     "code": "MOVIE_FREQUENCY",
+//     "category": "Media",
+//     "question": "How often do you watch movies?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "TV_HOURS",
+//     "category": "Media",
+//     "question": "How many hours of TV do you watch weekly?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "SOCIAL_MEDIA",
+//     "category": "Media",
+//     "question": "Which social media platforms do you use?",
+//     "type": "multi",
+//     "answerType": "multi"
+//   },
+
+//   {
+//     "code": "ONLINE_SHOPPER",
+//     "category": "Shopping",
+//     "question": "Do you shop online?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "AMAZON_USER",
+//     "category": "Shopping",
+//     "question": "Do you purchase from Amazon?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "GROCERY_SHOPPER",
+//     "category": "Shopping",
+//     "question": "Are you the primary grocery shopper?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+
+//   {
+//     "code": "PASSPORT_OWNER",
+//     "category": "Travel",
+//     "question": "Do you have a passport?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "TRAVEL_FREQUENCY",
+//     "category": "Travel",
+//     "question": "How often do you travel?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "AIRLINE_USAGE",
+//     "category": "Travel",
+//     "question": "Which airlines do you use most often?",
+//     "type": "multi",
+//     "answerType": "multi"
+//   },
+
+//   {
+//     "code": "SMOKER",
+//     "category": "Health",
+//     "question": "Do you smoke?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "ALCOHOL_FREQUENCY",
+//     "category": "Health",
+//     "question": "How often do you drink alcohol?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "FITNESS_MEMBER",
+//     "category": "Health",
+//     "question": "Are you a member of a fitness club?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "HEALTH_INSURANCE",
+//     "category": "Health",
+//     "question": "Do you have health insurance?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+
+//   {
+//     "code": "PET_OWNER",
+//     "category": "Pets",
+//     "question": "Do you own pets?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "PET_TYPE",
+//     "category": "Pets",
+//     "question": "Which pets do you own?",
+//     "type": "multi",
+//     "answerType": "multi"
+//   },
+
+//   {
+//     "code": "PRIMARY_DECISION_MAKER",
+//     "category": "Household",
+//     "question": "Are you the primary decision maker in your household?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "HOUSEHOLD_TYPE",
+//     "category": "Household",
+//     "question": "Which best describes your household?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+
+//   {
+//     "code": "B2B_DECISION_MAKER",
+//     "category": "B2B",
+//     "question": "Do you make purchasing decisions for your company?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "COMPANY_SIZE",
+//     "category": "B2B",
+//     "question": "How many employees work at your company?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "INDUSTRY",
+//     "category": "B2B",
+//     "question": "Which industry do you work in?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+
+//   {
+//     "code": "BEVERAGE_REGULAR",
+//     "category": "Food & Beverage",
+//     "question": "Which beverages do you regularly consume?",
+//     "type": "multi",
+//     "answerType": "multi"
+//   },
+//   {
+//     "code": "FAST_FOOD_USAGE",
+//     "category": "Food & Beverage",
+//     "question": "How often do you eat fast food?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+
+//   {
+//     "code": "PODCAST_USAGE",
+//     "category": "Media",
+//     "question": "Do you listen to podcasts?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+//   {
+//     "code": "PODCAST_DEVICE",
+//     "category": "Media",
+//     "question": "Which devices do you use for podcasts?",
+//     "type": "multi",
+//     "answerType": "multi"
+//   },
+
+//   {
+//     "code": "NEWS_SOURCE",
+//     "category": "Media",
+//     "question": "What is your primary news source?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+
+//   {
+//     "code": "EXERCISE_HOURS",
+//     "category": "Health",
+//     "question": "How many hours do you exercise weekly?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+
+//   {
+//     "code": "VIDEO_CAPABILITY",
+//     "category": "Technology",
+//     "question": "Can your device stream video content?",
+//     "type": "single",
+//     "answerType": "single"
+//   },
+
+//   {
+//     "code": "AUDIO_CAPABILITY",
+//     "category": "Technology",
+//     "question": "Can your device stream audio content?",
+//     "type": "single",
+//     "answerType": "single"
+//   }
+// ]
