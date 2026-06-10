@@ -12,4 +12,18 @@ router.get("/", async (req, res) => {
 
 });
 
+router.get(
+  "/profile-library",
+  async (req, res) => {
+
+    const profiles =
+      await Profile.find({
+        active: true
+      });
+
+    res.json(profiles);
+
+  }
+);
+
 export default router;

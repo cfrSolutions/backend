@@ -4,9 +4,13 @@ const profileSchema = new mongoose.Schema({
   code: String,
   category: String,
   question: String,
-  answerType: String, // single, multi, range
-
+  type: String,
+  answerType: String,
   options: [String],
+   active: {
+      type: Boolean,
+      default: true,
+    },
 });
 
 export default mongoose.model(
