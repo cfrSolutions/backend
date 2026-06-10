@@ -8,6 +8,9 @@ const TargetGroupSchema = new mongoose.Schema({
 
   market: String,
 
+
+  sector: String,
+
   language: {
     type: String,
     default: "English",
