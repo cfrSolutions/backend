@@ -251,10 +251,74 @@ const router = express.Router();
 
 global.sessions = global.sessions || {};
 
+// router.get("/start", async (req, res) => {
+//   const { tk } = req.query;
+//   let surveyLink = project.surveyLinks?.live;
+//   const sid =
+//   crypto.randomBytes(16).toString("hex");
+//   const project = await Project.findOne({
+//     "redirects.start.token": tk,
+//   });
+// surveyLink = surveyLink.replace(
+//   "[%RID%]",
+//   sid
+// );
+//   if (!project) {
+//     return res.send("Invalid link");
+//   }
+
+//   if (project.status === "COMPLETED") {
+//     return res.send("Survey completed");
+//   }
+
+//   if (project.status !== "LIVE") {
+//     return res.send("Survey not Live");
+//   }
+
+//   if (project.completes >= project.targetCompletes) {
+//     return res.redirect(
+//       `/api/redirect/qf?tk=${project.redirects.quotaFull.token}`
+//     );
+//   }
+
+//   let surveyLink = project.surveyLinks?.live;
+
+//   if (!surveyLink) {
+//     return res.send("Survey not Set");
+//   }
+
+
+//   const trackingParam =
+//   project.trackingParam || "pid";
+
+// surveyLink = surveyLink.replace(
+//   `${trackingParam}=`,
+//   `${trackingParam}=${rid}`
+// );
+//   // // Generate unique session id
+//   // const sid = crypto.randomBytes(16).toString("hex");
+
+//   // Store session
+//   global.sessions[sid] = {
+//     projectId: project._id.toString(),
+//     used: false,
+//     ip: req.ip,
+//     ua: req.headers["user-agent"],
+//     createdAt: Date.now(),
+//   };
+
+//   // Inject pid into SBO survey URL
+//   surveyLink = surveyLink.replace(
+//     "pid=",
+//     `pid=${sid}`
+//   );
+
+//   return res.redirect(surveyLink);
+// });
+
 router.get("/start", async (req, res) => {
   const { tk } = req.query;
 
-  
   const project = await Project.findOne({
     "redirects.start.token": tk,
   });
@@ -263,50 +327,40 @@ router.get("/start", async (req, res) => {
     return res.send("Invalid link");
   }
 
-  if (project.status === "COMPLETED") {
-    return res.send("Survey completed");
-  }
-
-  if (project.status !== "LIVE") {
-    return res.send("Survey not Live");
-  }
-
-  if (project.completes >= project.targetCompletes) {
-    return res.redirect(
-      `/api/redirect/qf?tk=${project.redirects.quotaFull.token}`
-    );
-  }
-
   let surveyLink = project.surveyLinks?.live;
 
   if (!surveyLink) {
     return res.send("Survey not Set");
   }
 
+  const rid = crypto.randomBytes(16).toString("hex");
 
-  const trackingParam =
-  project.trackingParam || "pid";
-
-surveyLink = surveyLink.replace(
-  `${trackingParam}=`,
-  `${trackingParam}=${rid}`
-);
-  // // Generate unique session id
-  // const sid = crypto.randomBytes(16).toString("hex");
-
-  // Store session
-  global.sessions[sid] = {
+  global.sessions[rid] = {
     projectId: project._id.toString(),
     used: false,
-    ip: req.ip,
-    ua: req.headers["user-agent"],
     createdAt: Date.now(),
   };
 
-  // Inject pid into SBO survey URL
+  const values = {
+    RID: rid,
+    BidIncidence:
+      req.query.BidIncidence || "",
+    PID:
+      req.query.PID || "",
+    SupplierID:
+      req.query.SupplierID || "",
+    SupplierName:
+      req.query.SupplierName || "",
+    MID:
+      req.query.MID || "",
+    RSID:
+      req.query.RSID || "",
+  };
+
   surveyLink = surveyLink.replace(
-    "pid=",
-    `pid=${sid}`
+    /\[%(\w+)%\]/g,
+    (_, variable) =>
+      values[variable] || ""
   );
 
   return res.redirect(surveyLink);
