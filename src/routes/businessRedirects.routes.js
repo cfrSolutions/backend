@@ -369,9 +369,9 @@ router.get("/start", async (req, res) => {
 router.get("/c", async (req, res) => {
   const { tk } = req.query;
 
-  const { pid } = req.query;
+  // const { pid } = req.query;
 
-  console.log("PID:", pid);
+  // console.log("PID:", pid);
   const response = await SurveyResponse.findById(pid);
   console.log("RESPONSE:", response);
 
@@ -511,18 +511,18 @@ if (response && response.status !== "COMPLETED") {
 router.get("/dq", async (req, res) => {
   const { tk } = req.query;
 
-  // IMPORTANT: get pid from URL
-  const sid = req.query.pid;
 
-  if (!sid) {
-    return res.send("No Session");
-  }
+  // const sid = req.query.pid;
 
-  const session = global.sessions[sid];
+  // if (!sid) {
+  //   return res.send("No Session");
+  // }
 
-  if (!session || session.used) {
-    return res.send("Invalid or reused session");
-  }
+  // const session = global.sessions[sid];
+
+  // if (!session || session.used) {
+  //   return res.send("Invalid or reused session");
+  // }
 
   const project = await Project.findOne({
     "redirects.disqualified.token": tk,
@@ -557,17 +557,17 @@ router.get("/qf", async (req, res) => {
   const { tk } = req.query;
 
   // IMPORTANT: get pid from URL
-  const sid = req.query.pid;
+  // const sid = req.query.pid;
 
-  if (!sid) {
-    return res.send("No Session");
-  }
+  // if (!sid) {
+  //   return res.send("No Session");
+  // }
 
-  const session = global.sessions[sid];
+  // const session = global.sessions[sid];
 
-  if (!session || session.used) {
-    return res.send("Invalid or reused session");
-  }
+  // if (!session || session.used) {
+  //   return res.send("Invalid or reused session");
+  // }
 
   const project = await Project.findOne({
     "redirects.quotaFull.token": tk,
