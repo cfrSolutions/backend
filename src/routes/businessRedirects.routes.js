@@ -465,7 +465,7 @@ return res.send("Invalid");
 
 const response =
 await SurveyResponse.findOne({
-sessionToken: RID,
+rid: RID,
 });
 
 if (!response) {
@@ -511,7 +511,7 @@ return res.send("Invalid");
 
 const response =
 await SurveyResponse.findOne({
-sessionToken: RID,
+rid: RID,
 });
 
 if (!response) {
@@ -555,7 +555,7 @@ return res.send("Invalid");
 
 const response =
 await SurveyResponse.findOne({
-sessionToken: RID,
+rid: RID,
 });
 
 if (!response) {
