@@ -877,36 +877,50 @@ if (!rid) {
 }
 console.log("CREATING RESPONSE WITH RID:", rid);
 // Store respondent session in database
-await SurveyResponse.create({
-project: project._id,
-rid,
-status: "STARTED",
+try {
+  const response =
+    await SurveyResponse.create({
+      project: project._id,
+      rid,
+      status: "STARTED",
 
-bidIncidence:
-  req.query.BidIncidence || "",
+      bidIncidence:
+        req.query.BidIncidence || "",
 
-pid:
-  req.query.PID || "",
+      pid:
+        req.query.PID || "",
 
-supplierId:
-  req.query.SupplierID || "",
+      supplierId:
+        req.query.SupplierID || "",
 
-supplierName:
-  req.query.SupplierName || "",
+      supplierName:
+        req.query.SupplierName || "",
 
-mid:
-  req.query.MID || "",
+      mid:
+        req.query.MID || "",
 
-rsid:
-  req.query.RSID || "",
+      rsid:
+        req.query.RSID || "",
 
-startedAt: new Date(),
+      startedAt: new Date(),
+    });
 
+  console.log(
+    "CREATED RESPONSE:",
+    response
+  );
+} catch (err) {
+  console.log(
+    "CREATE ERROR:",
+    err
+  );
 
-});
-
+  return res.status(500).send(
+    err.message
+  );
+}
 const values = {
-RID: sessionToken,
+RID: rid,
 BidIncidence:
 req.query.BidIncidence || "",
 
