@@ -1004,8 +1004,8 @@ totalResponses: 1,
 );
 
 return res.redirect(
-  project.redirects.complete.url ||
-  "https://inputify.io/thank-you"
+ "COMPLETE REDIRECT:",
+  project.redirects.complete.url
 );
 });
 
