@@ -845,169 +845,285 @@ const router = express.Router();
 global.sessions = global.sessions || {};
 
 
+// router.get("/start", async (req, res) => {
+// const { tk } = req.query;
+
+// const project = await Project.findOne({
+// "redirects.start.token": tk,
+// });
+
+// if (!project) {
+// return res.send("Invalid link");
+// }
+
+// let surveyLink = project.surveyLinks?.live;
+
+// if (!surveyLink) {
+// return res.send("Survey not Set");
+// }
+
+// // // Generate internal session token
+// // const sessionToken =
+// // crypto.randomBytes(32).toString("hex");
+
+// const rid =
+//   req.query.PID ||
+//   req.query.RID;
+
+// if (!rid) {
+//   return res.send(
+//     "Missing PID/RID"
+//   );
+// }
+// console.log("CREATING RESPONSE WITH RID:", rid);
+// // Store respondent session in database
+// try {
+//   const response =
+//     await SurveyResponse.create({
+//       project: project._id,
+//       rid,
+//       status: "STARTED",
+
+//       bidIncidence:
+//         req.query.BidIncidence || "",
+
+//       pid:
+//         req.query.PID || "",
+
+//       supplierId:
+//         req.query.SupplierID || "",
+
+//       supplierName:
+//         req.query.SupplierName || "",
+
+//       mid:
+//         req.query.MID || "",
+
+//       rsid:
+//         req.query.RSID || "",
+
+//       startedAt: new Date(),
+//     });
+
+//   console.log(
+//     "CREATED RESPONSE:",
+//     response
+//   );
+  
+
+
+// } catch (err) {
+//   console.log(
+//     "CREATE ERROR:",
+//     err
+//   );
+
+//   return res.status(500).send(
+//     err.message
+//   );
+// }
+// const values = {
+// RID: rid,
+// BidIncidence:
+// req.query.BidIncidence || "",
+
+// PID:
+//   req.query.PID || "",
+
+// SupplierID:
+//   req.query.SupplierID || "",
+
+// SupplierName:
+//   req.query.SupplierName || "",
+
+// MID:
+//   req.query.MID || "",
+
+// RSID:
+//   req.query.RSID || "",
+
+
+// };
+
+// surveyLink = surveyLink.replace(
+//   /\[%(\w+)%\]/g,
+//   (_, variable) =>
+//     values[variable] || ""
+// );
+// return res.redirect(surveyLink);
+// });
+
+
 router.get("/start", async (req, res) => {
-const { tk } = req.query;
+  const { tk } = req.query;
 
-const project = await Project.findOne({
-"redirects.start.token": tk,
-});
+  const project = await Project.findOne({
+    "redirects.start.token": tk,
+  });
 
-if (!project) {
-return res.send("Invalid link");
-}
+  if (!project) {
+    return res.send("Invalid link");
+  }
 
-let surveyLink = project.surveyLinks?.live;
+  let surveyLink = project.surveyLinks?.live;
 
-if (!surveyLink) {
-return res.send("Survey not Set");
-}
+  if (!surveyLink) {
+    return res.send("Survey not Set");
+  }
 
-// // Generate internal session token
-// const sessionToken =
-// crypto.randomBytes(32).toString("hex");
+  console.log("START QUERY:", req.query);
 
-const rid =
-  req.query.PID ||
-  req.query.RID;
+  const rid =
+    req.query.pid ||
+    req.query.PID ||
+    req.query.rid ||
+    req.query.RID;
 
-if (!rid) {
-  return res.send(
-    "Missing PID/RID"
-  );
-}
-console.log("CREATING RESPONSE WITH RID:", rid);
-// Store respondent session in database
-try {
-  const response =
+  if (!rid) {
+    return res.send("Missing RID");
+  }
+
+  try {
     await SurveyResponse.create({
       project: project._id,
       rid,
       status: "STARTED",
-
-      bidIncidence:
-        req.query.BidIncidence || "",
-
-      pid:
-        req.query.PID || "",
-
-      supplierId:
-        req.query.SupplierID || "",
-
-      supplierName:
-        req.query.SupplierName || "",
-
-      mid:
-        req.query.MID || "",
-
-      rsid:
-        req.query.RSID || "",
-
       startedAt: new Date(),
     });
 
-  console.log(
-    "CREATED RESPONSE:",
-    response
+    console.log(
+      "CREATED RESPONSE RID:",
+      rid
+    );
+  } catch (err) {
+    console.log("CREATE ERROR:", err);
+    return res.status(500).send(err.message);
+  }
+
+  surveyLink = surveyLink.replace(
+    /\[%RID%\]/g,
+    rid
   );
-  
 
-
-} catch (err) {
-  console.log(
-    "CREATE ERROR:",
-    err
-  );
-
-  return res.status(500).send(
-    err.message
-  );
-}
-const values = {
-RID: rid,
-BidIncidence:
-req.query.BidIncidence || "",
-
-PID:
-  req.query.PID || "",
-
-SupplierID:
-  req.query.SupplierID || "",
-
-SupplierName:
-  req.query.SupplierName || "",
-
-MID:
-  req.query.MID || "",
-
-RSID:
-  req.query.RSID || "",
-
-
-};
-
-surveyLink = surveyLink.replace(
-  /\[%(\w+)%\]/g,
-  (_, variable) =>
-    values[variable] || ""
-);
-return res.redirect(surveyLink);
+  return res.redirect(surveyLink);
 });
 
 
 router.get("/c", async (req, res) => {
-const { tk, RID } = req.query;
+  const { tk } = req.query;
 
-const project = await Project.findOne({
-"redirects.complete.token": tk,
+  const RID =
+    req.query.pid ||
+    req.query.PID ||
+    req.query.rid ||
+    req.query.RID;
+
+  console.log("COMPLETE QUERY:", req.query);
+  console.log("RID RECEIVED:", RID);
+
+  const project = await Project.findOne({
+    "redirects.complete.token": tk,
+  });
+
+  if (!project) {
+    return res.send("Invalid");
+  }
+
+  const response =
+    await SurveyResponse.findOne({
+      rid: RID,
+    });
+
+  console.log("FOUND RESPONSE:", response);
+
+  if (!response) {
+    return res.send("Response not found");
+  }
+
+  if (response.status === "COMPLETED") {
+    return res.send("Already completed");
+  }
+
+  response.status = "COMPLETED";
+  response.completedAt = new Date();
+
+  await response.save();
+
+  await Project.updateOne(
+    { _id: project._id },
+    {
+      $inc: {
+        completes: 1,
+        totalResponses: 1,
+      },
+    }
+  );
+
+  console.log(
+    "COMPLETE REDIRECT:",
+    project.redirects?.complete?.url
+  );
+
+  return res.redirect(
+    project.redirects?.complete?.url ||
+    "https://inputify.io/thank-you"
+  );
 });
 
-if (!project) {
-return res.send("Invalid");
-}
+// router.get("/c", async (req, res) => {
+// const { tk, RID } = req.query;
 
-console.log("RID RECEIVED:", RID);
+// const project = await Project.findOne({
+// "redirects.complete.token": tk,
+// });
 
-const response =
-await SurveyResponse.findOne({
-rid: RID,
-});
-console.log(
-  "ALL RIDS:",
-  await SurveyResponse.find(
-    {},
-    { rid: 1, status: 1 }
-  )
-);
-console.log("FOUND RESPONSE:", response);
+// if (!project) {
+// return res.send("Invalid");
+// }
 
-if (!response) {
-return res.send("Response not found");
-}
+// console.log("RID RECEIVED:", RID);
 
-if (response.status === "COMPLETED") {
-return res.send("Already completed");
-}
+// const response =
+// await SurveyResponse.findOne({
+// rid: RID,
+// });
+// console.log(
+//   "ALL RIDS:",
+//   await SurveyResponse.find(
+//     {},
+//     { rid: 1, status: 1 }
+//   )
+// );
+// console.log("FOUND RESPONSE:", response);
 
-response.status = "COMPLETED";
-response.completedAt = new Date();
+// if (!response) {
+// return res.send("Response not found");
+// }
 
-await response.save();
+// if (response.status === "COMPLETED") {
+// return res.send("Already completed");
+// }
 
-await Project.updateOne(
-{ _id: project._id },
-{
-$inc: {
-completes: 1,
-totalResponses: 1,
-},
-}
-);
+// response.status = "COMPLETED";
+// response.completedAt = new Date();
 
-return res.redirect(
- "COMPLETE REDIRECT:",
-  project.redirects.complete.url
-);
-});
+// await response.save();
+
+// await Project.updateOne(
+// { _id: project._id },
+// {
+// $inc: {
+// completes: 1,
+// totalResponses: 1,
+// },
+// }
+// );
+
+// return res.redirect(
+//  "COMPLETE REDIRECT:",
+//   project.redirects.complete.url
+// );
+// });
 
 
 
