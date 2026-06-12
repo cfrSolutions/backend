@@ -909,6 +909,19 @@ try {
     "CREATED RESPONSE:",
     response
   );
+
+console.log(
+  "CREATED RESPONSE RID:",
+  created.rid
+);
+
+console.log(
+  "CREATED RESPONSE ID:",
+  created._id
+);
+  
+
+
 } catch (err) {
   console.log(
     "CREATE ERROR:",
