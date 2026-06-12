@@ -5,13 +5,13 @@ const surveyResponseSchema = new mongoose.Schema(
     survey: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Survey",
-      required: true,
+      
     },
 
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      
     },
 
     vendor: {
