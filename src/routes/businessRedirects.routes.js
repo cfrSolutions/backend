@@ -875,7 +875,7 @@ if (!rid) {
     "Missing PID/RID"
   );
 }
-
+console.log("CREATING RESPONSE WITH RID:", rid);
 // Store respondent session in database
 await SurveyResponse.create({
 project: project._id,
@@ -948,10 +948,14 @@ if (!project) {
 return res.send("Invalid");
 }
 
+console.log("RID RECEIVED:", RID);
+
 const response =
 await SurveyResponse.findOne({
 rid: RID,
 });
+
+console.log("FOUND RESPONSE:", response);
 
 if (!response) {
 return res.send("Response not found");
