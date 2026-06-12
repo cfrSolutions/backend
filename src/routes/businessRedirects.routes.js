@@ -971,7 +971,13 @@ const response =
 await SurveyResponse.findOne({
 rid: RID,
 });
-
+console.log(
+  "ALL RIDS:",
+  await SurveyResponse.find(
+    {},
+    { rid: 1, status: 1 }
+  )
+);
 console.log("FOUND RESPONSE:", response);
 
 if (!response) {
@@ -998,7 +1004,8 @@ totalResponses: 1,
 );
 
 return res.redirect(
-"https://inputify.io/thank-you"
+  project.redirects.complete.url ||
+  "https://inputify.io/thank-you"
 );
 });
 
