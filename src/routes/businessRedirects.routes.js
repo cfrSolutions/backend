@@ -862,17 +862,25 @@ if (!surveyLink) {
 return res.send("Survey not Set");
 }
 
-// Generate internal session token
-const sessionToken =
-crypto.randomBytes(32).toString("hex");
+// // Generate internal session token
+// const sessionToken =
+// crypto.randomBytes(32).toString("hex");
+
+const rid =
+  req.query.PID ||
+  req.query.RID;
+
+if (!rid) {
+  return res.send(
+    "Missing PID/RID"
+  );
+}
 
 // Store respondent session in database
 await SurveyResponse.create({
 project: project._id,
-sessionToken,
+rid,
 status: "STARTED",
-
-rid: sessionToken,
 
 bidIncidence:
   req.query.BidIncidence || "",

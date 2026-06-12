@@ -20,6 +20,29 @@ const surveyResponseSchema = new mongoose.Schema(
       default: null,
     },
 
+    project: {
+      type:
+        mongoose.Schema.Types.ObjectId,
+      ref: "Project",
+    },
+
+    rid: {
+      type: String,
+      index: true,
+    },
+
+    pid: String,
+
+    bidIncidence: String,
+
+    supplierId: String,
+
+    supplierName: String,
+
+    mid: String,
+
+    rsid: String,
+
     status: {
       type: String,
       uppercase: true,
