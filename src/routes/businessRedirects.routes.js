@@ -444,11 +444,10 @@ RSID:
 };
 
 surveyLink = surveyLink.replace(
-/[%(\w+)%]/g,
-(_, variable) =>
-values[variable] || ""
+  /\[%(\w+)%\]/g,
+  (_, variable) =>
+    values[variable] || ""
 );
-
 return res.redirect(surveyLink);
 });
 
