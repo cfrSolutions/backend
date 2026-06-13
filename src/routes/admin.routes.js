@@ -377,6 +377,69 @@ router.put("/project/:id/go-live", async (req, res)=>{
   }
 });
 
+
+router.put(
+  "/project/:id/vendor-links",
+  authMiddleware,
+  async (req, res) => {
+    try {
+
+      if (
+        !["ADMIN", "SUPERADMIN"]
+          .includes(req.user.role)
+      ) {
+        return res.status(403).json({
+          message: "Access denied",
+        });
+      }
+
+      const project =
+        await Project.findById(
+          req.params.id
+        );
+
+      if (!project) {
+        return res.status(404).json({
+          message: "Project not found",
+        });
+      }
+
+      const {
+        vendorName,
+        capture,
+        complete,
+        disqualified,
+        quotaFull,
+      } = req.body;
+
+      project.vendorLinks = {
+        vendorName,
+        capture,
+        complete,
+        disqualified,
+        quotaFull,
+      };
+
+      await project.save();
+
+      res.json({
+        success: true,
+        message:
+          "Vendor links saved",
+      });
+
+    } catch (err) {
+
+      console.log(err);
+
+      res.status(500).json({
+        message: err.message,
+      });
+
+    }
+  }
+);
+
 router.put("/project/:id/start-negotiation", async (req, res) => {
 
   const project = await Project.findById(req.params.id);
