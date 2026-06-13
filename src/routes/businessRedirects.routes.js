@@ -986,6 +986,9 @@ router.get("/start", async (req, res) => {
   try {
     await SurveyResponse.create({
       project: project._id,
+      vendor:
+      project.vendorLinks?.[0]
+      ?.vendorName || null,
       rid,
       status: "STARTED",
       startedAt: new Date(),
@@ -1070,9 +1073,8 @@ if (redirectUrl) {
   return res.redirect(redirectUrl);
 }
 
-return res.redirect(
-  "https://inputify.io/thank-you"
-);
+project.vendorLinks.complete || 
+  "https://inputify.io/quota-full"
 });
 
 // router.get("/c", async (req, res) => {
@@ -1237,6 +1239,7 @@ if (redirectUrl) {
 }
 
 return res.redirect(
+  project.vendorLinks.complete || 
   "https://inputify.io/quota-full"
 );
 
