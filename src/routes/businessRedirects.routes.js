@@ -984,11 +984,20 @@ router.get("/start", async (req, res) => {
   }
 
   try {
+    // await SurveyResponse.create({
+    //   project: project._id,
+    //    vendor:
+    // project.vendorLinks?.[0]?.vendorName || "",
+    //   rid,
+    //   status: "STARTED",
+    //   startedAt: new Date(),
+    // });
+
     await SurveyResponse.create({
       project: project._id,
        vendor:
     project.vendorLinks?.[0]?.vendorName || "",
-      rid,
+      rid: rid,
       status: "STARTED",
       startedAt: new Date(),
     });
