@@ -1061,19 +1061,25 @@ router.get("/c", async (req, res) => {
     }
   );
 
- let redirectUrl =
-  project.vendorLinks?.complete;
+ const redirectUrl =
+  project.vendorLinks?.[0]?.complete;
+
+console.log(
+  "REDIRECTING TO:",
+  redirectUrl
+);
 
 if (redirectUrl) {
-  redirectUrl = redirectUrl
-    .replace(/\{\{RID\}\}/g, RID)
-    .replace(/\[%RID%\]/g, RID);
-
-  return res.redirect(redirectUrl);
+  return res.redirect(
+    redirectUrl
+      .replace(/\{\{RID\}\}/g, RID)
+      .replace(/\[%RID%\]/g, RID)
+  );
 }
 
-project.vendorLinks.complete || 
-  "https://inputify.io/quota-full"
+return res.redirect(
+  "https://inputify.io/thank-you"
+);
 });
 
 // router.get("/c", async (req, res) => {
