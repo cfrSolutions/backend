@@ -1059,15 +1059,20 @@ router.get("/c", async (req, res) => {
     }
   );
 
-  console.log(
-    "COMPLETE REDIRECT:",
-    project.redirects?.complete?.url
-  );
+ let redirectUrl =
+  project.vendorLinks?.complete;
 
-  return res.redirect(
-    project.redirects?.complete?.url ||
-    "https://inputify.io/thank-you"
-  );
+if (redirectUrl) {
+  redirectUrl = redirectUrl
+    .replace(/\{\{RID\}\}/g, RID)
+    .replace(/\[%RID%\]/g, RID);
+
+  return res.redirect(redirectUrl);
+}
+
+return res.redirect(
+  "https://inputify.io/thank-you"
+);
 });
 
 // router.get("/c", async (req, res) => {
@@ -1165,8 +1170,19 @@ totalResponses: 1,
 }
 );
 
+let redirectUrl =
+  project.vendorLinks?.disqualified;
+
+if (redirectUrl) {
+  redirectUrl = redirectUrl
+    .replace(/\{\{RID\}\}/g, RID)
+    .replace(/\[%RID%\]/g, RID);
+
+  return res.redirect(redirectUrl);
+}
+
 return res.redirect(
-"https://inputify.io/disqualified"
+  "https://inputify.io/disqualified"
 );
 });
 
@@ -1209,9 +1225,21 @@ totalResponses: 1,
 }
 );
 
+let redirectUrl =
+  project.vendorLinks?.quotaFull;
+
+if (redirectUrl) {
+  redirectUrl = redirectUrl
+    .replace(/\{\{RID\}\}/g, RID)
+    .replace(/\[%RID%\]/g, RID);
+
+  return res.redirect(redirectUrl);
+}
+
 return res.redirect(
-"https://inputify.io/quota-full"
+  "https://inputify.io/quota-full"
 );
+
 });
 
 

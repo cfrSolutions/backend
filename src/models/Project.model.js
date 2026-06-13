@@ -185,6 +185,20 @@ clientKeysFile: {
     },
   },
 ],
+
+vendorLinks: [
+  {
+    vendorName: String,
+
+    capture: String,
+
+    complete: String,
+
+    disqualified: String,
+
+    quotaFull: String,
+  },
+],
 },
 { timestamps: true }
 );
