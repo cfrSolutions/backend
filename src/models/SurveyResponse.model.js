@@ -14,11 +14,10 @@ const surveyResponseSchema = new mongoose.Schema(
       
     },
 
-    vendor: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Vendor",
-      default: null,
-    },
+   vendor: {
+  type: String,
+  default: "",
+},
 
     project: {
       type:
