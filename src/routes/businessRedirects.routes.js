@@ -840,7 +840,6 @@ import crypto from "crypto";
 import express from "express";
 import Project from "../models/Project.model.js";
 import SurveyResponse from "../models/SurveyResponse.model.js";
-
 const router = express.Router();
 
 global.sessions = global.sessions || {};
@@ -974,83 +973,39 @@ router.get("/start", async (req, res) => {
 
   console.log("START QUERY:", req.query);
 
-  // const rid =
-  //   req.query.pid ||
-  //   req.query.PID ||
-  //   req.query.rid ||
-  //   req.query.RID;
+  const rid =
+    req.query.pid ||
+    req.query.PID ||
+    req.query.rid ||
+    req.query.RID;
 
-  // if (!rid) {
-  //   return res.send("Missing RID");
-  // }
-
-  // try {
-  //   await SurveyResponse.create({
-  //     project: project._id,
-  //      vendor:
-  //   project.vendorLinks?.[0]?.vendorName || "",
-  //     rid,
-  //     status: "STARTED",
-  //     startedAt: new Date(),
-  //   });
-
-  
-
-  //   console.log(
-  //     "CREATED RESPONSE RID:",
-  //     rid
-  //   );
-  // } catch (err) {
-  //   console.log("CREATE ERROR:", err);
-  //   return res.status(500).send(err.message);
-  // }
-const supplierPid =
-  req.query.pid ||
-  req.query.PID ||
-  req.query.rid ||
-  req.query.RID;
-
-const internalRid =
-  crypto.randomUUID();
-
+  if (!rid) {
+    return res.send("Missing RID");
+  }
 
   try {
     await SurveyResponse.create({
-  project: project._id,
-  vendor:
+      project: project._id,
+       vendor:
     project.vendorLinks?.[0]?.vendorName || "",
+      rid,
+      status: "STARTED",
+      startedAt: new Date(),
+    });
 
-  rid: internalRid, // Inputify ID
-
-  pid: supplierPid, // SBO User ID
-
-  status: "STARTED",
-  startedAt: new Date(),
-});
-
-console.log(
-  "PID:",
-  supplierPid
-);
-
-console.log(
-  "RID:",
-  internalRid
-);
+    console.log(
+      "CREATED RESPONSE RID:",
+      rid
+    );
   } catch (err) {
     console.log("CREATE ERROR:", err);
     return res.status(500).send(err.message);
   }
 
-  // surveyLink = surveyLink.replace(
-  //   /\[%RID%\]/g,
-  //   rid
-  // );
-
   surveyLink = surveyLink.replace(
-  /\[%RID%\]/g,
-  internalRid
-);
+    /\[%RID%\]/g,
+    rid
+  );
 
   return res.redirect(surveyLink);
 });
@@ -1114,24 +1069,11 @@ console.log(
   redirectUrl
 );
 
-// if (redirectUrl) {
-//   return res.redirect(
-//     redirectUrl
-//       .replace(/\{\{RID\}\}/g, RID)
-//       .replace(/\[%RID%\]/g, RID)
-//   );
-// }
-
 if (redirectUrl) {
-
-  const supplierPid =
-    response.pid || RID;
-
   return res.redirect(
     redirectUrl
-      .replace(/\{\{RID\}\}/g, supplierPid)
-      .replace(/\[%RID%\]/g, supplierPid)
-      .replace(/\[\[PANELIST IDENTIFIER\]\]/g, supplierPid)
+      .replace(/\{\{RID\}\}/g, RID)
+      .replace(/\[%RID%\]/g, RID)
   );
 }
 
