@@ -1176,9 +1176,15 @@ router.get("/start", async (req, res) => {
 
 
 router.get("/c", async (req, res) => {
-console.log("NEW STATIC COMPLETE ROUTE");
+console.log("COMPLETE ROUTE");
 
-const { tk, RID } = req.query;
+const { tk } = req.query;
+
+const RID =
+req.query.pid ||
+req.query.PID ||
+req.query.rid ||
+req.query.RID;
 
 console.log("COMPLETE QUERY:", req.query);
 
@@ -1190,26 +1196,62 @@ if (!project) {
 return res.send("Invalid");
 }
 
-// First hit from supplier contains RID
+// If RID is available, use respondent tracking
 if (RID) {
-const response = await SurveyResponse.findOne({
+const response =
+await SurveyResponse.findOne({
 project: project._id,
 rid: RID,
 });
 
-```
 if (response) {
-  // Prevent double counting
-  if (response.status === "COMPLETED") {
-    return res.send("Already completed");
+  if (
+    response.status ===
+    "COMPLETED"
+  ) {
+    return res.redirect(
+  redirectUrl
+);
   }
 
-  response.status = "COMPLETED";
-  response.completedAt = new Date();
+  response.status =
+    "COMPLETED";
+
+  response.completedAt =
+    new Date();
 
   await response.save();
 }
-```
+
+} else {
+// Static redirect protection
+global.completeHits =
+global.completeHits ||
+new Map();
+
+const key = tk;
+const now = Date.now();
+
+const lastHit =
+  global.completeHits.get(key);
+
+if (
+  lastHit &&
+  now - lastHit < 5000
+) {
+  console.log(
+    "DUPLICATE COMPLETE BLOCKED"
+  );
+
+  return res.send(
+    "Duplicate ignored"
+  );
+}
+
+global.completeHits.set(
+  key,
+  now
+);
 
 }
 
@@ -1224,7 +1266,8 @@ totalResponses: 1,
 );
 
 const redirectUrl =
-project.vendorLinks?.[0]?.complete;
+project.vendorLinks?.[0]
+?.complete;
 
 console.log(
 "REDIRECTING TO:",
@@ -1232,7 +1275,9 @@ redirectUrl
 );
 
 if (redirectUrl) {
-return res.redirect(redirectUrl);
+return res.redirect(
+redirectUrl
+);
 }
 
 return res.redirect(
@@ -1240,73 +1285,206 @@ return res.redirect(
 );
 });
 
-
 router.get("/dq", async (req, res) => {
-  const { tk } = req.query;
+const { tk } = req.query;
 
-  const project = await Project.findOne({
-    "redirects.disqualified.token": tk,
-  });
+const RID =
+req.query.pid ||
+req.query.PID ||
+req.query.rid ||
+req.query.RID;
 
-  if (!project) {
-    return res.send("Invalid");
-  }
+console.log("DQ QUERY:", req.query);
 
-  await Project.updateOne(
-    { _id: project._id },
-    {
-      $inc: {
-        disqualified: 1,
-        totalResponses: 1,
-      },
-    }
-  );
-
-  const redirectUrl =
-    project.vendorLinks?.[0]?.disqualified;
-
-  if (redirectUrl) {
-    return res.redirect(redirectUrl);
-  }
-
-  return res.redirect(
-    "https://inputify.io/disqualified"
-  );
+const project = await Project.findOne({
+"redirects.disqualified.token": tk,
 });
 
+if (!project) {
+return res.send("Invalid");
+}
+
+if (RID) {
+const response =
+await SurveyResponse.findOne({
+project: project._id,
+rid: RID,
+});
+
+if (response) {
+  if (
+    response.status ===
+    "DISQUALIFIED"
+  ) {
+    return res.send(
+      "Already disqualified"
+    );
+  }
+
+  response.status =
+    "DISQUALIFIED";
+
+  await response.save();
+}
+
+
+} else {
+global.dqHits =
+global.dqHits || new Map();
+
+
+const key = tk;
+const now = Date.now();
+
+const lastHit =
+  global.dqHits.get(key);
+
+if (
+  lastHit &&
+  now - lastHit < 5000
+) {
+  console.log(
+    "DUPLICATE DQ BLOCKED"
+  );
+
+  return res.send(
+    "Duplicate ignored"
+  );
+}
+
+global.dqHits.set(
+  key,
+  now
+);
+
+
+}
+
+await Project.updateOne(
+{ _id: project._id },
+{
+$inc: {
+disqualified: 1,
+totalResponses: 1,
+},
+}
+);
+
+const redirectUrl =
+project.vendorLinks?.[0]
+?.disqualified;
+
+if (redirectUrl) {
+return res.redirect(
+redirectUrl
+);
+}
+
+return res.redirect(
+"https://inputify.io/disqualified"
+);
+});
 
 router.get("/qf", async (req, res) => {
-  const { tk } = req.query;
+const { tk } = req.query;
 
-  const project = await Project.findOne({
-    "redirects.quotaFull.token": tk,
-  });
+const RID =
+req.query.pid ||
+req.query.PID ||
+req.query.rid ||
+req.query.RID;
 
-  if (!project) {
-    return res.send("Invalid");
-  }
+console.log("QF QUERY:", req.query);
 
-  await Project.updateOne(
-    { _id: project._id },
-    {
-      $inc: {
-        quotaFull: 1,
-        totalResponses: 1,
-      },
-    }
-  );
-
-  const redirectUrl =
-    project.vendorLinks?.[0]?.quotaFull;
-
-  if (redirectUrl) {
-    return res.redirect(redirectUrl);
-  }
-
-  return res.redirect(
-    "https://inputify.io/quota-full"
-  );
+const project = await Project.findOne({
+"redirects.quotaFull.token": tk,
 });
+
+if (!project) {
+return res.send("Invalid");
+}
+
+if (RID) {
+const response =
+await SurveyResponse.findOne({
+project: project._id,
+rid: RID,
+});
+
+if (response) {
+  if (
+    response.status ===
+    "QUOTA_FULL"
+  ) {
+    return res.send(
+      "Already quota full"
+    );
+  }
+
+  response.status =
+    "QUOTA_FULL";
+
+  await response.save();
+}
+
+
+} else {
+global.qfHits =
+global.qfHits || new Map();
+
+
+const key = tk;
+const now = Date.now();
+
+const lastHit =
+  global.qfHits.get(key);
+
+if (
+  lastHit &&
+  now - lastHit < 5000
+) {
+  console.log(
+    "DUPLICATE QF BLOCKED"
+  );
+
+  return res.send(
+    "Duplicate ignored"
+  );
+}
+
+global.qfHits.set(
+  key,
+  now
+);
+
+
+}
+
+await Project.updateOne(
+{ _id: project._id },
+{
+$inc: {
+quotaFull: 1,
+totalResponses: 1,
+},
+}
+);
+
+const redirectUrl =
+project.vendorLinks?.[0]
+?.quotaFull;
+
+if (redirectUrl) {
+return res.redirect(
+redirectUrl
+);
+}
+
+return res.redirect(
+"https://inputify.io/quota-full"
+);
+});
+
 
 setInterval(() => {
   const now = Date.now();
