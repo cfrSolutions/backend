@@ -1176,6 +1176,7 @@ router.get("/start", async (req, res) => {
 
 
 router.get("/c", async (req, res) => {
+  console.log("NEW STATIC COMPLETE ROUTE");
   const { tk } = req.query;
 
   console.log("COMPLETE QUERY:", req.query);
