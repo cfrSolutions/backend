@@ -1176,44 +1176,68 @@ router.get("/start", async (req, res) => {
 
 
 router.get("/c", async (req, res) => {
-  console.log("NEW STATIC COMPLETE ROUTE");
-  const { tk } = req.query;
+console.log("NEW STATIC COMPLETE ROUTE");
 
-  console.log("COMPLETE QUERY:", req.query);
+const { tk, RID } = req.query;
 
-  const project = await Project.findOne({
-    "redirects.complete.token": tk,
-  });
+console.log("COMPLETE QUERY:", req.query);
 
-  if (!project) {
-    return res.send("Invalid");
+const project = await Project.findOne({
+"redirects.complete.token": tk,
+});
+
+if (!project) {
+return res.send("Invalid");
+}
+
+// First hit from supplier contains RID
+if (RID) {
+const response = await SurveyResponse.findOne({
+project: project._id,
+rid: RID,
+});
+
+```
+if (response) {
+  // Prevent double counting
+  if (response.status === "COMPLETED") {
+    return res.send("Already completed");
   }
 
-  await Project.updateOne(
-    { _id: project._id },
-    {
-      $inc: {
-        completes: 1,
-        totalResponses: 1,
-      },
-    }
-  );
+  response.status = "COMPLETED";
+  response.completedAt = new Date();
 
-  const redirectUrl =
-    project.vendorLinks?.[0]?.complete;
+  await response.save();
+}
+```
 
-  console.log(
-    "REDIRECTING TO:",
-    redirectUrl
-  );
+}
 
-  if (redirectUrl) {
-    return res.redirect(redirectUrl);
-  }
+await Project.updateOne(
+{ _id: project._id },
+{
+$inc: {
+completes: 1,
+totalResponses: 1,
+},
+}
+);
 
-  return res.redirect(
-    "https://inputify.io/thank-you"
-  );
+const redirectUrl =
+project.vendorLinks?.[0]?.complete;
+
+console.log(
+"REDIRECTING TO:",
+redirectUrl
+);
+
+if (redirectUrl) {
+return res.redirect(redirectUrl);
+}
+
+return res.redirect(
+"https://inputify.io/thank-you"
+);
 });
 
 
