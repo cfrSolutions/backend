@@ -1197,92 +1197,62 @@ return res.send("Invalid");
 }
 
 // If RID is available, use respondent tracking
+const redirectUrl =
+  project.vendorLinks?.[0]?.complete;
+const thankYouUrl =
+  redirectUrl ||
+  "https://inputify.io/thank-you";
+
 if (RID) {
-const response =
-await SurveyResponse.findOne({
-project: project._id,
-rid: RID,
-});
+  const response =
+    await SurveyResponse.findOne({
+      project: project._id,
+      rid: RID,
+    });
+if (!response) return res.send("Response not found");
+  
+    if (response.status === "COMPLETED") {
+      console.log(
+        "COMPLETE ROUTE already completed, redirecting to",
+        thankYouUrl
+      );
+      return res.redirect(thankYouUrl);
+    }
 
-if (response) {
-  if (
-    response.status ===
-    "COMPLETED"
-  ) {
-    return res.redirect(
-  redirectUrl
-);
-  }
+    response.status = "COMPLETED";
+    response.completedAt = new Date();
 
-  response.status =
-    "COMPLETED";
-
-  response.completedAt =
-    new Date();
-
-  await response.save();
-}
+    await response.save();
 
 } else {
-// Static redirect protection
-global.completeHits =
-global.completeHits ||
-new Map();
+  // Static redirect protection
+  global.completeHits = global.completeHits || new Map();
 
-const key = tk;
-const now = Date.now();
+  const key = tk;
+  const now = Date.now();
 
-const lastHit =
-  global.completeHits.get(key);
+  const lastHit = global.completeHits.get(key);
 
-if (
-  lastHit &&
-  now - lastHit < 5000
-) {
-  console.log(
-    "DUPLICATE COMPLETE BLOCKED"
-  );
+  if (lastHit && now - lastHit < 5000) {
+    console.log("DUPLICATE COMPLETE BLOCKED");
+    return res.redirect(thankYouUrl);
+  }
 
-  return res.send(
-    "Duplicate ignored"
-  );
-}
-
-global.completeHits.set(
-  key,
-  now
-);
-
+  global.completeHits.set(key, now);
 }
 
 await Project.updateOne(
-{ _id: project._id },
-{
-$inc: {
-completes: 1,
-totalResponses: 1,
-},
-}
+  { _id: project._id },
+  {
+    $inc: {
+      completes: 1,
+      totalResponses: 1,
+    },
+  }
 );
 
-const redirectUrl =
-project.vendorLinks?.[0]
-?.complete;
-
-console.log(
-"REDIRECTING TO:",
-redirectUrl
-);
-
-if (redirectUrl) {
-return res.redirect(
-redirectUrl
-);
-}
-
-return res.redirect(
-"https://inputify.io/thank-you"
-);
+console.log("REDIRECTING TO:", thankYouUrl);
+return res.redirect(thankYouUrl);
 });
 
 router.get("/dq", async (req, res) => {
