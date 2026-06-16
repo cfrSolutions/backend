@@ -836,6 +836,279 @@
 
 
 
+
+
+
+
+// import crypto from "crypto";
+// import express from "express";
+// import Project from "../models/Project.model.js";
+// import SurveyResponse from "../models/SurveyResponse.model.js";
+// const router = express.Router();
+
+// global.sessions = global.sessions || {};
+
+
+// router.get("/start", async (req, res) => {
+//   const { tk } = req.query;
+
+//   const project = await Project.findOne({
+//     "redirects.start.token": tk,
+//   });
+
+//   if (!project) {
+//     return res.send("Invalid link");
+//   }
+
+//   let surveyLink = project.surveyLinks?.live;
+
+//   if (!surveyLink) {
+//     return res.send("Survey not Set");
+//   }
+
+//   console.log("START QUERY:", req.query);
+
+//   const rid =
+//     req.query.pid ||
+//     req.query.PID ||
+//     req.query.rid ||
+//     req.query.RID;
+
+//   if (!rid) {
+//     return res.send("Missing RID");
+//   }
+
+//   try {
+//     await SurveyResponse.create({
+//       project: project._id,
+//        vendor:
+//     project.vendorLinks?.[0]?.vendorName || "",
+//       rid,
+//       status: "STARTED",
+//       startedAt: new Date(),
+//     });
+
+//     console.log(
+//       "CREATED RESPONSE RID:",
+//       rid
+//     );
+//   } catch (err) {
+//     console.log("CREATE ERROR:", err);
+//     return res.status(500).send(err.message);
+//   }
+
+//   surveyLink = surveyLink.replace(
+//     /\[%RID%\]/g,
+//     rid
+//   );
+
+//   return res.redirect(surveyLink);
+// });
+
+
+// router.get("/c", async (req, res) => {
+//   const { tk } = req.query;
+
+//   const RID =
+//     req.query.pid ||
+//     req.query.PID ||
+//     req.query.rid ||
+//     req.query.RID;
+
+//   console.log("COMPLETE QUERY:", req.query);
+//   console.log("RID RECEIVED:", RID);
+
+//   const project = await Project.findOne({
+//     "redirects.complete.token": tk,
+//   });
+
+//   if (!project) {
+//     return res.send("Invalid");
+//   }
+
+//   const response =
+//     await SurveyResponse.findOne({
+//       rid: RID,
+//     });
+
+//   console.log("FOUND RESPONSE:", response);
+
+//   if (!response) {
+//     return res.send("Response not found");
+//   }
+
+//   if (response.status === "COMPLETED") {
+//     return res.send("Already completed");
+//   }
+
+//   response.status = "COMPLETED";
+//   response.completedAt = new Date();
+
+//   await response.save();
+
+//   await Project.updateOne(
+//     { _id: project._id },
+//     {
+//       $inc: {
+//         completes: 1,
+//         totalResponses: 1,
+//       },
+//     }
+//   );
+
+//  const redirectUrl =
+//   project.vendorLinks?.[0]?.complete;
+
+// console.log(
+//   "REDIRECTING TO:",
+//   redirectUrl
+// );
+
+// if (redirectUrl) {
+//   return res.redirect(
+//     redirectUrl
+//       .replace(/\{\{RID\}\}/g, RID)
+//       .replace(/\[%RID%\]/g, RID)
+//   );
+// }
+
+// return res.redirect(
+//   "https://inputify.io/thank-you"
+// );
+// });
+
+
+// router.get("/dq", async (req, res) => {
+// const { tk, RID } = req.query;
+
+// const project = await Project.findOne({
+// "redirects.disqualified.token": tk,
+// });
+
+// if (!project) {
+// return res.send("Invalid");
+// }
+
+// const response =
+// await SurveyResponse.findOne({
+// rid: RID,
+// });
+
+// if (!response) {
+// return res.send("Response not found");
+// }
+
+// if (response.status !== "STARTED") {
+// return res.send("Already processed");
+// }
+
+// response.status = "DISQUALIFIED";
+
+// await response.save();
+
+// await Project.updateOne(
+// { _id: project._id },
+// {
+// $inc: {
+// disqualified: 1,
+// totalResponses: 1,
+// },
+// }
+// );
+
+// let redirectUrl =
+//   project.vendorLinks?.disqualified;
+
+// if (redirectUrl) {
+//   redirectUrl = redirectUrl
+//     .replace(/\{\{RID\}\}/g, RID)
+//     .replace(/\[%RID%\]/g, RID);
+
+//   return res.redirect(redirectUrl);
+// }
+
+// return res.redirect(
+//   "https://inputify.io/disqualified"
+// );
+// });
+
+
+// router.get("/qf", async (req, res) => {
+// const { tk, RID } = req.query;
+
+// const project = await Project.findOne({
+// "redirects.quotaFull.token": tk,
+// });
+
+// if (!project) {
+// return res.send("Invalid");
+// }
+
+// const response =
+// await SurveyResponse.findOne({
+// rid: RID,
+// });
+
+// if (!response) {
+// return res.send("Response not found");
+// }
+
+// if (response.status !== "STARTED") {
+// return res.send("Already processed");
+// }
+
+// response.status = "QUOTA_FULL";
+
+// await response.save();
+
+// await Project.updateOne(
+// { _id: project._id },
+// {
+// $inc: {
+// quotaFull: 1,
+// totalResponses: 1,
+// },
+// }
+// );
+
+// let redirectUrl =
+//   project.vendorLinks?.quotaFull;
+
+// if (redirectUrl) {
+//   redirectUrl = redirectUrl
+//     .replace(/\{\{RID\}\}/g, RID)
+//     .replace(/\[%RID%\]/g, RID);
+
+//   return res.redirect(redirectUrl);
+// }
+
+// return res.redirect(
+//   project.vendorLinks.complete || 
+//   "https://inputify.io/quota-full"
+// );
+
+// });
+
+// setInterval(() => {
+//   const now = Date.now();
+
+//   for (const sid in global.sessions) {
+//     const session = global.sessions[sid];
+
+//     // Remove after 1 hour
+//     if (now - session.createdAt > 1000 * 60 * 60) {
+//       delete global.sessions[sid];
+//     }
+//   }
+// }, 1000 * 60 * 10);
+
+// export default router;
+
+
+
+
+
+
 import crypto from "crypto";
 import express from "express";
 import Project from "../models/Project.model.js";
@@ -843,115 +1116,6 @@ import SurveyResponse from "../models/SurveyResponse.model.js";
 const router = express.Router();
 
 global.sessions = global.sessions || {};
-
-
-// router.get("/start", async (req, res) => {
-// const { tk } = req.query;
-
-// const project = await Project.findOne({
-// "redirects.start.token": tk,
-// });
-
-// if (!project) {
-// return res.send("Invalid link");
-// }
-
-// let surveyLink = project.surveyLinks?.live;
-
-// if (!surveyLink) {
-// return res.send("Survey not Set");
-// }
-
-// // // Generate internal session token
-// // const sessionToken =
-// // crypto.randomBytes(32).toString("hex");
-
-// const rid =
-//   req.query.PID ||
-//   req.query.RID;
-
-// if (!rid) {
-//   return res.send(
-//     "Missing PID/RID"
-//   );
-// }
-// console.log("CREATING RESPONSE WITH RID:", rid);
-// // Store respondent session in database
-// try {
-//   const response =
-//     await SurveyResponse.create({
-//       project: project._id,
-//       rid,
-//       status: "STARTED",
-
-//       bidIncidence:
-//         req.query.BidIncidence || "",
-
-//       pid:
-//         req.query.PID || "",
-
-//       supplierId:
-//         req.query.SupplierID || "",
-
-//       supplierName:
-//         req.query.SupplierName || "",
-
-//       mid:
-//         req.query.MID || "",
-
-//       rsid:
-//         req.query.RSID || "",
-
-//       startedAt: new Date(),
-//     });
-
-//   console.log(
-//     "CREATED RESPONSE:",
-//     response
-//   );
-  
-
-
-// } catch (err) {
-//   console.log(
-//     "CREATE ERROR:",
-//     err
-//   );
-
-//   return res.status(500).send(
-//     err.message
-//   );
-// }
-// const values = {
-// RID: rid,
-// BidIncidence:
-// req.query.BidIncidence || "",
-
-// PID:
-//   req.query.PID || "",
-
-// SupplierID:
-//   req.query.SupplierID || "",
-
-// SupplierName:
-//   req.query.SupplierName || "",
-
-// MID:
-//   req.query.MID || "",
-
-// RSID:
-//   req.query.RSID || "",
-
-
-// };
-
-// surveyLink = surveyLink.replace(
-//   /\[%(\w+)%\]/g,
-//   (_, variable) =>
-//     values[variable] || ""
-// );
-// return res.redirect(surveyLink);
-// });
 
 
 router.get("/start", async (req, res) => {
@@ -1014,14 +1178,7 @@ router.get("/start", async (req, res) => {
 router.get("/c", async (req, res) => {
   const { tk } = req.query;
 
-  const RID =
-    req.query.pid ||
-    req.query.PID ||
-    req.query.rid ||
-    req.query.RID;
-
   console.log("COMPLETE QUERY:", req.query);
-  console.log("RID RECEIVED:", RID);
 
   const project = await Project.findOne({
     "redirects.complete.token": tk,
@@ -1030,26 +1187,6 @@ router.get("/c", async (req, res) => {
   if (!project) {
     return res.send("Invalid");
   }
-
-  const response =
-    await SurveyResponse.findOne({
-      rid: RID,
-    });
-
-  console.log("FOUND RESPONSE:", response);
-
-  if (!response) {
-    return res.send("Response not found");
-  }
-
-  if (response.status === "COMPLETED") {
-    return res.send("Already completed");
-  }
-
-  response.status = "COMPLETED";
-  response.completedAt = new Date();
-
-  await response.save();
 
   await Project.updateOne(
     { _id: project._id },
@@ -1061,443 +1198,90 @@ router.get("/c", async (req, res) => {
     }
   );
 
- const redirectUrl =
-  project.vendorLinks?.[0]?.complete;
+  const redirectUrl =
+    project.vendorLinks?.[0]?.complete;
 
-console.log(
-  "REDIRECTING TO:",
-  redirectUrl
-);
-
-if (redirectUrl) {
-  return res.redirect(
+  console.log(
+    "REDIRECTING TO:",
     redirectUrl
-      .replace(/\{\{RID\}\}/g, RID)
-      .replace(/\[%RID%\]/g, RID)
   );
-}
 
-return res.redirect(
-  "https://inputify.io/thank-you"
-);
+  if (redirectUrl) {
+    return res.redirect(redirectUrl);
+  }
+
+  return res.redirect(
+    "https://inputify.io/thank-you"
+  );
 });
-
-// router.get("/c", async (req, res) => {
-// const { tk, RID } = req.query;
-
-// const project = await Project.findOne({
-// "redirects.complete.token": tk,
-// });
-
-// if (!project) {
-// return res.send("Invalid");
-// }
-
-// console.log("RID RECEIVED:", RID);
-
-// const response =
-// await SurveyResponse.findOne({
-// rid: RID,
-// });
-// console.log(
-//   "ALL RIDS:",
-//   await SurveyResponse.find(
-//     {},
-//     { rid: 1, status: 1 }
-//   )
-// );
-// console.log("FOUND RESPONSE:", response);
-
-// if (!response) {
-// return res.send("Response not found");
-// }
-
-// if (response.status === "COMPLETED") {
-// return res.send("Already completed");
-// }
-
-// response.status = "COMPLETED";
-// response.completedAt = new Date();
-
-// await response.save();
-
-// await Project.updateOne(
-// { _id: project._id },
-// {
-// $inc: {
-// completes: 1,
-// totalResponses: 1,
-// },
-// }
-// );
-
-// return res.redirect(
-//  "COMPLETE REDIRECT:",
-//   project.redirects.complete.url
-// );
-// });
-
 
 
 router.get("/dq", async (req, res) => {
-const { tk, RID } = req.query;
+  const { tk } = req.query;
 
-const project = await Project.findOne({
-"redirects.disqualified.token": tk,
-});
+  const project = await Project.findOne({
+    "redirects.disqualified.token": tk,
+  });
 
-if (!project) {
-return res.send("Invalid");
-}
+  if (!project) {
+    return res.send("Invalid");
+  }
 
-const response =
-await SurveyResponse.findOne({
-rid: RID,
-});
+  await Project.updateOne(
+    { _id: project._id },
+    {
+      $inc: {
+        disqualified: 1,
+        totalResponses: 1,
+      },
+    }
+  );
 
-if (!response) {
-return res.send("Response not found");
-}
+  const redirectUrl =
+    project.vendorLinks?.[0]?.disqualified;
 
-if (response.status !== "STARTED") {
-return res.send("Already processed");
-}
+  if (redirectUrl) {
+    return res.redirect(redirectUrl);
+  }
 
-response.status = "DISQUALIFIED";
-
-await response.save();
-
-await Project.updateOne(
-{ _id: project._id },
-{
-$inc: {
-disqualified: 1,
-totalResponses: 1,
-},
-}
-);
-
-let redirectUrl =
-  project.vendorLinks?.disqualified;
-
-if (redirectUrl) {
-  redirectUrl = redirectUrl
-    .replace(/\{\{RID\}\}/g, RID)
-    .replace(/\[%RID%\]/g, RID);
-
-  return res.redirect(redirectUrl);
-}
-
-return res.redirect(
-  "https://inputify.io/disqualified"
-);
+  return res.redirect(
+    "https://inputify.io/disqualified"
+  );
 });
 
 
 router.get("/qf", async (req, res) => {
-const { tk, RID } = req.query;
+  const { tk } = req.query;
 
-const project = await Project.findOne({
-"redirects.quotaFull.token": tk,
+  const project = await Project.findOne({
+    "redirects.quotaFull.token": tk,
+  });
+
+  if (!project) {
+    return res.send("Invalid");
+  }
+
+  await Project.updateOne(
+    { _id: project._id },
+    {
+      $inc: {
+        quotaFull: 1,
+        totalResponses: 1,
+      },
+    }
+  );
+
+  const redirectUrl =
+    project.vendorLinks?.[0]?.quotaFull;
+
+  if (redirectUrl) {
+    return res.redirect(redirectUrl);
+  }
+
+  return res.redirect(
+    "https://inputify.io/quota-full"
+  );
 });
-
-if (!project) {
-return res.send("Invalid");
-}
-
-const response =
-await SurveyResponse.findOne({
-rid: RID,
-});
-
-if (!response) {
-return res.send("Response not found");
-}
-
-if (response.status !== "STARTED") {
-return res.send("Already processed");
-}
-
-response.status = "QUOTA_FULL";
-
-await response.save();
-
-await Project.updateOne(
-{ _id: project._id },
-{
-$inc: {
-quotaFull: 1,
-totalResponses: 1,
-},
-}
-);
-
-let redirectUrl =
-  project.vendorLinks?.quotaFull;
-
-if (redirectUrl) {
-  redirectUrl = redirectUrl
-    .replace(/\{\{RID\}\}/g, RID)
-    .replace(/\[%RID%\]/g, RID);
-
-  return res.redirect(redirectUrl);
-}
-
-return res.redirect(
-  project.vendorLinks.complete || 
-  "https://inputify.io/quota-full"
-);
-
-});
-
-
-// router.get("/start", async (req, res) => {
-//   const { tk } = req.query;
-
-//   const project = await Project.findOne({
-//     "redirects.start.token": tk,
-//   });
-
-//   if (!project) {
-//     return res.send("Invalid link");
-//   }
-
-//   let surveyLink = project.surveyLinks?.live;
-
-//   if (!surveyLink) {
-//     return res.send("Survey not Set");
-//   }
-
-//   const sessionToken =
-//     crypto.randomBytes(32).toString("hex");
-
-//   await SurveyResponse.create({
-//     project: project._id,
-//     sessionToken,
-//     status: "STARTED",
-//     startedAt: new Date(),
-//   });
-
-//   res.cookie(
-//     "inputify_sid",
-//     sessionToken,
-//     {
-//       httpOnly: true,
-//       secure: true,
-//       sameSite: "none",
-//       maxAge: 1000 * 60 * 60 * 24,
-//     }
-//   );
-
-//   return res.redirect(surveyLink);
-// });
-
-
-// router.get("/c", async (req, res) => {
-//   const { tk } = req.query;
-
-//   console.log(
-//     "COOKIES:",
-//     req.cookies
-//   );
-
-//   const sessionToken =
-//     req.cookies.inputify_sid;
-
-//   if (!sessionToken) {
-//     return res.send(
-//       "No Session Found"
-//     );
-//   }
-
-//   const project =
-//     await Project.findOne({
-//       "redirects.complete.token": tk,
-//     });
-
-//   if (!project) {
-//     return res.send("Invalid");
-//   }
-
-//   const response =
-//     await SurveyResponse.findOne({
-//       sessionToken,
-//     });
-
-//   if (!response) {
-//     return res.send(
-//       "Response not found"
-//     );
-//   }
-
-//   if (
-//     response.status ===
-//     "COMPLETED"
-//   ) {
-//     return res.send(
-//       "Already completed"
-//     );
-//   }
-
-//   response.status =
-//     "COMPLETED";
-
-//   response.completedAt =
-//     new Date();
-
-//   await response.save();
-
-//   await Project.updateOne(
-//     { _id: project._id },
-//     {
-//       $inc: {
-//         completes: 1,
-//         totalResponses: 1,
-//       },
-//     }
-//   );
-
-//   res.clearCookie(
-//     "inputify_sid"
-//   );
-
-//   return res.redirect(
-//     "https://inputify.io/thank-you"
-//   );
-// });
-
-
-// router.get("/dq", async (req, res) => {
-//   const { tk } = req.query;
-
-//   const sessionToken =
-//     req.cookies.inputify_sid;
-
-//   if (!sessionToken) {
-//     return res.send(
-//       "No Session Found"
-//     );
-//   }
-
-//   const project =
-//     await Project.findOne({
-//       "redirects.disqualified.token":
-//         tk,
-//     });
-
-//   if (!project) {
-//     return res.send("Invalid");
-//   }
-
-//   const response =
-//     await SurveyResponse.findOne({
-//       sessionToken,
-//     });
-
-//   if (!response) {
-//     return res.send(
-//       "Response not found"
-//     );
-//   }
-
-//   if (
-//     response.status !==
-//     "STARTED"
-//   ) {
-//     return res.send(
-//       "Already processed"
-//     );
-//   }
-
-//   response.status =
-//     "DISQUALIFIED";
-
-//   await response.save();
-
-//   await Project.updateOne(
-//     { _id: project._id },
-//     {
-//       $inc: {
-//         disqualified: 1,
-//         totalResponses: 1,
-//       },
-//     }
-//   );
-
-//   res.clearCookie(
-//     "inputify_sid"
-//   );
-
-//   return res.redirect(
-//     "https://inputify.io/disqualified"
-//   );
-// });
-
-// router.get("/qf", async (req, res) => {
-//   const { tk } = req.query;
-
-//   const sessionToken =
-//     req.cookies.inputify_sid;
-
-//   if (!sessionToken) {
-//     return res.send(
-//       "No Session Found"
-//     );
-//   }
-
-//   const project =
-//     await Project.findOne({
-//       "redirects.quotaFull.token":
-//         tk,
-//     });
-
-//   if (!project) {
-//     return res.send("Invalid");
-//   }
-
-//   const response =
-//     await SurveyResponse.findOne({
-//       sessionToken,
-//     });
-
-//   if (!response) {
-//     return res.send(
-//       "Response not found"
-//     );
-//   }
-
-//   if (
-//     response.status !==
-//     "STARTED"
-//   ) {
-//     return res.send(
-//       "Already processed"
-//     );
-//   }
-
-//   response.status =
-//     "QUOTA_FULL";
-
-//   await response.save();
-
-//   await Project.updateOne(
-//     { _id: project._id },
-//     {
-//       $inc: {
-//         quotaFull: 1,
-//         totalResponses: 1,
-//       },
-//     }
-//   );
-
-//   res.clearCookie(
-//     "inputify_sid"
-//   );
-
-//   return res.redirect(
-//     "https://inputify.io/quota-full"
-//   );
-// });
 
 setInterval(() => {
   const now = Date.now();
