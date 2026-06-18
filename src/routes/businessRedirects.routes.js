@@ -1195,10 +1195,15 @@ const project = await Project.findOne({
 if (!project) {
 return res.send("Invalid");
 }
-
+ console.log("COMPLETE ROUTE");
 // If RID is available, use respondent tracking
 const redirectUrl =
   project.vendorLinks?.[0]?.complete;
+
+console.log("FINAL REDIRECT URL:");
+  console.log(redirectUrl);
+
+
 const thankYouUrl =
   redirectUrl ||
   "https://inputify.io/thank-you";
