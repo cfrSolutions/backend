@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const ConditionSchema = new mongoose.Schema(
   {
@@ -44,9 +44,15 @@ const QuestionSchema = new mongoose.Schema(
       default: false,
     },
 
-    options: [String],
+    options: {
+      type: [String],
+      default: [],
+    },
 
-    conditions: [ConditionSchema],
+    conditions: {
+      type: [ConditionSchema],
+      default: [],
+    },
   },
   { _id: false }
 );
@@ -62,24 +68,37 @@ const SurveySchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
+      trim: true,
     },
 
-    description: String,
+    description: {
+      type: String,
+      default: "",
+    },
 
-    completeUrl: String,
+    completeUrl: {
+      type: String,
+      default: "",
+    },
 
-    disqualifyUrl: String,
+    disqualifyUrl: {
+      type: String,
+      default: "",
+    },
 
-    quotaFullUrl: String,
+    quotaFullUrl: {
+      type: String,
+      default: "",
+    },
 
-    questions: [QuestionSchema],
+    questions: {
+      type: [QuestionSchema],
+      default: [],
+    },
 
     status: {
       type: String,
-      enum: [
-        "Draft",
-        "Published",
-      ],
+      enum: ["Draft", "Published"],
       default: "Draft",
     },
   },
@@ -88,7 +107,4 @@ const SurveySchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model(
-  "Survey",
-  SurveySchema
-);
+export default mongoose.model("SurveyBuilder", SurveySchema);
