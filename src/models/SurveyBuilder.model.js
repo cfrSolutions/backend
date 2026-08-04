@@ -14,6 +14,10 @@ const ConditionSchema = new mongoose.Schema(
       ],
       default: "continue",
     },
+    operator: {
+    type: String,
+    default: "equals"
+}
   },
   { _id: false }
 );
@@ -55,7 +59,7 @@ const QuestionSchema = new mongoose.Schema(
       default: [],
     },
   },
-  { _id: false }
+  
 );
 
 const SurveySchema = new mongoose.Schema(
