@@ -30,7 +30,7 @@ import notificationRoutes from "./src/routes/notification.routes.js";
 import projectRoutes from "./src/routes/project.routes.js";
 import businessRedirects from "./src/routes/businessRedirects.routes.js";
 import profileRoutes from "./src/routes/profile.routes.js";
-import surveyBuilderRoutes  from "./src/routes/surveyRoutes.js";
+import surveyBuilderRoutes  from "./src/routes/surveyBuilder.routes.js";
 //import businessRoutes from "./src/routes/business.routes.js";
 
 const app = express();
