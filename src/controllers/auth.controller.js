@@ -649,13 +649,18 @@ if (refUser) {
 export const login = async (req, res) => {
   try {
        
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
 
     // 1. Find user
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
+    if (user.role !== role) {
+    return res.status(403).json({
+        message: "Please use the correct login."
+    });
+}
  //console.log("Creating session for:", user._id.toString());
     // 2. Check password
     const isMatch = await bcrypt.compare(password, user.password);
