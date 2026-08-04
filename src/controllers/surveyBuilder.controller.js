@@ -271,3 +271,18 @@ export const submitSurvey = async (req, res) => {
   }
 
 };
+
+export const getSurveyResponses = async (req, res) => {
+  try {
+    const responses = await SurveyResponse.find({
+      survey: req.params.surveyId,
+    }).sort({ createdAt: -1 });
+
+    res.json(responses);
+
+  } catch (err) {
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};
