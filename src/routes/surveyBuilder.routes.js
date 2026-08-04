@@ -1,5 +1,5 @@
 import express from "express";
-import auth from "../middleware/auth.js";
+import { authMiddleware } from "../middleware/auth.middleware.js";
 import { createSurvey,
     getSurveys,
     getSurvey,
@@ -9,10 +9,10 @@ import { createSurvey,
 
 const router = express.Router();
 
-router.post("/create", auth, createSurvey);
-router.get("/", auth, getSurveys);
-router.get("/:id", auth, getSurvey);
-router.put("/:id", auth, updateSurvey);
-router.delete("/:id", auth, deleteSurvey);
+router.post("/create", authMiddleware, createSurvey);
+router.get("/", authMiddleware, getSurveys);
+router.get("/:id", authMiddleware, getSurvey);
+router.put("/:id", authMiddleware, updateSurvey);
+router.delete("/:id", authMiddleware, deleteSurvey);
 
 export default router;

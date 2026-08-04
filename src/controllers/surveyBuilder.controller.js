@@ -2,8 +2,12 @@ import Survey from "../models/SurveyBuilder.model.js";
 
 export const createSurvey = async (req, res) => {
   try {
+    const userId =
+  req.user._id ||
+  req.user.id ||
+  req.user.userId;
     const survey = await Survey.create({
-      business: req.user.id,
+      business: userId,
       name: req.body.name,
       description: req.body.description,
       completeUrl: req.body.completeUrl,
