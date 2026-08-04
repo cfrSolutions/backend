@@ -32,13 +32,22 @@ export const createSurvey = async (req, res) => {
 
 export const getSurveys = async (req, res) => {
   try {
+    const userId =
+      req.user._id ||
+      req.user.id ||
+      req.user.userId;
+
+    console.log("USER ID:", userId);
+
     const surveys = await Survey.find({
-      business: req.user.id,
+      business: userId,
     })
       .sort({ createdAt: -1 })
       .select(
         "name description status createdAt updatedAt questions"
       );
+
+    console.log("FOUND SURVEYS:", surveys);
 
     const result = surveys.map((survey) => ({
       _id: survey._id,
@@ -61,13 +70,17 @@ export const getSurveys = async (req, res) => {
   }
 };
 
-export const getSurvey = async (req, res) => {
 
+export const getSurvey = async (req, res) => {
   try {
+    const userId =
+      req.user._id ||
+      req.user.id ||
+      req.user.userId;
 
     const survey = await Survey.findOne({
       _id: req.params.id,
-      business: req.user.id,
+      business: userId,
     });
 
     if (!survey) {
@@ -79,15 +92,12 @@ export const getSurvey = async (req, res) => {
     res.json(survey);
 
   } catch (err) {
-
     console.error(err);
 
     res.status(500).json({
       message: err.message,
     });
-
   }
-
 };
 
 export const updateSurvey = async (req, res) => {
@@ -144,20 +154,21 @@ export const updateSurvey = async (req, res) => {
 };
 
 export const deleteSurvey = async (req, res) => {
-
   try {
+    const userId =
+      req.user._id ||
+      req.user.id ||
+      req.user.userId;
 
     const survey = await Survey.findOneAndDelete({
       _id: req.params.id,
-      business: req.user.id,
+      business: userId,
     });
 
     if (!survey) {
-
       return res.status(404).json({
         message: "Survey not found",
       });
-
     }
 
     res.json({
@@ -166,13 +177,10 @@ export const deleteSurvey = async (req, res) => {
     });
 
   } catch (err) {
-
     console.error(err);
 
     res.status(500).json({
       message: err.message,
     });
-
   }
-
 };
