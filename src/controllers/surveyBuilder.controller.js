@@ -39,13 +39,13 @@ export const getSurveys = async (req, res) => {
 
     console.log("USER ID:", userId);
 
-    const surveys = await Survey.find({
-      business: userId,
-    })
-      .sort({ createdAt: -1 })
-      .select(
-        "name description status createdAt updatedAt questions"
-      );
+   const surveys = await Survey.find({
+  business: userId,
+})
+.sort({ createdAt: -1 })
+.select(
+  "publicToken name description status createdAt updatedAt questions"
+);
 
     console.log("FOUND SURVEYS:", surveys);
 
