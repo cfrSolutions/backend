@@ -212,20 +212,36 @@ console.log("Referral from session:", referralCode);
           user.isEmailVerified = true; // Trust Google's verification
           await user.save();
         }
-const selectedRole = req.session?.role;
+// const selectedRole = req.session?.role;
+
+// console.log("ROLE FROM DB:", user.role);
+// console.log("SESSION ROLE:", selectedRole);
+
+// if (
+//     selectedRole &&
+//     selectedRole === "BUSINESS" &&
+//     user.role !== "BUSINESS"
+// ) {
+//     user.role = "BUSINESS";
+//     await user.save();
+
+//     console.log("UPDATED ROLE TO BUSINESS");
+// }
+
+const selectedRole =
+  req.session?.role === "BUSINESS"
+    ? "BUSINESS"
+    : "USER";
 
 console.log("ROLE FROM DB:", user.role);
 console.log("SESSION ROLE:", selectedRole);
 
-if (
-    selectedRole &&
-    selectedRole === "BUSINESS" &&
-    user.role !== "BUSINESS"
-) {
-    user.role = "BUSINESS";
-    await user.save();
+// Always synchronize the role with the selected toggle
+if (user.role !== selectedRole) {
+  user.role = selectedRole;
+  await user.save();
 
-    console.log("UPDATED ROLE TO BUSINESS");
+  console.log("ROLE UPDATED TO:", user.role);
 }
         // Logs for debugging
         console.log("GOOGLE_CLIENT_ID =", process.env.GOOGLE_CLIENT_ID);
