@@ -40,9 +40,20 @@ const QuestionSchema = new mongoose.Schema(
         "number",
         "email",
         "date",
+        "matrix"
       ],
       required: true,
     },
+
+    rows: {
+  type: [String],
+  default: [],
+},
+
+columns: {
+  type: [String],
+  default: [],
+},
 
     required: {
       type: Boolean,
