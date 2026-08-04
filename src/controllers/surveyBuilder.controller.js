@@ -225,9 +225,9 @@ export const submitSurvey = async (req, res) => {
 
     const { answers, status } = req.body;
 
-    const survey = await SurveyBuilder.findOne({
-      publicToken: token,
-    });
+    const survey = await Survey.findOne({
+  publicToken: token,
+});
 
     if (!survey) {
       return res.status(404).json({
