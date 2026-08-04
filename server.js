@@ -30,7 +30,7 @@ import notificationRoutes from "./src/routes/notification.routes.js";
 import projectRoutes from "./src/routes/project.routes.js";
 import businessRedirects from "./src/routes/businessRedirects.routes.js";
 import profileRoutes from "./src/routes/profile.routes.js";
-import surveyRoutes from "./src/routes/surveyRoutes.js";
+import surveyBuilderRoutes  from "./src/routes/surveyRoutes.js";
 //import businessRoutes from "./src/routes/business.routes.js";
 
 const app = express();
@@ -145,7 +145,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/redirect", businessRedirects);
 app.use("/api/profiles", profileRoutes);
-app.use("/api/surveys", surveyRoutes);
+app.use("/api/survey-builder", surveyBuilderRoutes );
 
 /* -------------------- SOCKET SERVER -------------------- */
 

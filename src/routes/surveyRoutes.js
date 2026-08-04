@@ -1,15 +1,9 @@
-const router = require("express").Router();
+import express from "express";
+import auth from "../middleware/auth.js";
+import { createSurvey } from "../controllers/surveyController.js";
 
-const auth = require("../middleware/auth");
+const router = express.Router();
 
-const {
-    createSurvey,
-} = require("../controllers/surveyController");
+router.post("/create", auth, createSurvey);
 
-router.post(
-    "/create",
-    auth,
-    createSurvey
-);
-
-module.exports = router;
+export default router;

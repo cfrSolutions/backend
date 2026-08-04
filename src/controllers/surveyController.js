@@ -1,33 +1,23 @@
-const Survey = require("../models/Survey");
+import Survey from "../models/Survey.js";
 
-exports.createSurvey = async (req, res) => {
+export const createSurvey = async (req, res) => {
   try {
-
     const survey = await Survey.create({
       business: req.user.id,
-
       name: req.body.name,
-
       description: req.body.description,
-
       completeUrl: req.body.completeUrl,
-
       disqualifyUrl: req.body.disqualifyUrl,
-
       quotaFullUrl: req.body.quotaFullUrl,
-
       questions: req.body.questions || [],
     });
 
     res.status(201).json(survey);
-
   } catch (err) {
-
-    console.log(err);
+    console.error(err);
 
     res.status(500).json({
       message: err.message,
     });
-
   }
 };
