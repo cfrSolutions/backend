@@ -272,15 +272,36 @@ export const submitSurvey = async (req, res) => {
 
 };
 
+// export const getSurveyResponses = async (req, res) => {
+//   try {
+//     const responses = await SurveyResponse.find({
+//       survey: req.params.surveyId,
+//     })
+//       .populate("survey")
+//       .sort({ createdAt: -1 });
+
+//     res.json(responses);
+//   } catch (err) {
+//     res.status(500).json({
+//       message: err.message,
+//     });
+//   }
+// };
+
 export const getSurveyResponses = async (req, res) => {
   try {
+    const survey = await Survey.findById(req.params.surveyId);
+
     const responses = await SurveyResponse.find({
       survey: req.params.surveyId,
     })
-      .populate("survey")
       .sort({ createdAt: -1 });
 
-    res.json(responses);
+    res.json({
+      survey,
+      responses,
+    });
+
   } catch (err) {
     res.status(500).json({
       message: err.message,
