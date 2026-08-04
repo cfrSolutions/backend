@@ -1,5 +1,5 @@
 import Survey from "../models/SurveyBuilder.model.js";
-
+import SurveyResponse from "../models/SurveyBuildResponse.model.js";
 export const createSurvey = async (req, res) => {
   try {
     const userId =
@@ -214,4 +214,60 @@ export const deleteSurvey = async (req, res) => {
       message: err.message,
     });
   }
+};
+
+
+export const submitSurvey = async (req, res) => {
+
+  try {
+
+    const { token } = req.params;
+
+    const { answers, status } = req.body;
+
+    const survey = await SurveyBuilder.findOne({
+      publicToken: token,
+    });
+
+    if (!survey) {
+      return res.status(404).json({
+        message: "Survey not found",
+      });
+    }
+
+    await SurveyResponse.create({
+
+      survey: survey._id,
+
+      business: survey.business,
+
+      publicToken: survey.publicToken,
+
+      answers,
+
+      status,
+
+      ip: req.ip,
+
+      userAgent: req.headers["user-agent"],
+
+      completedAt: new Date(),
+
+    });
+
+    res.json({
+      success: true,
+    });
+
+  } catch (err) {
+
+    console.log(err);
+
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+
+  }
+
 };

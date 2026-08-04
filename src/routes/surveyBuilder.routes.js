@@ -6,6 +6,7 @@ import { createSurvey,
     updateSurvey,
     deleteSurvey,
     getPublicSurvey,
+    submitSurvey
  } from "../controllers/surveyBuilder.controller.js";
 
 const router = express.Router();
@@ -16,6 +17,6 @@ router.get("/public/:token", getPublicSurvey);
 router.get("/:id", authMiddleware, getSurvey);
 router.put("/:id", authMiddleware, updateSurvey);
 router.delete("/:id", authMiddleware, deleteSurvey);
-
+router.post( "/submit/:token",submitSurvey);
 
 export default router;
