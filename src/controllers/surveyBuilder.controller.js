@@ -49,15 +49,19 @@ export const getSurveys = async (req, res) => {
 
     console.log("FOUND SURVEYS:", surveys);
 
-    const result = surveys.map((survey) => ({
-      _id: survey._id,
-      name: survey.name,
-      description: survey.description,
-      status: survey.status,
-      questions: survey.questions.length,
-      createdAt: survey.createdAt,
-      updatedAt: survey.updatedAt,
-    }));
+   const result = surveys.map((survey) => ({
+  _id: survey._id,
+  publicToken: survey.publicToken,
+
+  name: survey.name,
+  description: survey.description,
+  status: survey.status,
+
+  questions: survey.questions.length,
+
+  createdAt: survey.createdAt,
+  updatedAt: survey.updatedAt,
+}));
 
     res.json(result);
 
@@ -70,6 +74,33 @@ export const getSurveys = async (req, res) => {
   }
 };
 
+export const getPublicSurvey = async (req, res) => {
+
+  try {
+
+    const survey = await Survey.findOne({
+      publicToken: req.params.token,
+    });
+
+    if (!survey) {
+      return res.status(404).json({
+        message: "Survey not found",
+      });
+    }
+
+    res.json(survey);
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      message: err.message,
+    });
+
+  }
+
+};
 
 export const getSurvey = async (req, res) => {
   try {

@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import crypto from "crypto";
 
 const ConditionSchema = new mongoose.Schema(
   {
@@ -64,6 +65,14 @@ const SurveySchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+
+    publicToken: {
+    type: String,
+    unique: true,
+    index: true,
+    default: () =>
+        crypto.randomBytes(12).toString("hex"),
+},
 
     name: {
       type: String,
