@@ -6,6 +6,10 @@ export const createSurvey = async (req, res) => {
   req.user._id ||
   req.user.id ||
   req.user.userId;
+  const questions = (req.body.questions || []).filter(
+  (q) => q.title && q.title.trim() !== ""
+);
+
     const survey = await Survey.create({
       business: userId,
       name: req.body.name,
@@ -13,7 +17,7 @@ export const createSurvey = async (req, res) => {
       completeUrl: req.body.completeUrl,
       disqualifyUrl: req.body.disqualifyUrl,
       quotaFullUrl: req.body.quotaFullUrl,
-      questions: req.body.questions || [],
+      questions,
     });
 
     res.status(201).json(survey);
@@ -89,11 +93,18 @@ export const getSurvey = async (req, res) => {
 export const updateSurvey = async (req, res) => {
 
   try {
+    const userId =
+  req.user._id ||
+  req.user.id ||
+  req.user.userId;
+  const questions = (req.body.questions || []).filter(
+  (q) => q.title && q.title.trim() !== ""
+);
 
     const survey = await Survey.findOneAndUpdate(
       {
         _id: req.params.id,
-        business: req.user.id,
+        business: userId,
       },
       {
         name: req.body.name,
@@ -101,7 +112,7 @@ export const updateSurvey = async (req, res) => {
         completeUrl: req.body.completeUrl,
         disqualifyUrl: req.body.disqualifyUrl,
         quotaFullUrl: req.body.quotaFullUrl,
-        questions: req.body.questions,
+        questions,
         status: req.body.status,
       },
       {
