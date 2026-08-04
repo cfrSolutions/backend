@@ -108,11 +108,17 @@ console.log("SESSION ROLE:", req.session.role);
       // await req.user.save();
       // Only set role if user is NEW (no role yet)
 // Only assign role if user is NEW (no role set)
-if (!req.user.role) {
-  req.user.role =
-    req.session.role === "BUSINESS" ? "BUSINESS" : "USER";
+const selectedRole =
+  req.session.role === "BUSINESS"
+    ? "BUSINESS"
+    : "USER";
+
+if (req.user.role !== selectedRole) {
+  req.user.role = selectedRole;
   await req.user.save();
 }
+
+console.log("UPDATED ROLE:", req.user.role);
 
     const userAgent = req.headers["user-agent"] || "";
     const ip =

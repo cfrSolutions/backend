@@ -142,16 +142,21 @@ passport.use(
   // get referral from session or query
   const referralCode = req.session?.referralCode;
 
-  user = new User({
-    name: profile.displayName,
-    email: profile.emails[0].value,
-    googleId: profile.id,
-    isEmailVerified: true,
-    status: "ACTIVE",
-    walletNumber: Math.floor(10000000 + Math.random() * 90000000).toString(),
-    referralCode: generateReferralCode(profile.displayName)
-  });
+  const selectedRole =
+  req.session?.role === "BUSINESS"
+    ? "BUSINESS"
+    : "USER";
 
+user = new User({
+  name: profile.displayName,
+  email: profile.emails[0].value,
+  googleId: profile.id,
+  role: selectedRole,   // <-- ADD THIS
+  isEmailVerified: true,
+  status: "ACTIVE",
+  walletNumber: Math.floor(10000000 + Math.random() * 90000000).toString(),
+  referralCode: generateReferralCode(profile.displayName)
+});
   // attach referrer
   if (referralCode) {
     const refUser = await User.findOne({ referralCode });
@@ -207,7 +212,21 @@ console.log("Referral from session:", referralCode);
           user.isEmailVerified = true; // Trust Google's verification
           await user.save();
         }
+const selectedRole = req.session?.role;
 
+console.log("ROLE FROM DB:", user.role);
+console.log("SESSION ROLE:", selectedRole);
+
+if (
+    selectedRole &&
+    selectedRole === "BUSINESS" &&
+    user.role !== "BUSINESS"
+) {
+    user.role = "BUSINESS";
+    await user.save();
+
+    console.log("UPDATED ROLE TO BUSINESS");
+}
         // Logs for debugging
         console.log("GOOGLE_CLIENT_ID =", process.env.GOOGLE_CLIENT_ID);
         console.log("GOOGLE_CLIENT_SECRET =", process.env.GOOGLE_CLIENT_SECRET ? "LOADED" : "MISSING");
