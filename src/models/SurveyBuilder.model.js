@@ -19,7 +19,7 @@ const ConditionSchema = new mongoose.Schema(
     default: "equals"
 }
   },
-  { _id: false }
+  
 );
 
 const QuestionSchema = new mongoose.Schema(
