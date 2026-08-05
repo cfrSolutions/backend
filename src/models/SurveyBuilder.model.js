@@ -1,26 +1,64 @@
 import mongoose from "mongoose";
 import crypto from "crypto";
 
-const ConditionSchema = new mongoose.Schema(
-  {
-    value: String,
-    action: {
-      type: String,
-      enum: [
-        "continue",
-        "complete",
-        "disqualify",
-        "quota",
-      ],
-      default: "continue",
-    },
-    operator: {
-    type: String,
-    default: "equals"
-}
-  },
+// const ConditionSchema = new mongoose.Schema(
+//   {
+//     value: String,
+//     action: {
+//       type: String,
+//       enum: [
+//         "continue",
+//         "complete",
+//         "disqualify",
+//         "quota",
+//       ],
+//       default: "continue",
+//     },
+//     operator: {
+//     type: String,
+//     default: "equals"
+// }
+//   },
   
-);
+// );
+
+const ConditionSchema = new mongoose.Schema({
+  operator: {
+    type: String,
+    enum: [
+      "equals",
+      "not_equals",
+      "greater_than",
+      "greater_equal",
+      "less_than",
+      "less_equal",
+      "contains",
+    ],
+    default: "equals",
+  },
+
+  value: {
+    type: mongoose.Schema.Types.Mixed,
+    default: "",
+  },
+
+  action: {
+    type: String,
+    enum: [
+      "continue",
+      "skip",
+      "complete",
+      "disqualify",
+      "quota",
+    ],
+    default: "continue",
+  },
+
+  skipTo: {
+    type: String,
+    default: "",
+  },
+});
 
 const QuestionSchema = new mongoose.Schema(
   {

@@ -6,9 +6,23 @@ export const createSurvey = async (req, res) => {
   req.user._id ||
   req.user.id ||
   req.user.userId;
-  const questions = (req.body.questions || []).filter(
-  (q) => q.title && q.title.trim() !== ""
-);
+  const questions = (req.body.questions || [])
+  .filter((q) => q.title?.trim())
+  .map((q) => ({
+    title: q.title,
+    type: q.type,
+    required: q.required || false,
+    options: q.options || [],
+    rows: q.rows || [],
+    columns: q.columns || [],
+
+    conditions: (q.conditions || []).map((c) => ({
+      operator: c.operator,
+      value: c.value,
+      action: c.action,
+      skipTo: c.skipTo || "",
+    })),
+  }));
 
     const survey = await Survey.create({
       business: userId,
@@ -138,9 +152,23 @@ export const updateSurvey = async (req, res) => {
   req.user._id ||
   req.user.id ||
   req.user.userId;
-  const questions = (req.body.questions || []).filter(
-  (q) => q.title && q.title.trim() !== ""
-);
+ const questions = (req.body.questions || [])
+  .filter((q) => q.title?.trim())
+  .map((q) => ({
+    title: q.title,
+    type: q.type,
+    required: q.required || false,
+    options: q.options || [],
+    rows: q.rows || [],
+    columns: q.columns || [],
+
+    conditions: (q.conditions || []).map((c) => ({
+      operator: c.operator,
+      value: c.value,
+      action: c.action,
+      skipTo: c.skipTo || "",
+    })),
+  }));
 
     const survey = await Survey.findOneAndUpdate(
       {
