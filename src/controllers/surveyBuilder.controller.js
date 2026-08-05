@@ -9,6 +9,7 @@ export const createSurvey = async (req, res) => {
   const questions = (req.body.questions || [])
   .filter((q) => q.title?.trim())
   .map((q) => ({
+    id: q.id,
     title: q.title,
     type: q.type,
     required: q.required || false,
@@ -17,6 +18,7 @@ export const createSurvey = async (req, res) => {
     columns: q.columns || [],
 
     conditions: (q.conditions || []).map((c) => ({
+      id: c.id,
       operator: c.operator,
       value: c.value,
       action: c.action,
@@ -155,6 +157,7 @@ export const updateSurvey = async (req, res) => {
  const questions = (req.body.questions || [])
   .filter((q) => q.title?.trim())
   .map((q) => ({
+    id: q.id,
     title: q.title,
     type: q.type,
     required: q.required || false,
@@ -163,6 +166,7 @@ export const updateSurvey = async (req, res) => {
     columns: q.columns || [],
 
     conditions: (q.conditions || []).map((c) => ({
+      id: c.id,
       operator: c.operator,
       value: c.value,
       action: c.action,

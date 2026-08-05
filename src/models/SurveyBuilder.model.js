@@ -23,6 +23,10 @@ import crypto from "crypto";
 // );
 
 const ConditionSchema = new mongoose.Schema({
+  id: {
+  type: String,
+  default: () => crypto.randomUUID(),
+},
   operator: {
     type: String,
     enum: [
@@ -62,6 +66,11 @@ const ConditionSchema = new mongoose.Schema({
 
 const QuestionSchema = new mongoose.Schema(
   {
+
+    id: {
+  type: String,
+  default: () => crypto.randomUUID(),
+},
     title: {
       type: String,
       required: true,
