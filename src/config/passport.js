@@ -228,37 +228,16 @@ console.log("Referral from session:", referralCode);
 //     console.log("UPDATED ROLE TO BUSINESS");
 // }
 
-// const selectedRole =
-//   req.session?.role === "BUSINESS"
-//     ? "BUSINESS"
-//     : "USER";
-
-// // console.log("ROLE FROM DB:", user.role);
-// // console.log("SESSION ROLE:", selectedRole);
-
-// // Always synchronize the role with the selected toggle
-// if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
-//   if (user.role !== selectedRole) {
-//     user.role = selectedRole;
-//     await user.save();
-
-//     console.log("ROLE UPDATED TO:", user.role);
-//   }
-// }
 const selectedRole =
   req.session?.role === "BUSINESS"
     ? "BUSINESS"
     : "USER";
 
-console.log("===== PASSPORT FILE EXECUTED =====");
-console.log("DB ROLE:", user.role);
-console.log("SELECTED ROLE:", selectedRole);
+// console.log("ROLE FROM DB:", user.role);
+// console.log("SESSION ROLE:", selectedRole);
 
-if (["ADMIN", "SUPERADMIN"].includes(user.role)) {
-  console.log("PROTECTED ROLE - NOT UPDATING");
-} else {
-  console.log("NORMAL USER - UPDATING IF NEEDED");
-
+// Always synchronize the role with the selected toggle
+if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
   if (user.role !== selectedRole) {
     user.role = selectedRole;
     await user.save();
@@ -266,6 +245,29 @@ if (["ADMIN", "SUPERADMIN"].includes(user.role)) {
     console.log("ROLE UPDATED TO:", user.role);
   }
 }
+
+
+// const selectedRole =
+//   req.session?.role === "BUSINESS"
+//     ? "BUSINESS"
+//     : "USER";
+
+// console.log("===== PASSPORT FILE EXECUTED =====");
+// console.log("DB ROLE:", user.role);
+// console.log("SELECTED ROLE:", selectedRole);
+
+// if (["ADMIN", "SUPERADMIN"].includes(user.role)) {
+//   console.log("PROTECTED ROLE - NOT UPDATING");
+// } else {
+//   console.log("NORMAL USER - UPDATING IF NEEDED");
+
+//   if (user.role !== selectedRole) {
+//     user.role = selectedRole;
+//     await user.save();
+
+//     console.log("ROLE UPDATED TO:", user.role);
+//   }
+// }
         // Logs for debugging
         // console.log("GOOGLE_CLIENT_ID =", process.env.GOOGLE_CLIENT_ID);
         // console.log("GOOGLE_CLIENT_SECRET =", process.env.GOOGLE_CLIENT_SECRET ? "LOADED" : "MISSING");
