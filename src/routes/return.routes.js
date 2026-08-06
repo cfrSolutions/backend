@@ -11,7 +11,7 @@ router.get("/complete", async (req, res) => {
   console.log("RETURN QUERY:", req.query);
   try {
    //const { uid } = req.query;
-   const uid = req.query.uid || req.query.id || req.query.pid|| req.query.PID || Object.values(req.query)[0];
+   const uid =  req.query.rid || req.query.RID || req.query.uid || req.query.id || req.query.pid|| req.query.PID || Object.values(req.query)[0];
 
   //  const uid =
   // req.query.uid ||
@@ -22,11 +22,14 @@ router.get("/complete", async (req, res) => {
   //   mongoose.Types.ObjectId.isValid(v)
   // );
 if (!uid) return res.send("Missing response id");
-    const response = await SurveyResponse.findById(uid).populate("survey");
-    // 1. Get the ID from the query (handle different possible param names)
+    // const response = await SurveyResponse.findById(uid).populate("survey");
+    const response = await SurveyResponse.findOne({
+  rid: uid,
+}).populate("survey");
+   
         if (!response) return res.status(404).send("Invalid response");
    if (response.status === "COMPLETED") {
-        // Redirect immediately if already done to prevent double-paying
+        
         return res.redirect(`${response.survey.returnBaseUrl}/user/dashboard?st=com`);
     }
 
@@ -92,9 +95,17 @@ const redirectUrl = `${response.survey.returnBaseUrl}/user/dashboard?st=com`;
 
 router.get("/screenout", async (req, res) => {
   //const { uid } = req.query;
-const uid = Object.values(req.query)[0];
+// const uid = Object.values(req.query)[0];
+const uid =
+  req.query.rid ||
+  req.query.RID ||
+  Object.values(req.query)[0];
 
-  const response = await SurveyResponse.findById(uid).populate("survey");
+  // const response = await SurveyResponse.findById(uid).populate("survey");
+  const response = await SurveyResponse.findOne({
+  rid: uid,
+}).populate("survey");
+
   if (!response) return res.send("Invalid response");
 
   response.status = "SCREENOUT";
@@ -113,9 +124,17 @@ const uid = Object.values(req.query)[0];
 
 router.get("/quota", async (req, res) => {
  //const { uid } = req.query;
-const uid = Object.values(req.query)[0];
+// const uid = Object.values(req.query)[0];
+const uid =
+  req.query.rid ||
+  req.query.RID ||
+  Object.values(req.query)[0];
 
-  const response = await SurveyResponse.findById(uid).populate("survey");
+  // const response = await SurveyResponse.findById(uid).populate("survey");
+  const response = await SurveyResponse.findOne({
+  rid: uid,
+}).populate("survey");
+
   if (!response) return res.send("Invalid response");
 
   response.status = "QUOTA_FULL";
