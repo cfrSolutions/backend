@@ -44,11 +44,21 @@ router.post("/start", authMiddleware, async (req, res) => {
   }
     // CREATE RESPONSE (THIS IS THE UID)
     const rid = crypto.randomBytes(8).toString("hex").toUpperCase();
-    const completeTk = new URL(survey.vendorCompleteUrl).searchParams.get("tk");
+    const survey = await Survey.findById(surveyId);
+     if (!survey) {
+      return res.status(404).json({ message: "Survey not found" });
+    }
+const completeTk = survey.vendorCompleteUrl
+  ? new URL(survey.vendorCompleteUrl).searchParams.get("tk")
+  : "";
 
-const dqTk = new URL(survey.vendorDisqualifyUrl).searchParams.get("tk");
+const dqTk = survey.vendorDisqualifyUrl
+  ? new URL(survey.vendorDisqualifyUrl).searchParams.get("tk")
+  : "";
 
-const quotaTk = new URL(survey.vendorQuotaUrl).searchParams.get("tk");
+const quotaTk = survey.vendorQuotaUrl
+  ? new URL(survey.vendorQuotaUrl).searchParams.get("tk")
+  : "";
     const response = await SurveyResponse.create({
       survey: surveyId,
       user: userId,
@@ -60,21 +70,9 @@ const quotaTk = new URL(survey.vendorQuotaUrl).searchParams.get("tk");
       expectedQuotaTk: quotaTk,
     });
 
-    const survey = await Survey.findById(surveyId);
-    const completeTk = survey.vendorCompleteUrl
-  ? new URL(survey.vendorCompleteUrl).searchParams.get("tk")
-  : "";
-
-const dqTk = survey.vendorDisqualifyUrl
-  ? new URL(survey.vendorDisqualifyUrl).searchParams.get("tk")
-  : "";
-
-const quotaTk = survey.vendorQuotaUrl
-  ? new URL(survey.vendorQuotaUrl).searchParams.get("tk")
-  : "";
-    if (!survey) {
-      return res.status(404).json({ message: "Survey not found" });
-    }
+    
+    
+   
 
     if (!response.user) {
       return res.status(400).send("Response has no user attached");
