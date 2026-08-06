@@ -31,6 +31,7 @@ import projectRoutes from "./src/routes/project.routes.js";
 import businessRedirects from "./src/routes/businessRedirects.routes.js";
 import profileRoutes from "./src/routes/profile.routes.js";
 import surveyBuilderRoutes  from "./src/routes/surveyBuilder.routes.js";
+import postbackRoutes from "./src/routes/postback.routes.js";
 //import businessRoutes from "./src/routes/business.routes.js";
 
 const app = express();
@@ -146,6 +147,7 @@ app.use("/api/projects", projectRoutes);
 app.use("/api/redirect", businessRedirects);
 app.use("/api/profiles", profileRoutes);
 app.use("/api/survey-builder", surveyBuilderRoutes );
+app.use("/api/postback", postbackRoutes);
 
 /* -------------------- SOCKET SERVER -------------------- */
 
