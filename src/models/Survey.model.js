@@ -93,6 +93,9 @@ const surveySchema = new mongoose.Schema(
     },
 
     companySurveyUrl: String,
+    vendorCompleteUrl: String,
+    vendorDisqualifyUrl: String,
+    vendorQuotaUrl: String,
     
     trackingParam: {
     type: String,

@@ -242,7 +242,7 @@ if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
     user.role = selectedRole;
     await user.save();
 
-    console.log("ROLE UPDATED TO:", user.role);
+    // console.log("ROLE UPDATED TO:", user.role);
   }
 }
 

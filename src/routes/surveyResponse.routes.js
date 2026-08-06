@@ -1,6 +1,7 @@
 import express from "express";
 import SurveyResponse from "../models/SurveyResponse.model.js";
 import Survey from "../models/Survey.model.js";
+import crypto from "crypto";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
@@ -42,9 +43,11 @@ router.post("/start", authMiddleware, async (req, res) => {
     });
   }
     // CREATE RESPONSE (THIS IS THE UID)
+    const rid = crypto.randomBytes(8).toString("hex").toUpperCase();
     const response = await SurveyResponse.create({
       survey: surveyId,
       user: userId,
+      rid,
       status: "STARTED",
       startedAt: new Date(),
     });
@@ -82,7 +85,10 @@ router.post("/start", authMiddleware, async (req, res) => {
 const separator = redirectUrl.includes("?") ? "&" : "?";
 
 redirectUrl =
-  `${redirectUrl}${separator}${survey.trackingParam}=${response._id}`;
+`${redirectUrl}${separator}${survey.trackingParam}=${response.rid}`;
+
+// redirectUrl =
+//   `${redirectUrl}${separator}${survey.trackingParam}=${response._id}`;
 
 
     return res.json({ redirectUrl });
