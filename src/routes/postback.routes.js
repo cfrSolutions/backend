@@ -27,76 +27,97 @@ router.get("/", async (req, res) => {
 
     const response = await SurveyResponse.findOne({ rid });
 
-    if (!response) {
-      return res.status(404).json({
-        success: false,
-        message: "RID not found",
-      });
-    }
-
-   if (response.status === "COMPLETED") {
-  return res.json({
-    success: true,
-    message: "Already completed",
+if (!response) {
+  return res.status(404).json({
+    success: false,
+    message: "RID not found",
   });
 }
 
+   const status = req.query.status || "COMPLETED";
+
 const survey = await Survey.findById(response.survey);
 
-const points = survey?.points || 0;
+if (status === "COMPLETED") {
 
-response.status = "COMPLETED";
-response.completedAt = new Date();
+  if (response.status === "COMPLETED") {
+    return res.json({
+      success: true,
+      message: "Already completed",
+    });
+  }
 
-if (response.startedAt) {
-  response.durationSeconds = Math.max(
-    Math.floor((response.completedAt - response.startedAt) / 1000),
-    10
+  const points = survey?.points || 0;
+
+  response.status = "COMPLETED";
+  response.completedAt = new Date();
+
+  if (response.startedAt) {
+    response.durationSeconds = Math.max(
+      Math.floor((response.completedAt - response.startedAt) / 1000),
+      10
+    );
+  }
+
+  await response.save();
+
+  await Wallet.findOneAndUpdate(
+    { user: response.user },
+    {
+      $inc: {
+        balance: points,
+        totalEarned: points,
+      },
+    },
+    {
+      upsert: true,
+    }
   );
-}
 
-await response.save();
+  await WalletTransaction.create({
+    user: response.user,
+    type: "EARN",
+    points,
+    description: `Completed: ${survey.title}`,
+    survey: survey._id,
+  });
 
-await Wallet.findOneAndUpdate(
-  { user: response.user },
-  {
-    $inc: {
-      balance: points,
-      totalEarned: points,
-    },
-  },
-  {
-    upsert: true,
-  }
-);
+  await Survey.updateOne(
+    { _id: survey._id },
+    {
+      $inc: {
+        responsesCount: 1,
+      },
+    }
+  );
 
-await WalletTransaction.create({
-  user: response.user,
-  type: "EARN",
-  points,
-  description: `Completed: ${survey.title}`,
-  survey: survey._id,
-});
-
-await Survey.updateOne(
-  { _id: survey._id },
-  {
-    $inc: {
-      responsesCount: 1,
-    },
-  }
-);
-
-await User.updateOne(
+  await User.updateOne(
   { _id: response.user },
   {
-    hasCompletedSurvey: true,
+    $set: {
+      hasCompletedSurvey: true,
+    },
   }
 );
+}
+
+else if (status === "SCREENOUT") {
+
+  response.status = "SCREENOUT";
+  await response.save();
+
+}
+
+else if (status === "QUOTA_FULL") {
+
+  response.status = "QUOTA_FULL";
+  await response.save();
+
+}
 
 return res.json({
   success: true,
-  message: "Survey completed successfully",
+  message: status,
 });
 
   } catch (err) {

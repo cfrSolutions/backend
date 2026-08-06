@@ -1228,6 +1228,25 @@ if (!response) return res.send("Response not found");
     response.completedAt = new Date();
 
     await response.save();
+    try {
+  const postbackUrl =
+    `https://api.inputify.io/api/postback` +
+    `?rid=${encodeURIComponent(RID)}` +
+    `&status=COMPLETED`;
+
+  const result = await fetch(postbackUrl);
+
+  console.log(
+    "USER POSTBACK:",
+    await result.text()
+  );
+
+} catch (err) {
+  console.log(
+    "USER POSTBACK FAILED:",
+    err.message
+  );
+}
 
 } else {
   // Static redirect protection
@@ -1300,6 +1319,15 @@ if (response) {
     "DISQUALIFIED";
 
   await response.save();
+  try {
+  await fetch(
+    `https://api.inputify.io/api/postback` +
+    `?rid=${encodeURIComponent(RID)}` +
+    `&status=SCREENOUT`
+  );
+} catch (err) {
+  console.log(err.message);
+}
 }
 
 
@@ -1400,6 +1428,15 @@ if (response) {
     "QUOTA_FULL";
 
   await response.save();
+  try {
+  await fetch(
+    `https://api.inputify.io/api/postback` +
+    `?rid=${encodeURIComponent(RID)}` +
+    `&status=QUOTA_FULL`
+  );
+} catch (err) {
+  console.log(err.message);
+}
 }
 
 
