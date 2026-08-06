@@ -62,6 +62,9 @@ export const createSurvey = async (req, res) => {
       timeLimit: timeLimit || 10,
       surveyType: req.body.surveyType,
       companySurveyUrl: req.body.companySurveyUrl || null,
+      vendorCompleteUrl: req.body.vendorCompleteUrl || null,
+  vendorDisqualifyUrl: req.body.vendorDisqualifyUrl || null,
+  vendorQuotaUrl: req.body.vendorQuotaUrl || null,
       trackingParam: req.body.trackingParam || null,
 
       // ✅ AUTO SET BASE URL

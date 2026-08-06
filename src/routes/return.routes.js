@@ -13,6 +13,8 @@ router.get("/complete", async (req, res) => {
    //const { uid } = req.query;
    const uid =  req.query.rid || req.query.RID || req.query.uid || req.query.id || req.query.pid|| req.query.PID || Object.values(req.query)[0];
 
+   const tk = req.query.tk || "";
+   
   //  const uid =
   // req.query.uid ||
   // req.query.id ||
@@ -25,6 +27,7 @@ if (!uid) return res.send("Missing response id");
     // const response = await SurveyResponse.findById(uid).populate("survey");
     const response = await SurveyResponse.findOne({
   rid: uid,
+  expectedCompleteTk: tk,
 }).populate("survey");
    
         if (!response) return res.status(404).send("Invalid response");
@@ -101,9 +104,12 @@ const uid =
   req.query.RID ||
   Object.values(req.query)[0];
 
+  const tk = req.query.tk || "";
+
   // const response = await SurveyResponse.findById(uid).populate("survey");
-  const response = await SurveyResponse.findOne({
+ const response = await SurveyResponse.findOne({
   rid: uid,
+  expectedDqTk: tk,
 }).populate("survey");
 
   if (!response) return res.send("Invalid response");
@@ -130,9 +136,12 @@ const uid =
   req.query.RID ||
   Object.values(req.query)[0];
 
+  const tk = req.query.tk || "";
+
   // const response = await SurveyResponse.findById(uid).populate("survey");
   const response = await SurveyResponse.findOne({
   rid: uid,
+  expectedQuotaTk: tk,
 }).populate("survey");
 
   if (!response) return res.send("Invalid response");

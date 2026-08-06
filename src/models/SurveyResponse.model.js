@@ -30,6 +30,21 @@ const surveyResponseSchema = new mongoose.Schema(
       index: true,
     },
 
+    expectedCompleteTk: {
+  type: String,
+  default: "",
+},
+
+expectedDqTk: {
+  type: String,
+  default: "",
+},
+
+expectedQuotaTk: {
+  type: String,
+  default: "",
+},
+
     pid: String,
 
     bidIncidence: String,
@@ -58,6 +73,8 @@ const surveyResponseSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+
+    
 
     completedAt: Date,
 
