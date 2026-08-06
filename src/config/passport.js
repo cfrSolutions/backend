@@ -233,19 +233,21 @@ const selectedRole =
     ? "BUSINESS"
     : "USER";
 
-console.log("ROLE FROM DB:", user.role);
-console.log("SESSION ROLE:", selectedRole);
+// console.log("ROLE FROM DB:", user.role);
+// console.log("SESSION ROLE:", selectedRole);
 
 // Always synchronize the role with the selected toggle
-if (user.role !== selectedRole) {
-  user.role = selectedRole;
-  await user.save();
+if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
+  if (user.role !== selectedRole) {
+    user.role = selectedRole;
+    await user.save();
 
-  console.log("ROLE UPDATED TO:", user.role);
+    console.log("ROLE UPDATED TO:", user.role);
+  }
 }
         // Logs for debugging
-        console.log("GOOGLE_CLIENT_ID =", process.env.GOOGLE_CLIENT_ID);
-        console.log("GOOGLE_CLIENT_SECRET =", process.env.GOOGLE_CLIENT_SECRET ? "LOADED" : "MISSING");
+        // console.log("GOOGLE_CLIENT_ID =", process.env.GOOGLE_CLIENT_ID);
+        // console.log("GOOGLE_CLIENT_SECRET =", process.env.GOOGLE_CLIENT_SECRET ? "LOADED" : "MISSING");
 
         return done(null, user);
       } catch (err) {
