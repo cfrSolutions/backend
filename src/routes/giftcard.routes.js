@@ -88,7 +88,7 @@ if (!wallet) {
 }
 
 // 🔐 NOW SAFE
-const processingFee = 200;
+const processingFee = 0;
 const totalDeduction = card.pointsRequired + processingFee;
 console.log("Step 1: Wallet found");
 if (wallet.balance < totalDeduction) {
