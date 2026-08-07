@@ -12,7 +12,7 @@ import UserProfile from "../models/UserProfile.model.js";
 import { getCurrencyFromCountry } from "../utils/countryCurrency.js";
 
 const tremendous = axios.create({
-  baseURL: "https://testflight.tremendous.com/api/v2",
+  baseURL: "https://api.tremendous.com/api/v2",
   headers: {
     Authorization: `Bearer ${process.env.TREMENDOUS_API_KEY}`,
     "Content-Type": "application/json",
@@ -90,9 +90,12 @@ if (!wallet) {
 // 🔐 NOW SAFE
 const processingFee = 200;
 const totalDeduction = card.pointsRequired + processingFee;
+console.log("Step 1: Wallet found");
 if (wallet.balance < totalDeduction) {
+    console.log("Step 2: Insufficient points");
   return res.status(400).json({ message: "Insufficient points" });
 } 
+console.log("Step 3: Calling Tremendous");
 // if (wallet.balance < card.pointsRequired) {
 //   return res.status(400).json({ message: "Insufficient points" });
 // }
@@ -106,6 +109,7 @@ try {
   currency: card.currency,   // 🔥 ADD
     
   });
+  console.log("Step 4: Tremendous response received");
 } catch (err) {
   console.error("TREMENDOUS REJECTION:", JSON.stringify(err.response?.data, null, 2)); 
 
