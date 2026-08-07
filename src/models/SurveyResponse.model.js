@@ -60,7 +60,7 @@ expectedQuotaTk: {
     status: {
       type: String,
       uppercase: true,
-      enum: ["STARTED", "COMPLETED", "INVALID", "FLAGGED", "SCREENOUT", "QUOTA_FULL", "CANCELLED", "CLEANED",],
+      enum: ["STARTED", "COMPLETED", "INVALID", "FLAGGED", "SCREENOUT", "QUOTA_FULL", "DISQUALIFIED", "CANCELLED", "CLEANED",],
       default: "STARTED",
     },
 
