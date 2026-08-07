@@ -17,17 +17,36 @@ router.post("/start", authMiddleware, async (req, res) => {
     }
 
    
-  const existingCompleted = await SurveyResponse.findOne({
-    survey: surveyId,
-    user: userId,
-    status: "COMPLETED",
-  });
+  // const existingCompleted = await SurveyResponse.findOne({
+  //   survey: surveyId,
+  //   user: userId,
+  //   status: "COMPLETED",
+  // });
 
-  if (existingCompleted) {
-    return res.status(400).json({
-      message: "Survey already completed",
-    });
-  }
+  // if (existingCompleted) {
+  //   return res.status(400).json({
+  //     message: "Survey already completed",
+  //   });
+  // }
+
+  const existingResponse = await SurveyResponse.findOne({
+  survey: surveyId,
+  user: userId,
+  status: {
+    $in: [
+      "COMPLETED",
+      "SCREENOUT",
+      "QUOTA_FULL",
+    ],
+  },
+});
+
+if (existingResponse) {
+  return res.status(400).json({
+    status: existingResponse.status,
+    message: "Survey already finished",
+  });
+}
 
   
   const existingStarted = await SurveyResponse.findOne({
