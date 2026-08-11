@@ -1135,7 +1135,7 @@ router.get("/start", async (req, res) => {
     return res.send("Survey not Set");
   }
 
-  console.log("START QUERY:", req.query);
+  // console.log("START QUERY:", req.query);
 
   const rid =
     req.query.pid ||
@@ -1157,12 +1157,12 @@ router.get("/start", async (req, res) => {
       startedAt: new Date(),
     });
 
-    console.log(
-      "CREATED RESPONSE RID:",
-      rid
-    );
+    // console.log(
+    //   "CREATED RESPONSE RID:",
+    //   rid
+    // );
   } catch (err) {
-    console.log("CREATE ERROR:", err);
+    // console.log("CREATE ERROR:", err);
     return res.status(500).send(err.message);
   }
 
@@ -1176,7 +1176,7 @@ router.get("/start", async (req, res) => {
 
 
 router.get("/c", async (req, res) => {
-console.log("COMPLETE ROUTE");
+// console.log("COMPLETE ROUTE");
 
 const { tk } = req.query;
 
@@ -1186,7 +1186,7 @@ req.query.PID ||
 req.query.rid ||
 req.query.RID;
 
-console.log("COMPLETE QUERY:", req.query);
+// console.log("COMPLETE QUERY:", req.query);
 
 const project = await Project.findOne({
 "redirects.complete.token": tk,
@@ -1195,13 +1195,13 @@ const project = await Project.findOne({
 if (!project) {
 return res.send("Invalid");
 }
- console.log("COMPLETE ROUTE");
+//  console.log("COMPLETE ROUTE");
 // If RID is available, use respondent tracking
 const redirectUrl =
   project.vendorLinks?.[0]?.complete;
 
-console.log("FINAL REDIRECT URL:");
-  console.log(redirectUrl);
+// console.log("FINAL REDIRECT URL:");
+//   console.log(redirectUrl);
 
 
 const thankYouUrl =
@@ -1217,10 +1217,10 @@ if (RID) {
 if (!response) return res.send("Response not found");
   
     if (response.status === "COMPLETED") {
-      console.log(
-        "COMPLETE ROUTE already completed, redirecting to",
-        thankYouUrl
-      );
+      // console.log(
+      //   "COMPLETE ROUTE already completed, redirecting to",
+      //   thankYouUrl
+      // );
       return res.redirect(thankYouUrl);
     }
 
@@ -1236,15 +1236,14 @@ if (!response) return res.send("Response not found");
 
   const result = await fetch(postbackUrl);
 
-  console.log(
-    "USER POSTBACK:",
-    await result.text()
-  );
+  // console.log(
+  //   "USER POSTBACK:",
+  //   await result.text()
+  // );
 
 } catch (err) {
   console.log(
-    "USER POSTBACK FAILED:",
-    err.message
+    "USER POSTBACK FAILED:"
   );
 }
 
@@ -1258,7 +1257,7 @@ if (!response) return res.send("Response not found");
   const lastHit = global.completeHits.get(key);
 
   if (lastHit && now - lastHit < 5000) {
-    console.log("DUPLICATE COMPLETE BLOCKED");
+    // console.log("DUPLICATE COMPLETE BLOCKED");
     return res.redirect(thankYouUrl);
   }
 
@@ -1288,7 +1287,7 @@ req.query.PID ||
 req.query.rid ||
 req.query.RID;
 
-console.log("DQ QUERY:", req.query);
+// console.log("DQ QUERY:", req.query);
 
 const project = await Project.findOne({
 "redirects.disqualified.token": tk,
@@ -1346,9 +1345,9 @@ if (
   lastHit &&
   now - lastHit < 5000
 ) {
-  console.log(
-    "DUPLICATE DQ BLOCKED"
-  );
+  // console.log(
+  //   "DUPLICATE DQ BLOCKED"
+  // );
 
   return res.send(
     "Duplicate ignored"
@@ -1397,7 +1396,7 @@ req.query.PID ||
 req.query.rid ||
 req.query.RID;
 
-console.log("QF QUERY:", req.query);
+// console.log("QF QUERY:", req.query);
 
 const project = await Project.findOne({
 "redirects.quotaFull.token": tk,
@@ -1455,9 +1454,9 @@ if (
   lastHit &&
   now - lastHit < 5000
 ) {
-  console.log(
-    "DUPLICATE QF BLOCKED"
-  );
+  // console.log(
+  //   "DUPLICATE QF BLOCKED"
+  // );
 
   return res.send(
     "Duplicate ignored"

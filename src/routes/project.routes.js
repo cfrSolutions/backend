@@ -140,7 +140,8 @@ router.get("/:id", authMiddleware, async (req, res) => {
     // if (project.business.toString() !== req.userId.toString()) {
     //   return res.status(403).json({ message: "Unauthorized" });
     // }
-
+    console.log("ADMIN PROJECT:");
+    console.log(JSON.stringify(project, null, 2));
     res.json(project);
   } catch (err) {
     res.status(500).json({ message: err.message });

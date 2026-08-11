@@ -90,12 +90,12 @@ if (!wallet) {
 // 🔐 NOW SAFE
 const processingFee = 0;
 const totalDeduction = card.pointsRequired + processingFee;
-console.log("Step 1: Wallet found");
+
 if (wallet.balance < totalDeduction) {
-    console.log("Step 2: Insufficient points");
+   
   return res.status(400).json({ message: "Insufficient points" });
 } 
-console.log("Step 3: Calling Tremendous");
+
 // if (wallet.balance < card.pointsRequired) {
 //   return res.status(400).json({ message: "Insufficient points" });
 // }
@@ -109,9 +109,9 @@ try {
   currency: card.currency,   // 🔥 ADD
     
   });
-  console.log("Step 4: Tremendous response received");
+  
 } catch (err) {
-  console.error("TREMENDOUS REJECTION:", JSON.stringify(err.response?.data, null, 2)); 
+  console.error("TREMENDOUS REJECTION:"); 
 
   return res.status(422).json({
     message: "Reward provider failed",
