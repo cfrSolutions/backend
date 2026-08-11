@@ -40,8 +40,93 @@
 
 // export default mongoose.model("Survey", surveySchema);
 
+// Admin Survey Model
 
 import mongoose from "mongoose";
+
+const targetGroupSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    // =========================
+    // BASIC TARGETING
+    // =========================
+
+    employmentStatus: {
+      type: String,
+      default: "ANY",
+    },
+
+    profession: {
+      type: String,
+      default: "ANY",
+    },
+
+    specialties: {
+      type: [String],
+      default: [],
+    },
+
+    // =========================
+    // DEMOGRAPHICS
+    // =========================
+
+    ageFrom: {
+      type: Number,
+      default: null,
+    },
+
+    ageTo: {
+      type: Number,
+      default: null,
+    },
+
+    gender: {
+      type: String,
+      default: "All",
+    },
+
+    country: {
+      type: String,
+      default: "ALL",
+    },
+
+    // =========================
+    // SURVEY TARGET
+    // =========================
+
+    targetCompletes: {
+      type: Number,
+      default: 0,
+    },
+
+    // =========================
+    // DEVICE
+    // =========================
+
+    devices: {
+      mobile: {
+        type: Boolean,
+        default: true,
+      },
+      desktop: {
+        type: Boolean,
+        default: true,
+      },
+      tablet: {
+        type: Boolean,
+        default: true,
+      },
+    },
+  },
+  {
+    _id: true,
+  }
+);
 
 const surveySchema = new mongoose.Schema(
   {
@@ -141,6 +226,10 @@ returnBaseUrl: {
   required: true, 
 },
 
+targetGroups: {
+  type: [targetGroupSchema],
+  default: [],
+},
 
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
