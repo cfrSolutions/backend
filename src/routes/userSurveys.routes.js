@@ -516,10 +516,7 @@ router.get("/available", authMiddleware, async (req, res) => {
       user: userId,
     }).lean();
 
-console.log("====================================");
-    console.log("USER ID:", userId);
-    console.log("USER PROFILE:", profile);
-    console.log("====================================");
+
     // --------------------------------------------------
     // GET ACTIVE SURVEYS
     // --------------------------------------------------
@@ -631,10 +628,7 @@ console.log("====================================");
 
   } catch (err) {
 
-    console.error(
-      "Available surveys error:",
-      err
-    );
+    
 
     res.status(500).json({
       message: "Failed to load surveys",

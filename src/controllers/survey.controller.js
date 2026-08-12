@@ -316,7 +316,7 @@ export const adminOverviewStats = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("ADMIN OVERVIEW ERROR:", err);
+    
     res.status(500).json({ message: "Failed to load admin overview" });
   }
 };
@@ -392,7 +392,7 @@ export const adminDashboardSummary = async (req, res) => {
     });
 
   } catch (err) {
-    console.error(err);
+   
     res.status(500).json({ message: "Dashboard load failed" });
   }
 };
