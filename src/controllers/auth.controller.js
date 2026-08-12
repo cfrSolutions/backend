@@ -513,6 +513,7 @@
 import User from "../models/User.model.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import axios from "axios";
 import crypto from "crypto";
 import { sendEmail } from "../utils/sendEmail.js";
 // import { generateEmailToken } from "../utils/generateToken.js";
@@ -535,8 +536,34 @@ export const registerUser = async (req, res) => {
 };
 
   try {
-    const { name, email, password, referralCode, role } = req.body;
-if (!password || password.trim() === "") {
+    const { name, email, password, referralCode, role, captcha } = req.body;
+    if (role === "USER") {
+      if (!captcha) {
+        return res.status(400).json({
+          message: "Please complete the CAPTCHA",
+        });
+      }
+
+      const captchaResponse =
+        await axios.post(
+          "https://www.google.com/recaptcha/api/siteverify",
+          null,
+          {
+            params: {
+              secret: process.env.RECAPTCHA_SECRET,
+              response: captcha,
+            },
+          }
+        );
+
+      if (!captchaResponse.data.success) {
+        return res.status(400).json({
+          message: "CAPTCHA verification failed",
+        });
+      }
+    }
+
+    if (!password || password.trim() === "") {
       return res.status(400).json({ message: "Password is required" });
     }
     if (!name || !email || !password) {
