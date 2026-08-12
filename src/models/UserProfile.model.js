@@ -26,7 +26,7 @@ const userProfileSchema = new mongoose.Schema(
     companySize: String,
     seniority: String,
 
-    // ✅ CONSUMER MODULE (ADD THIS)
+    // ✅ CONSUMER MODULE
     household: String,
     parental: String,
     primary: String,

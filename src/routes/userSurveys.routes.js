@@ -312,10 +312,6 @@ import { authMiddleware } from "../middleware/auth.middleware.js";
 const router = express.Router();
 
 
-// ======================================================
-// HELPERS
-// ======================================================
-
 const normalize = (value) => {
   if (value === null || value === undefined) {
     return "";
@@ -325,11 +321,11 @@ const normalize = (value) => {
 };
 
 
-// Check whether ONE target group matches the user's profile
 const matchesTargetGroup = (group, profile) => {
-  // --------------------------------------------------
+
+  // ==================================================
   // EMPLOYMENT STATUS
-  // --------------------------------------------------
+  // ==================================================
 
   if (
     group.employmentStatus &&
@@ -344,9 +340,9 @@ const matchesTargetGroup = (group, profile) => {
   }
 
 
-  // --------------------------------------------------
+  // ==================================================
   // PROFESSION
-  // --------------------------------------------------
+  // ==================================================
 
   if (
     group.profession &&
@@ -361,20 +357,26 @@ const matchesTargetGroup = (group, profile) => {
   }
 
 
-  // --------------------------------------------------
+  // ==================================================
   // SPECIALTY
-  // --------------------------------------------------
+  // ==================================================
 
   if (
     Array.isArray(group.specialties) &&
     group.specialties.length > 0
   ) {
+
     const userSpecialty = normalize(profile.specialty);
 
-    const specialtyMatches = group.specialties.some(
-      (specialty) =>
-        normalize(specialty) === userSpecialty
-    );
+    if (!userSpecialty) {
+      return false;
+    }
+
+    const specialtyMatches =
+      group.specialties.some(
+        (specialty) =>
+          normalize(specialty) === userSpecialty
+      );
 
     if (!specialtyMatches) {
       return false;
@@ -382,14 +384,15 @@ const matchesTargetGroup = (group, profile) => {
   }
 
 
-  // --------------------------------------------------
+  // ==================================================
   // GENDER
-  // --------------------------------------------------
+  // ==================================================
 
   if (
     group.gender &&
     normalize(group.gender) !== "all"
   ) {
+
     if (
       normalize(group.gender) !==
       normalize(profile.gender)
@@ -399,14 +402,15 @@ const matchesTargetGroup = (group, profile) => {
   }
 
 
-  // --------------------------------------------------
+  // ==================================================
   // COUNTRY
-  // --------------------------------------------------
+  // ==================================================
 
   if (
     group.country &&
     normalize(group.country) !== "all"
   ) {
+
     if (
       normalize(group.country) !==
       normalize(profile.country)
@@ -416,11 +420,12 @@ const matchesTargetGroup = (group, profile) => {
   }
 
 
-  // --------------------------------------------------
+  // ==================================================
   // AGE
-  // --------------------------------------------------
+  // ==================================================
 
   if (profile.dob) {
+
     const today = new Date();
     const dob = new Date(profile.dob);
 
@@ -447,6 +452,7 @@ const matchesTargetGroup = (group, profile) => {
       group.ageFrom !== null &&
       group.ageFrom !== undefined
     ) {
+
       if (age < group.ageFrom) {
         return false;
       }
@@ -457,16 +463,13 @@ const matchesTargetGroup = (group, profile) => {
       group.ageTo !== null &&
       group.ageTo !== undefined
     ) {
+
       if (age > group.ageTo) {
         return false;
       }
     }
   }
 
-
-  // --------------------------------------------------
-  // EVERYTHING MATCHED
-  // --------------------------------------------------
 
   return true;
 };
