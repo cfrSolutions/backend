@@ -516,7 +516,10 @@ router.get("/available", authMiddleware, async (req, res) => {
       user: userId,
     }).lean();
 
-
+console.log("====================================");
+    console.log("USER ID:", userId);
+    console.log("USER PROFILE:", profile);
+    console.log("====================================");
     // --------------------------------------------------
     // GET ACTIVE SURVEYS
     // --------------------------------------------------
