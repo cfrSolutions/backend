@@ -61,10 +61,11 @@ export const createSurvey = async (req, res) => {
       status: req.body.status || "DRAFT",
       timeLimit: timeLimit || 10,
       surveyType: req.body.surveyType,
+      targetGroups: req.body.targetGroups || [],
       companySurveyUrl: req.body.companySurveyUrl || null,
       vendorCompleteUrl: req.body.vendorCompleteUrl || null,
-  vendorDisqualifyUrl: req.body.vendorDisqualifyUrl || null,
-  vendorQuotaUrl: req.body.vendorQuotaUrl || null,
+      vendorDisqualifyUrl: req.body.vendorDisqualifyUrl || null,
+      vendorQuotaUrl: req.body.vendorQuotaUrl || null,
       trackingParam: req.body.trackingParam || null,
 
       // ✅ AUTO SET BASE URL
