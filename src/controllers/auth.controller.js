@@ -619,9 +619,7 @@ if (referralCode) {
 
 
     await newUser.save();
-    return res.status(201).json({
-  message: "Signup successful",
-});
+    
     /* ================= REFERRAL REWARD ================= */
 
 if (refUser) {
@@ -662,6 +660,9 @@ if (refUser) {
       // return res.status(201).json({
       //   message: "Signup successful. Please check your email.",
       // });
+      return res.status(201).json({
+  message: "Signup successful",
+});
 
   } catch (err) {
     console.error("REGISTER ERROR:", err);
