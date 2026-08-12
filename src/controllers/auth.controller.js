@@ -663,10 +663,31 @@ export const login = async (req, res) => {
 }
  //console.log("Creating session for:", user._id.toString());
     // 2. Check password
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
+    // const isMatch = await bcrypt.compare(password, user.password);
+    // if (!isMatch) {
+    //   return res.status(401).json({ message: "Invalid credentials" });
+    // }
+
+    // 2. Check password
+if (!user.password) {
+  return res.status(401).json({
+    message: "This account was created with Google. Please continue with Google.",
+  });
+}
+
+if (!password || typeof password !== "string") {
+  return res.status(400).json({
+    message: "Password is required",
+  });
+}
+
+const isMatch = await bcrypt.compare(password, user.password);
+
+if (!isMatch) {
+  return res.status(401).json({
+    message: "Invalid credentials",
+  });
+}
 
     // // 3. Email + status check
     // if (!user.isEmailVerified) {
