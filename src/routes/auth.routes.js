@@ -163,7 +163,7 @@ router.get(
 
     // ✅ only role in URL (not token) i Need to change thiss
     res.redirect(
-      `${process.env.FRONTEND_URL}/oauth-success?role=${req.user.role}`
+      `${process.env.FRONTEND_URL}/oauth-success?role=${roleFromFrontend}`
     );
 
     // res.redirect(
