@@ -77,19 +77,52 @@ router.post("/login", login);
 // }));
 
 
+// router.get("/google", (req, res, next) => {
+
+//   // store referral code in session
+//   if (req.query.ref) {
+//     req.session.referralCode = req.query.ref;
+//   }
+
+//  if (req.query.role) {
+//     req.session.role = req.query.role; // USER or BUSINESS
+//   }
+//   passport.authenticate("google", {
+//     scope: ["profile", "email"],
+//   })(req, res, next);
+// });
+
 router.get("/google", (req, res, next) => {
+  const selectedRole =
+    req.query.role === "BUSINESS"
+      ? "BUSINESS"
+      : "USER";
 
-  // store referral code in session
-  if (req.query.ref) {
-    req.session.referralCode = req.query.ref;
-  }
+  const referralCode = req.query.ref || null;
 
- if (req.query.role) {
-    req.session.role = req.query.role; // USER or BUSINESS
-  }
-  passport.authenticate("google", {
-    scope: ["profile", "email"],
-  })(req, res, next);
+  // Store the role selected on the frontend
+  req.session.role = selectedRole;
+  req.session.referralCode = referralCode;
+
+  console.log("=================================");
+  console.log("GOOGLE LOGIN");
+  console.log("Query role:", req.query.role);
+  console.log("Selected role:", selectedRole);
+  console.log("Session role:", req.session.role);
+  console.log("=================================");
+
+  // IMPORTANT: save session before redirecting to Google
+  req.session.save((err) => {
+    if (err) {
+      console.error("SESSION SAVE ERROR:", err);
+      return next(err);
+    }
+
+    passport.authenticate("google", {
+      scope: ["profile", "email"],
+      session: false,
+    })(req, res, next);
+  });
 });
 
 
