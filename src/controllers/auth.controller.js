@@ -417,30 +417,77 @@ export const changePassword = async (req, res) => {
 };
 
 
-export const logout = async (req, res)=>{
-  try{
-    if(!req.user.userId){
-      return res.status(401).json({message: "unauthorize"});
-    }
-    if(req.user.sessionId){
-      await UserSession.findByIdAndUpdate(req.user.session,{
-        isActive: false,
-        lastActive: new Date(),
+
+export const logout = async (req, res) => {
+  try {
+    if (!req.user?.userId) {
+      return res.status(401).json({
+        message: "Unauthorized",
       });
     }
 
-    res.clearCookie("token",{
+    // Deactivate current session
+    if (req.user.sessionId) {
+      await UserSession.findByIdAndUpdate(
+        req.user.sessionId,
+        {
+          isActive: false,
+          lastActiveAt: new Date(),
+        }
+      );
+    }
+
+    // Clear authentication cookie
+    res.clearCookie("token", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
+      domain:
+        process.env.NODE_ENV === "production"
+          ? ".inputify.io"
+          : undefined,
+      path: "/",
     });
-    return res.json({message: "Logiut successfully"});
-  }
-  catch(err){
-   
-    return res.status(500).json({message: "server error"});
+
+    return res.status(200).json({
+      success: true,
+      message: "Logout successful",
+    });
+
+  } catch (err) {
+    console.error("LOGOUT ERROR:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
   }
 };
+
+// export const logout = async (req, res)=>{
+//   try{
+//     if(!req.user.userId){
+//       return res.status(401).json({message: "unauthorize"});
+//     }
+//     if(req.user.sessionId){
+//       await UserSession.findByIdAndUpdate(req.user.session,{
+//         isActive: false,
+//         lastActive: new Date(),
+//       });
+//     }
+
+//     res.clearCookie("token",{
+//       httpOnly: true,
+//       secure: process.env.NODE_ENV === "production",
+//       sameSite: "lax",
+//     });
+//     return res.json({message: "Logiut successfully"});
+//   }
+//   catch(err){
+   
+//     return res.status(500).json({message: "server error"});
+//   }
+// };
 
 /* ======================
    REQUEST DELETE ACCOUNT
