@@ -179,7 +179,7 @@ if (refUser) {
 ====================== */
 export const login = async (req, res) => {
   try {
-       
+       console.log("LOGIN BODY:", req.body);
     const { email, password, role } = req.body;
 
     if (
