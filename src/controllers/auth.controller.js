@@ -537,7 +537,15 @@ export const registerUser = async (req, res) => {
 
   try {
     const { name, email, password, referralCode, role, captcha } = req.body;
-    const allowedRole = role === "BUSINESS" ? "BUSINESS" : "USER";
+    const allowedRoles = ["USER", "BUSINESS"];
+
+const selectedRole = role || "USER";
+
+if (!allowedRoles.includes(selectedRole)) {
+  return res.status(400).json({
+    message: "Invalid account type",
+  });
+}
       if (!captcha) {
         return res.status(400).json({
           message: "Please complete the CAPTCHA",
@@ -596,7 +604,7 @@ const newUser = new User({
       name,
       email,
       password: hashedPassword,
-      role: allowedRole,
+      role: selectedRole,
       walletNumber: generateWalletNumber(),
       referralCode: generateReferralCode(name),
       isEmailVerified: true,
@@ -697,7 +705,7 @@ export const login = async (req, res) => {
         message: "Invalid login input",
       });
     }
-
+    
     const cleanEmail = email.trim().toLowerCase();
 
     if (!cleanEmail || !password) {
@@ -706,11 +714,20 @@ export const login = async (req, res) => {
       });
     }
 
+     if (!["USER", "BUSINESS"].includes(role)) {
+      return res.status(400).json({
+        message: "Invalid account type",
+      });
+    }
+
     // 1. Find user
     const user = await User.findOne({ email: cleanEmail });
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
+
+    
+
     if (user.role !== role) {
     return res.status(403).json({
         message: "Please use the correct login."
