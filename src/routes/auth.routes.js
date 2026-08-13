@@ -60,6 +60,7 @@ const router = express.Router();
 
 router.post("/register", registerUser);
 router.post("/login", login);
+router.get("/me", authMiddleware, me);
 // router.get("/verify-email/:token", verifyEmail);
 // router.get(
 //   "/google",

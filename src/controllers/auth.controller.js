@@ -550,6 +550,7 @@ export const deleteAccount = async (req, res) => {
 };
 
 export const me = async (req, res) => {
+   try {
   const user = await User.findById(req.user.userId).select(
     "_id name email role walletNumber referralCode profileImage createdAt"
   );
@@ -559,7 +560,23 @@ export const me = async (req, res) => {
 // );
 
 
-  res.json({ user });
+  // res.json({ user });
+  if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      user,
+    });
+  } catch (error) {
+    console.error("ME ERROR:", error);
+
+    return res.status(500).json({
+      message: "Server error",
+    });
+  }
 };
 
 
