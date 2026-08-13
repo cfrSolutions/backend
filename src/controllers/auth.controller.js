@@ -536,8 +536,14 @@ export const registerUser = async (req, res) => {
 };
 
   try {
-    const { name, email, password, referralCode, captcha } = req.body;
-    
+    const { name, email, password, referralCode, role, captcha } = req.body;
+    const allowedSignupRoles = ["USER", "BUSINESS"];
+
+if (!allowedSignupRoles.includes(role)) {
+  return res.status(400).json({
+    message: "Invalid account type",
+  });
+} 
       if (!captcha) {
         return res.status(400).json({
           message: "Please complete the CAPTCHA",
@@ -596,7 +602,7 @@ const newUser = new User({
       name,
       email,
       password: hashedPassword,
-      role: "USER",
+      role,
       walletNumber: generateWalletNumber(),
       referralCode: generateReferralCode(name),
       isEmailVerified: true,
