@@ -93,38 +93,34 @@ router.post("/login", login);
 // });
 
 router.get("/google", (req, res, next) => {
-  const selectedRole =
+  const role =
     req.query.role === "BUSINESS"
       ? "BUSINESS"
       : "USER";
 
-  const referralCode = req.query.ref || null;
-
-  // Store the role selected on the frontend
-  req.session.role = selectedRole;
-  req.session.referralCode = referralCode;
+  const ref = req.query.ref || "";
 
   console.log("=================================");
   console.log("GOOGLE LOGIN");
   console.log("Query role:", req.query.role);
-  console.log("Selected role:", selectedRole);
-  console.log("Session role:", req.session.role);
-  console.log("=================================");
+  console.log("Selected role:", role);
 
-  // IMPORTANT: save session before redirecting to Google
-  req.session.save((err) => {
-    if (err) {
-      console.error("SESSION SAVE ERROR:", err);
-      return next(err);
-    }
+  // Put role + referral into OAuth state
+  const state = Buffer.from(
+    JSON.stringify({
+      role,
+      ref,
+    })
+  ).toString("base64url");
 
-    passport.authenticate("google", {
-      scope: ["profile", "email"],
-      session: false,
-    })(req, res, next);
-  });
+  console.log("OAuth state:", state);
+
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+    session: false,
+    state,
+  })(req, res, next);
 });
-
 
 // router.get(
 //   "/google/callback",
@@ -216,33 +212,52 @@ router.get(
     try {
       console.log("=================================");
       console.log("GOOGLE CALLBACK");
-      console.log("Session role:", req.session.role);
-      console.log("User before role update:", req.user.role);
 
-      // Get role selected on login page
-      const selectedRole =
-        req.session.role === "BUSINESS"
-          ? "BUSINESS"
-          : "USER";
+      console.log("OAuth state:", req.query.state);
+
+      let selectedRole = "USER";
+      let referralCode = null;
+
+      // Read role from OAuth state
+      if (req.query.state) {
+        try {
+          const decoded = JSON.parse(
+            Buffer.from(req.query.state, "base64url").toString("utf8")
+          );
+
+          selectedRole =
+            decoded.role === "BUSINESS"
+              ? "BUSINESS"
+              : "USER";
+
+          referralCode = decoded.ref || null;
+
+        } catch (stateError) {
+          console.error("STATE DECODE ERROR:", stateError);
+
+          return res.redirect(
+            `${process.env.FRONTEND_URL}/login?error=invalid_oauth_state`
+          );
+        }
+      }
 
       console.log("SELECTED ROLE:", selectedRole);
+      console.log("USER BEFORE ROLE UPDATE:", req.user.role);
 
-      // IMPORTANT:
-      // Change MongoDB role according to the toggle
+      // -----------------------------------------
+      // UPDATE MONGODB ROLE
+      // -----------------------------------------
+
       req.user.role = selectedRole;
 
       await req.user.save();
 
       console.log("USER ROLE AFTER UPDATE:", req.user.role);
 
-      // Get referral if required
-      const referralCode = req.session.referralCode;
+      // -----------------------------------------
+      // REDIRECT ACCORDING TO TOGGLE
+      // -----------------------------------------
 
-      // Clear temporary session values
-      req.session.role = null;
-      req.session.referralCode = null;
-
-      // IMPORTANT: redirect according to selected toggle
       return res.redirect(
         `${process.env.FRONTEND_URL}/oauth-success?role=${selectedRole}`
       );
@@ -257,34 +272,4 @@ router.get(
   }
 );
 
-router.put("/change-password", authMiddleware, changePassword);
-
-router.post("/logout", authMiddleware, logout);
-// router.post("/request-delete", authMiddleware, requestDeleteAccount);
-// router.get("/confirm-delete/:token", confirmDeleteAccount);
-router.delete("/delete-account", authMiddleware, deleteAccount);
-// router.get("/me", authMiddleware, (req, res) => {
-//   res.json(req.user);
-// });
-router.get("/me", authMiddleware, me);
-
-router.put("/update-role", authMiddleware, async (req, res) => {
-  try {
-    const { role } = req.body;
-
-    const user = await User.findByIdAndUpdate(
-      req.user.userId,
-      { role },
-      { new: true }
-    );
-
-    res.json({
-      message: "Role updated",
-      role: user.role
-    });
-  } catch (err) {
-    // console.log("UPDATE ROLE ERROR:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
 export default router;
