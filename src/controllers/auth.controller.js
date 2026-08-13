@@ -570,6 +570,15 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ message: "All fields required" });
     }
 
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
+
+if (!passwordRegex.test(password)) {
+  return res.status(400).json({
+    message:
+      "Password must be at least 8 characters and contain at least one letter and one number.",
+  });
+}
+
     if (email.endsWith("@cfr.solutions")) {
       return res.status(403).json({
         message: "CFR emails must be created by admin",
