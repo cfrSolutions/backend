@@ -188,7 +188,7 @@ export const surveyStats = async (req, res) => {
       loi,
     });
   } catch (err) {
-    console.error("STATS ERROR:", err);
+    // console.error("STATS ERROR:", err);
     res.status(500).json({ message: "Failed to load survey stats" });
   }
 };

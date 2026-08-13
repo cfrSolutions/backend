@@ -665,7 +665,7 @@ if (refUser) {
 });
 
   } catch (err) {
-    console.error("REGISTER ERROR:", err);
+    // console.error("REGISTER ERROR:", err);
     return res.status(500).json({ message: "Server error" });
   }
 };
@@ -794,7 +794,7 @@ res.cookie("token", token, {
 res.json({ token, role: user.role });
 
   } catch (err) {
-    console.error("LOGIN ERROR:", err);
+    // console.error("LOGIN ERROR:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -877,7 +877,7 @@ export const changePassword = async (req, res) => {
     res.json({ message: "Password updated successfully" });
 
   } catch (err) {
-    console.error("CHANGE PASSWORD ERROR:", err);
+    // console.error("CHANGE PASSWORD ERROR:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -903,7 +903,7 @@ export const logout = async (req, res)=>{
     return res.json({message: "Logiut successfully"});
   }
   catch(err){
-    console.log("Logout error: ", err);
+   
     return res.status(500).json({message: "server error"});
   }
 };
@@ -992,8 +992,8 @@ export const deleteAccount = async (req, res) => {
     const userId = req.user.userId;
     const { reason, feedback } = req.body;
 
-    console.log("Delete Reason:", reason);
-    console.log("Feedback:", feedback);
+    // console.log("Delete Reason:", reason);
+    // console.log("Feedback:", feedback);
 
     await UserSession.deleteMany({ userId });
     await Wallet.deleteOne({ user: userId });
@@ -1010,7 +1010,7 @@ export const deleteAccount = async (req, res) => {
     return res.json({ message: "Account deleted successfully" });
 
   } catch (err) {
-    console.error("DELETE ACCOUNT ERROR:", err);
+    // console.error("DELETE ACCOUNT ERROR:", err);
     return res.status(500).json({ message: "Server error" });
   }
 };

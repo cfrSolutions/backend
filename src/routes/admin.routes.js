@@ -84,7 +84,7 @@ if (!user) {
     res.json({ message: "Role updated successfully" });
 
   } catch (err) {
-    console.error("TOGGLE ROLE ERROR:", err); // 🔥 check terminal
+    // console.error("TOGGLE ROLE ERROR:", err); 
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -117,7 +117,7 @@ router.get("/surveys", authMiddleware, adminOnly, async (req, res) => {
 
     res.json(surveys);
   } catch (err) {
-    console.error(err);
+    // console.error(err);
     res.status(500).json({ message: "Failed to load surveys" });
   }
 });
@@ -137,7 +137,7 @@ router.get(
 
       res.json(responses);
     } catch (err) {
-      console.error(err);
+      // console.error(err);
       res.status(500).json({ message: "Failed to load responses" });
     }
   }
@@ -275,7 +275,7 @@ router.put("/project/:id/accept", authMiddleware, async (req, res) => {
     });
 
   } catch (err) {
-    console.log("ADMIN ACCEPT ERROR:", err);
+    // console.log("ADMIN ACCEPT ERROR:", err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -320,7 +320,7 @@ router.put("/project/:id/reject", authMiddleware, async (req, res) => {
     res.json({ message: "Project rejected" });
 
   } catch (err) {
-    console.log("ADMIN REJECT ERROR:", err);
+    // console.log("ADMIN REJECT ERROR:", err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -358,7 +358,7 @@ router.put("/project/:id/move-testing", async(req, res)=>{
     res.send({message: "Moved to TESTING"});
   }
   catch(err){
-    console.err(err);
+    // console.err(err);
     res.status(500).send("Server error");
   }
 });
@@ -372,7 +372,7 @@ router.put("/project/:id/go-live", async (req, res)=>{
     res.send({message: "Proect is LIVE"});
   }
   catch(err){
-    console.log(err);
+    // console.log(err);
     res.status(500).send("Sever error");
   }
 });
@@ -430,7 +430,7 @@ router.put(
 
     } catch (err) {
 
-      console.log(err);
+      // console.log(err);
 
       res.status(500).json({
         message: err.message,
@@ -519,7 +519,7 @@ router.put(
 
     } catch (err) {
 
-      console.log(err);
+      // console.log(err);
 
       res.status(500).json({
         message: "Server Error",
@@ -559,7 +559,7 @@ router.put(
 
     } catch (err) {
 
-      console.log(err);
+      // console.log(err);
 
       res.status(500).json({
         message: "Server error",

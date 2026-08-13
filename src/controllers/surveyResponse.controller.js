@@ -28,7 +28,7 @@ export const startSurvey = async (req, res) => {
     res.json({ redirectUrl });
 
   } catch (error) {
-    console.error(error);
+    // console.error(error);
     res.status(500).json({ message: "Failed to start survey" });
   }
 };

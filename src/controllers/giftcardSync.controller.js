@@ -157,8 +157,8 @@ const tremendous = axios.create({
 export const syncGiftCards = async (req, res) => {
   const { data } = await tremendous.get("/products");
 
-  console.log("TOTAL PRODUCTS:", data.products.length);
-  console.log("FIRST PRODUCT SAMPLE:", JSON.stringify(data.products[0], null, 2));
+  // console.log("TOTAL PRODUCTS:", data.products.length);
+  // console.log("FIRST PRODUCT SAMPLE:", JSON.stringify(data.products[0], null, 2));
 
   let created = 0;
 

@@ -38,7 +38,7 @@ export const createSurvey = async (req, res) => {
 
     res.status(201).json(survey);
   } catch (err) {
-    console.error(err);
+    // console.error(err);
 
     res.status(500).json({
       message: err.message,
@@ -53,7 +53,7 @@ export const getSurveys = async (req, res) => {
       req.user.id ||
       req.user.userId;
 
-    console.log("USER ID:", userId);
+    // console.log("USER ID:", userId);
 
    const surveys = await Survey.find({
   business: userId,
@@ -63,7 +63,7 @@ export const getSurveys = async (req, res) => {
   "publicToken name description status createdAt updatedAt questions"
 );
 
-    console.log("FOUND SURVEYS:", surveys);
+    // console.log("FOUND SURVEYS:", surveys);
 
    const result = surveys.map((survey) => ({
   _id: survey._id,
@@ -82,7 +82,7 @@ export const getSurveys = async (req, res) => {
     res.json(result);
 
   } catch (err) {
-    console.error(err);
+    // console.error(err);
 
     res.status(500).json({
       message: err.message,
@@ -108,7 +108,7 @@ export const getPublicSurvey = async (req, res) => {
 
   } catch (err) {
 
-    console.error(err);
+    // console.error(err);
 
     res.status(500).json({
       message: err.message,
@@ -139,7 +139,7 @@ export const getSurvey = async (req, res) => {
     res.json(survey);
 
   } catch (err) {
-    console.error(err);
+    // console.error(err);
 
     res.status(500).json({
       message: err.message,
@@ -206,7 +206,7 @@ export const updateSurvey = async (req, res) => {
 
   } catch (err) {
 
-    console.error(err);
+    // console.error(err);
 
     res.status(500).json({
       message: err.message,
@@ -240,7 +240,7 @@ export const deleteSurvey = async (req, res) => {
     });
 
   } catch (err) {
-    console.error(err);
+    // console.error(err);
 
     res.status(500).json({
       message: err.message,
@@ -293,7 +293,7 @@ export const submitSurvey = async (req, res) => {
 
   } catch (err) {
 
-    console.log(err);
+    // console.log(err);
 
     res.status(500).json({
       success: false,
