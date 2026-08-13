@@ -688,8 +688,26 @@ export const login = async (req, res) => {
        
     const { email, password, role } = req.body;
 
+    if (
+      typeof email !== "string" ||
+      typeof password !== "string" ||
+      typeof role !== "string"
+    ) {
+      return res.status(400).json({
+        message: "Invalid login input",
+      });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (!cleanEmail || !password) {
+      return res.status(400).json({
+        message: "Email and password are required",
+      });
+    }
+
     // 1. Find user
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: cleanEmail });
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
