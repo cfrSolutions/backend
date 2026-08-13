@@ -218,7 +218,10 @@ router.get(
       let selectedRole = "USER";
       let referralCode = null;
 
-      // Read role from OAuth state
+      // -----------------------------------------
+      // READ ROLE FROM OAUTH STATE
+      // -----------------------------------------
+
       if (req.query.state) {
         try {
           const decoded = JSON.parse(
@@ -245,7 +248,7 @@ router.get(
       console.log("USER BEFORE ROLE UPDATE:", req.user.role);
 
       // -----------------------------------------
-      // UPDATE MONGODB ROLE
+      // UPDATE USER ROLE
       // -----------------------------------------
 
       req.user.role = selectedRole;
@@ -255,11 +258,112 @@ router.get(
       console.log("USER ROLE AFTER UPDATE:", req.user.role);
 
       // -----------------------------------------
-      // REDIRECT ACCORDING TO TOGGLE
+      // DEVICE INFORMATION
+      // -----------------------------------------
+
+      const userAgent = req.headers["user-agent"] || "";
+
+      const ip =
+        req.headers["x-forwarded-for"]?.split(",")[0] ||
+        req.socket.remoteAddress ||
+        "";
+
+      let device = "Unknown";
+      let os = "Unknown";
+
+      if (/android/i.test(userAgent)) {
+        os = "Android";
+      } else if (/iphone|ipad/i.test(userAgent)) {
+        os = "iOS";
+      } else if (/windows/i.test(userAgent)) {
+        os = "Windows";
+      } else if (/mac/i.test(userAgent)) {
+        os = "Mac";
+      }
+
+      if (/chrome/i.test(userAgent) && !/edge|opr/i.test(userAgent)) {
+        device = "Chrome";
+      } else if (/firefox/i.test(userAgent)) {
+        device = "Firefox";
+      } else if (/safari/i.test(userAgent) && !/chrome/i.test(userAgent)) {
+        device = "Safari";
+      }
+
+      // -----------------------------------------
+      // CREATE / UPDATE USER SESSION
+      // -----------------------------------------
+
+      const userSession = await UserSession.findOneAndUpdate(
+        {
+          userId: req.user._id,
+          userAgent,
+        },
+        {
+          device,
+          os,
+          ip,
+          userAgent,
+          isActive: true,
+          lastActiveAt: new Date(),
+        },
+        {
+          upsert: true,
+          new: true,
+        }
+      );
+
+      // -----------------------------------------
+      // CREATE JWT
+      // -----------------------------------------
+
+      const token = jwt.sign(
+        {
+          userId: req.user._id.toString(),
+          role: req.user.role,
+          sessionId: userSession._id.toString(),
+        },
+        process.env.JWT_SECRET,
+        {
+          expiresIn: "7d",
+        }
+      );
+
+      console.log("JWT CREATED");
+      console.log("JWT ROLE:", req.user.role);
+
+      // -----------------------------------------
+      // SET AUTH COOKIE
+      // -----------------------------------------
+
+      res.cookie("token", token, {
+        httpOnly: true,
+
+        // IMPORTANT for production
+        secure: process.env.NODE_ENV === "production",
+
+        // Frontend = inputify.io
+        // Backend = api.inputify.io
+        domain:
+          process.env.NODE_ENV === "production"
+            ? ".inputify.io"
+            : undefined,
+
+        sameSite: "lax",
+
+        path: "/",
+
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      console.log("AUTH COOKIE SET");
+      console.log("REDIRECT ROLE:", req.user.role);
+
+      // -----------------------------------------
+      // REDIRECT TO FRONTEND
       // -----------------------------------------
 
       return res.redirect(
-        `${process.env.FRONTEND_URL}/oauth-success?role=${selectedRole}`
+        `${process.env.FRONTEND_URL}/oauth-success?role=${req.user.role}`
       );
 
     } catch (error) {
