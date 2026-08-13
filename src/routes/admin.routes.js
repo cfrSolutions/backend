@@ -325,7 +325,7 @@ router.put("/project/:id/reject", authMiddleware, async (req, res) => {
   }
 });
 
-router.get("/project/:id", authMiddleware, async (req, res) => {
+router.get("/project/:id", authMiddleware, adminOnly, async (req, res) => {
   const project = await Project.findById(req.params.id)
     .populate("business", "email name");
 
@@ -349,7 +349,7 @@ router.get("/projects", authMiddleware, async (req, res) => {
   }
 });
 
-router.put("/project/:id/move-testing", async(req, res)=>{
+router.put("/project/:id/move-testing", authMiddleware, async(req, res)=>{
   try{
     const project = await Project.findById(req.params.id);
     if(!project) return res.status(404).send("Project not found");
@@ -363,7 +363,7 @@ router.put("/project/:id/move-testing", async(req, res)=>{
   }
 });
 
-router.put("/project/:id/go-live", async (req, res)=>{
+router.put("/project/:id/go-live", authMiddleware, async (req, res)=>{
   try{
     const project = await Project.findById(req.params.id);
     if(!project) return res.status(404).send("Project not found");
@@ -440,7 +440,7 @@ router.put(
   }
 );
 
-router.put("/project/:id/start-negotiation", async (req, res) => {
+router.put("/project/:id/start-negotiation", authMiddleware, async (req, res) => {
 
   const project = await Project.findById(req.params.id);
 
