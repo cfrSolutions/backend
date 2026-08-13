@@ -75,10 +75,10 @@ router.get("/google", (req, res, next) => {
 
   const ref = req.query.ref || "";
 
-  console.log("=================================");
-  console.log("GOOGLE LOGIN");
-  console.log("Query role:", req.query.role);
-  console.log("Selected role:", role);
+  // console.log("=================================");
+  // console.log("GOOGLE LOGIN");
+  // console.log("Query role:", req.query.role);
+  // console.log("Selected role:", role);
 
   // Put role + referral into OAuth state
   const state = Buffer.from(
@@ -88,7 +88,7 @@ router.get("/google", (req, res, next) => {
     })
   ).toString("base64url");
 
-  console.log("OAuth state:", state);
+  // console.log("OAuth state:", state);
 
   passport.authenticate("google", {
     scope: ["profile", "email"],
@@ -106,10 +106,10 @@ router.get(
   }),
   async (req, res) => {
     try {
-      console.log("=================================");
-      console.log("GOOGLE CALLBACK");
+      // console.log("=================================");
+      // console.log("GOOGLE CALLBACK");
 
-      console.log("OAuth state:", req.query.state);
+      // console.log("OAuth state:", req.query.state);
 
       // =====================================================
       // 1. GET SELECTED ROLE FROM OAUTH STATE
@@ -139,7 +139,7 @@ router.get(
         }
       }
 
-      console.log("SELECTED ROLE FROM LOGIN:", selectedRole);
+      // console.log("SELECTED ROLE FROM LOGIN:", selectedRole);
 
       // =====================================================
       // 2. IMPORTANT:
@@ -148,7 +148,7 @@ router.get(
 
       const databaseRole = req.user.role;
 
-      console.log("DATABASE ROLE:", databaseRole);
+      // console.log("DATABASE ROLE:", databaseRole);
 
       let finalRole;
 
@@ -162,13 +162,13 @@ router.get(
 
         finalRole = databaseRole;
 
-        console.log(
-          "ADMINISTRATOR ACCOUNT DETECTED."
-        );
-        console.log(
-          "Keeping original role:",
-          finalRole
-        );
+        // console.log(
+        //   "ADMINISTRATOR ACCOUNT DETECTED."
+        // );
+        // console.log(
+        //   "Keeping original role:",
+        //   finalRole
+        // );
       } else {
         // ---------------------------------------------
         // NORMAL USER / BUSINESS ACCOUNT
@@ -181,13 +181,13 @@ router.get(
           await req.user.save();
         }
 
-        console.log(
-          "USER/BUSINESS ROLE UPDATED TO:",
-          finalRole
-        );
+        // console.log(
+        //   "USER/BUSINESS ROLE UPDATED TO:",
+        //   finalRole
+        // );
       }
 
-      console.log("FINAL ROLE:", finalRole);
+      // console.log("FINAL ROLE:", finalRole);
 
       // =====================================================
       // 3. DEVICE INFORMATION
@@ -260,8 +260,8 @@ router.get(
         }
       );
 
-      console.log("JWT CREATED");
-      console.log("JWT ROLE:", finalRole);
+      // console.log("JWT CREATED");
+      // console.log("JWT ROLE:", finalRole);
 
       // =====================================================
       // 6. SET COOKIE
@@ -284,8 +284,8 @@ router.get(
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
-      console.log("AUTH COOKIE SET");
-      console.log("REDIRECT ROLE:", finalRole);
+      // console.log("AUTH COOKIE SET");
+      // console.log("REDIRECT ROLE:", finalRole);
 
       // =====================================================
       // 7. REDIRECT TO OAUTH SUCCESS
