@@ -536,7 +536,7 @@ export const registerUser = async (req, res) => {
 };
 
   try {
-    const { name, email, password, referralCode, role, captcha } = req.body;
+    const { name, email, password, referralCode, captcha } = req.body;
     if (role === "USER") {
       if (!captcha) {
         return res.status(400).json({
@@ -596,7 +596,7 @@ const newUser = new User({
       name,
       email,
       password: hashedPassword,
-      role: role || "USER",
+      role: "USER",
       walletNumber: generateWalletNumber(),
       referralCode: generateReferralCode(name),
       isEmailVerified: true,
