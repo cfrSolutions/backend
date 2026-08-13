@@ -61,7 +61,9 @@ app.use(helmet({
 // );
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5000,
+  max: 1000,
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 app.use((req, res, next) => {
@@ -80,6 +82,8 @@ app.use(
   rateLimit({
     windowMs: 10 * 60 * 1000,
     max: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
   })
 );
 
@@ -89,6 +93,8 @@ app.use(
   rateLimit({
     windowMs: 10 * 60 * 1000,
     max: 3,
+    standardHeaders: true,
+    legacyHeaders: false,
   })
 );
 
@@ -113,11 +119,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(
   session({
-    secret: process.env.JWT_SECRET,
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false // true only in HTTPS production
+      secure: true,
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     }
   })
 );
