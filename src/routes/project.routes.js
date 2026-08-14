@@ -1,6 +1,8 @@
+// Business side
 import express from "express";
 import Project from "../models/Project.model.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
+import { businessOnly } from "../middleware/business.middleware.js";
 import multer from "multer";
 import cloudinary from "../config/cloudinary.js";
 import crypto from "crypto";
@@ -38,7 +40,7 @@ const router = express.Router();
 // });
 
 
-router.post("/create", authMiddleware, async (req, res) => {
+router.post("/create", authMiddleware, businessOnly, async (req, res) => {
   const userId = req.user._id || req.user.id || req.user.userId;
 
   try {
