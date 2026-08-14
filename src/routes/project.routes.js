@@ -9,106 +9,143 @@ import crypto from "crypto";
 import CPI from "../models/CPI.model.js";
 
 const router = express.Router();
-// router.post("/create", authMiddleware, async(req, res)=>{
-//       // console.log("🚀🚀🚀 NEW CREATE PROJECT CODE RUNNING 🚀🚀🚀");
-//       // console.log("USER 👉", req.user);
-//       const userId = req.user._id || req.user.id || req.user.userId;
 
-// if (!userId) {
-//   return res.status(401).json({ message: "User not found in token" });
-// }
-//     try{
-//         const surveyId = "SURV-" + Date.now(); 
-//         const project = await Project.create({
-//             ...req.body,
-//             surveyId,
-//   totalResponses: 0,
-//   disqualified: 0,
-//   quotaFull: 0,
-//             business: userId,
-//         });
-// //          console.log("FINAL DATA:", {
-// //   ...req.body,
-// //   surveyId,
-// // });
-//         res.json(project);
-       
-//     }
-//     catch(err){
-//         res.status(500).json({message: err.message});
-//     }
-// });
+// router.post("/create", authMiddleware, businessOnly, async (req, res) => {
+//   const userId = req.user._id || req.user.id || req.user.userId;
 
-
-router.post("/create", authMiddleware, businessOnly, async (req, res) => {
-  const userId = req.user._id || req.user.id || req.user.userId;
-
-  try {
-    const generateToken = () => crypto.randomBytes(24).toString("hex");
+//   try {
+//     const generateToken = () => crypto.randomBytes(24).toString("hex");
     
-    const project = await Project.create({
-      ...req.body,
-       name: req.body.name,
+//     const project = await Project.create({
+//       ...req.body,
+//        name: req.body.name,
 
-      description:
-        req.body.description || "",
+//       description:
+//         req.body.description || "",
 
-      business: userId,
-      status: "DRAFT",
-      targetGroups: [],
-      targetCompletes: req.body.targetCompletes,
-      completes: 0, 
-      surveyId: "SURV-" + Date.now(),
+//       business: userId,
+//       status: "DRAFT",
+//       targetGroups: [],
+//       targetCompletes: req.body.targetCompletes,
+//       completes: 0, 
+//       surveyId: "SURV-" + Date.now(),
 
-      redirects: {
-        start: { token: generateToken() },
-        complete: { token: generateToken() },
-        disqualified: { token: generateToken() },
-        quotaFull: { token: generateToken() },
-      },
+//       redirects: {
+//         start: { token: generateToken() },
+//         complete: { token: generateToken() },
+//         disqualified: { token: generateToken() },
+//         quotaFull: { token: generateToken() },
+//       },
 
-      disqualified: 0,
-      quotaFull: 0,
-      totalResponses: 0,
-      business: userId,
-    });
+//       disqualified: 0,
+//       quotaFull: 0,
+//       totalResponses: 0,
+//       business: userId,
+//     });
 
-    res.json(project);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// router.post("/create", authMiddleware, async(req, res)=>{
-//       // console.log("🚀🚀🚀 NEW CREATE PROJECT CODE RUNNING 🚀🚀🚀");
-//       // console.log("USER 👉", req.user);
-//       const userId = req.user._id || req.user.id || req.user.userId;
-
-// if (!userId) {
-//   return res.status(401).json({ message: "User not found in token" });
-// }
-//     try{
-//         const surveyId = "SURV-" + Date.now(); 
-//         const project = await Project.create({
-//             ...req.body,
-//             surveyId,
-//   totalResponses: 0,
-//   disqualified: 0,
-//   quotaFull: 0,
-//             business: userId,
-//         });
-// //          console.log("FINAL DATA:", {
-// //   ...req.body,
-// //   surveyId,
-// // });
-//         res.json(project);
-       
-//     }
-//     catch(err){
-//         res.status(500).json({message: err.message});
-//     }
+//     res.json(project);
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
 // });
 
+router.post(
+  "/create",
+  authMiddleware,
+  businessOnly,
+  async (req, res) => {
+    try {
+      const userId =
+        req.user._id ||
+        req.user.id ||
+        req.user.userId;
+
+      if (!userId) {
+        return res.status(401).json({
+          message: "User not found in authentication token",
+        });
+      }
+
+      const generateToken = () =>
+        crypto.randomBytes(24).toString("hex");
+
+      const {
+        name,
+        description,
+        sector,
+        market,
+        targetCompletes,
+        ageFrom,
+        ageTo,
+        gender,
+        loi,
+        incidence,
+        cpi,
+        budget,
+        timeline,
+        openEnded,
+        devices,
+      } = req.body;
+
+      const project = await Project.create({
+        name,
+        description: description || "",
+
+        sector,
+        market,
+        targetCompletes,
+        ageFrom,
+        ageTo,
+        gender,
+        loi,
+        incidence,
+        cpi,
+        budget,
+        timeline,
+        openEnded,
+        devices,
+
+        // 🔐 ALWAYS from authenticated user
+        business: userId,
+
+        // 🔐 SERVER CONTROLLED
+        status: "DRAFT",
+        targetGroups: [],
+        completes: 0,
+        disqualified: 0,
+        quotaFull: 0,
+        totalResponses: 0,
+
+        surveyId: "SURV-" + Date.now(),
+
+        // 🔐 SERVER GENERATED
+        redirects: {
+          start: {
+            token: generateToken(),
+          },
+          complete: {
+            token: generateToken(),
+          },
+          disqualified: {
+            token: generateToken(),
+          },
+          quotaFull: {
+            token: generateToken(),
+          },
+        },
+      });
+
+      return res.status(201).json(project);
+
+    } catch (err) {
+      console.error("CREATE PROJECT ERROR:", err);
+
+      return res.status(500).json({
+        message: "Failed to create project",
+      });
+    }
+  }
+);
 
 router.get("/", authMiddleware, async (req, res) => {
   try {
