@@ -66,7 +66,11 @@ router.post(
   authMiddleware,
   logout
 );
-
+router.delete(
+  "/delete-account",
+  authMiddleware,
+  deleteAccount
+);
 router.get("/google", (req, res, next) => {
   const role =
     req.query.role === "BUSINESS"
