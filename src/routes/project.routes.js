@@ -147,17 +147,40 @@ router.post(
   }
 );
 
-router.get("/", authMiddleware, async (req, res) => {
-  try {
-    const userId = req.user._id || req.user.id || req.user.userId;
-    const projects = await Project.find({ business: userId });
+router.get(
+  "/",
+  authMiddleware,
+  businessOnly,
+  async (req, res) => {
+    try {
+      const userId =
+        req.user._id ||
+        req.user.id ||
+        req.user.userId;
 
-    res.json(projects);
-  } catch (err) {
-    // console.log("FETCH PROJECT ERROR:", err);
-    res.status(500).json({ message: err.message });
+      if (!userId) {
+        return res.status(401).json({
+          message: "User not found in authentication token",
+        });
+      }
+
+      const projects = await Project.find({
+        business: userId,
+      }).sort({
+        createdAt: -1,
+      });
+
+      return res.json(projects);
+
+    } catch (err) {
+      console.error("GET BUSINESS PROJECTS ERROR:", err);
+
+      return res.status(500).json({
+        message: "Failed to fetch projects",
+      });
+    }
   }
-});
+);
 
 router.get("/check-cpi", async (req, res) => {
 
@@ -179,7 +202,7 @@ router.get("/:id", authMiddleware, async (req, res) => {
     // if (project.business.toString() !== req.userId.toString()) {
     //   return res.status(403).json({ message: "Unauthorized" });
     // }
-    console.log("ADMIN PROJECT:");
+    // console.log("ADMIN PROJECT:");
     console.log(JSON.stringify(project, null, 2));
     res.json(project);
   } catch (err) {
