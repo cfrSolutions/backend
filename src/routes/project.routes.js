@@ -3,7 +3,7 @@ import express from "express";
 import Project from "../models/Project.model.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { businessOnly } from "../middleware/business.middleware.js";
-import { adminOnly } from "../middleware/admin.middleware.js";
+import adminOnly from "../middleware/admin.middleware.js";
 import multer from "multer";
 import cloudinary from "../config/cloudinary.js";
 import crypto from "crypto";
