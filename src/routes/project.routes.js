@@ -182,7 +182,7 @@ router.get(
   }
 );
 
-router.get("/check-cpi", async (req, res) => {
+router.get("/check-cpi", authMiddleware, businessOnly, async (req, res) => {
 
   const data = await CPI.find().limit(5);
 
@@ -251,7 +251,7 @@ router.get(
   }
 );
 
-router.put("/:id/survey-links", authMiddleware, async(req, res)=>{
+router.put("/:id/survey-links", authMiddleware, businessOnly, async(req, res)=>{
   try{
     const userId = req.user._id || req.user.id || req.user.userId;
     const project = await Project.findOne({
@@ -264,6 +264,11 @@ router.put("/:id/survey-links", authMiddleware, async(req, res)=>{
     }
     
     const {test, live} = req.body;
+    if (!test || !live) {
+  return res.status(400).json({
+    message: "Test and live survey links are required",
+  });
+}
     project.surveyLinks = {test, live};
     project.status = "TESTING";
     await project.save();
@@ -281,6 +286,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.put(
   "/:id/upload-keys",
   authMiddleware,
+  businessOnly,
   upload.single("file"),
   async (req, res) => {
     try {
@@ -329,14 +335,15 @@ router.put(
 );
 
 // ADMIN → GO LIVE
-router.put("/admin/project/:id/go-live", async (req, res) => {
+router.put("/admin/project/:id/go-live", authMiddleware, adminOnly, async (req, res) => {
   try {
-    const userId = req.user._id || req.user.id || req.user.userId;
-    // const project = await Project.findById(req.params.id);
-    const project = await Project.findOne({
-        _id: req.params.id,
-        business: userId,
-      });
+    // const userId = req.user._id || req.user.id || req.user.userId;
+    const project = await Project.findById(req.params.id);
+    if (!project) {
+  return res.status(404).json({
+    message: "Project not found",
+  });
+}
     project.status = "LIVE";
 
     await project.save();
@@ -348,7 +355,7 @@ router.put("/admin/project/:id/go-live", async (req, res) => {
 });
 
 router.post(
-  "/calculate-cpi",
+  "/calculate-cpi", authMiddleware, businessOnly,
   async (req, res) => {
 
     try {
@@ -409,6 +416,7 @@ router.post(
 router.post(
   "/:projectId/target-groups",
   authMiddleware,
+  businessOnly,
   async (req, res) => {
     const userId = req.user._id || req.user.id || req.user.userId;
 
@@ -421,6 +429,12 @@ router.post(
         _id: req.params.projectId,
         business: userId,
       });
+
+      if (!project) {
+  return res.status(404).json({
+    message: "Project not found",
+  });
+}
 
     project.targetGroups.push({
        ...req.body,
@@ -444,7 +458,7 @@ router.post(
 
 router.put(
   "/:projectId/target-group/:targetGroupId",
-  authMiddleware,
+  authMiddleware, businessOnly,
   async (req, res) => {
 
     console.log("BODY:", req.body);
@@ -458,12 +472,20 @@ router.put(
         _id: req.params.projectId,
         business: userId,
       });
-
+      if (!project) {
+  return res.status(404).json({
+    message: "Project not found",
+  });
+}
     const group =
       project.targetGroups.id(
         req.params.targetGroupId
       );
-
+if (!group) {
+  return res.status(404).json({
+    message: "Target group not found",
+  });
+}
     Object.assign(group, req.body);
 
     await project.save();
@@ -474,7 +496,7 @@ router.put(
 
 router.get(
   "/:projectId/target-group/:targetGroupId",
-  authMiddleware,
+  authMiddleware, businessOnly,
   async (req, res) => {
 
     // const project =
@@ -489,7 +511,11 @@ router.get(
         business: userId,
       });
     
-
+      if (!project) {
+  return res.status(404).json({
+    message: "Project not found",
+  });
+}
     const group =
       project.targetGroups.id(
         req.params.targetGroupId
