@@ -134,7 +134,29 @@ router.post(
         },
       });
 
-      return res.status(201).json(project);
+      return res.status(201).json({
+  message: "Project created successfully",
+  project: {
+    _id: project._id,
+    name: project.name,
+    description: project.description,
+    sector: project.sector,
+    market: project.market,
+    targetCompletes: project.targetCompletes,
+    ageFrom: project.ageFrom,
+    ageTo: project.ageTo,
+    gender: project.gender,
+    loi: project.loi,
+    incidence: project.incidence,
+    budget: project.budget,
+    timeline: project.timeline,
+    openEnded: project.openEnded,
+    devices: project.devices,
+    status: project.status,
+    surveyId: project.surveyId,
+    createdAt: project.createdAt,
+  },
+});
 
     } catch (err) {
       console.error("CREATE PROJECT ERROR:", err);
