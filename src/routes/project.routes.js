@@ -404,183 +404,60 @@ router.put("/admin/project/:id/go-live", authMiddleware, adminOnly, async (req, 
   }
 });
 
-// router.post(
-//   "/calculate-cpi", authMiddleware, businessOnly,
-//   async (req, res) => {
-
-//     try {
-
-//       const {
-//         country,
-//         ir,
-//         loi,
-//       } = req.body;
-
-//      const rates = await CPI.find({
-//   country: {
-//     $regex: new RegExp(
-//       `^${country.trim()}$`,
-//       "i"
-//     ),
-//   },
-// });
-
-//       if (!rates.length) {
-//         return res.status(404).json({
-//           message: "No CPI found",
-//         });
-//       }
-
-//       let bestRate = null;
-//       let bestScore = Infinity;
-
-//       rates.forEach(rate => {
-
-//         const score =
-//           Math.abs(rate.ir - ir) +
-//           Math.abs(rate.loi - loi);
-
-//         if(score < bestScore){
-
-//           bestScore = score;
-//           bestRate = rate;
-
-//         }
-//       });
-
-//       res.json({
-//         cpi: bestRate.cpi,
-//       });
-
-//     } catch(err){
-
-//       console.log(err);
-
-//       res.status(500).json({
-//         message: err.message,
-//       });
-//     }
-//   }
-// );
-
-
 router.post(
-  "/calculate-cpi",
-  authMiddleware,
-  businessOnly,
+  "/calculate-cpi", authMiddleware, businessOnly,
   async (req, res) => {
+
     try {
-      const { country, ir, loi } = req.body;
 
-      // -----------------------------
-      // 1. Validate country
-      // -----------------------------
-      if (
-        typeof country !== "string" ||
-        !country.trim()
-      ) {
-        return res.status(400).json({
-          message: "Country is required",
-        });
-      }
+      const {
+        country,
+        ir,
+        loi,
+      } = req.body;
 
-      // -----------------------------
-      // 2. Validate IR
-      // -----------------------------
-      const numericIr = Number(ir);
-
-      if (
-        !Number.isFinite(numericIr) ||
-        numericIr < 0 ||
-        numericIr > 100
-      ) {
-        return res.status(400).json({
-          message: "Invalid incidence rate",
-        });
-      }
-
-      // -----------------------------
-      // 3. Validate LOI
-      // -----------------------------
-      const numericLoi = Number(loi);
-
-      if (
-        !Number.isFinite(numericLoi) ||
-        numericLoi <= 0
-      ) {
-        return res.status(400).json({
-          message: "Invalid LOI",
-        });
-      }
-
-      // -----------------------------
-      // 4. Escape country for regex
-      // -----------------------------
-      const escapedCountry = country
-        .trim()
-        .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-      // -----------------------------
-      // 5. Get CPI rates for country
-      // -----------------------------
-      const rates = await CPI.find({
-        country: {
-          $regex: `^${escapedCountry}$`,
-          $options: "i",
-        },
-      }).select("country ir loi cpi");
+     const rates = await CPI.find({
+  country: {
+    $regex: new RegExp(
+      `^${country.trim()}$`,
+      "i"
+    ),
+  },
+});
 
       if (!rates.length) {
         return res.status(404).json({
-          message: "No CPI found for this country",
+          message: "No CPI found",
         });
       }
 
-      // -----------------------------
-      // 6. Find closest CPI
-      // -----------------------------
       let bestRate = null;
       let bestScore = Infinity;
 
-      for (const rate of rates) {
-        const rateIr = Number(rate.ir);
-        const rateLoi = Number(rate.loi);
-
-        if (
-          !Number.isFinite(rateIr) ||
-          !Number.isFinite(rateLoi)
-        ) {
-          continue;
-        }
+      rates.forEach(rate => {
 
         const score =
-          Math.abs(rateIr - numericIr) +
-          Math.abs(rateLoi - numericLoi);
+          Math.abs(rate.ir - ir) +
+          Math.abs(rate.loi - loi);
 
-        if (score < bestScore) {
+        if(score < bestScore){
+
           bestScore = score;
           bestRate = rate;
+
         }
-      }
+      });
 
-      if (!bestRate) {
-        return res.status(404).json({
-          message: "No valid CPI rate found",
-        });
-      }
-
-      // -----------------------------
-      // 7. Return only what frontend needs
-      // -----------------------------
-      return res.json({
+      res.json({
         cpi: bestRate.cpi,
       });
 
-    } catch (err) {
-      console.error("CALCULATE CPI ERROR:", err);
+    } catch(err){
 
-      return res.status(500).json({
-        message: "Failed to calculate CPI",
+      console.log(err);
+
+      res.status(500).json({
+        message: err.message,
       });
     }
   }
