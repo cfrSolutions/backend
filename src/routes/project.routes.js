@@ -232,6 +232,46 @@ router.get(
 // });
 
 
+// router.get(
+//   "/:id",
+//   authMiddleware,
+//   businessOnly,
+//   async (req, res) => {
+//     try {
+//       const userId =
+//         req.user._id ||
+//         req.user.id ||
+//         req.user.userId;
+
+//       if (!userId) {
+//         return res.status(401).json({
+//           message: "User not found in authentication token",
+//         });
+//       }
+
+//       const project = await Project.findOne({
+//         _id: req.params.id,
+//         business: userId,
+//       });
+
+//       if (!project) {
+//         return res.status(404).json({
+//           message: "Project not found",
+//         });
+//       }
+
+//       return res.json(project);
+
+//     } catch (err) {
+//       console.error("GET PROJECT ERROR:", err);
+
+//       return res.status(500).json({
+//         message: "Failed to fetch project",
+//       });
+//     }
+//   }
+// );
+
 router.get(
   "/:id",
   authMiddleware,
@@ -252,7 +292,9 @@ router.get(
       const project = await Project.findOne({
         _id: req.params.id,
         business: userId,
-      });
+      }).select(
+        "_id name description sector market targetCompletes ageFrom ageTo gender loi incidence budget timeline openEnded devices status surveyId surveyLinks targetGroups completes disqualified quotaFull totalResponses createdAt updatedAt"
+      );
 
       if (!project) {
         return res.status(404).json({
