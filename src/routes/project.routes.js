@@ -190,36 +190,13 @@ router.get(
       // }).sort({
       //   createdAt: -1,
       // });
-       const projects = await Project.find(
-        { _id: req.params.id, business: userId },
-        {
-          // Public/business UI fields
-          name: 1,
-          description: 1,
-          sector: 1,
-          market: 1,
-          targetCompletes: 1,
-          completes: 1,
-          ageFrom: 1,
-          ageTo: 1,
-          gender: 1,
-          loi: 1,
-          incidence: 1,
-          budget: 1,
-          timeline: 1,
-          openEnded: 1,
-          devices: 1,
-          status: 1,
-          surveyId: 1,
-          targetGroups: 1,
-          surveyLinks: 1,
-          createdAt: 1,
-          updatedAt: 1,
-        }
-      ).sort({
-        createdAt: -1,
-      });
 
+      const projects = await Project.find({
+  business: userId,
+})
+  .select("-redirects -clientKeysFile")
+  .sort({ createdAt: -1 });
+  
       return res.json(projects);
 
     } catch (err) {
