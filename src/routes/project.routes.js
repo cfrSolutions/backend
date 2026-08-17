@@ -282,7 +282,9 @@ router.put("/:id/survey-links", authMiddleware, businessOnly, async(req, res)=>{
 
 
 
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({ storage: multer.memoryStorage(), limits: {
+    fileSize: 5 * 1024 * 1024
+  } });
 
 router.put(
   "/:id/upload-keys",
@@ -296,7 +298,7 @@ router.put(
       const project = await Project.findOne({
         _id: req.params.id,
         business: userId,
-      });
+      }).select("-clientKeysFile");
 
       if (!project) {
         return res.status(403).json({ message: "Unauthorized" });
@@ -308,21 +310,24 @@ router.put(
       const stream = cloudinary.uploader.upload_stream(
         {
           resource_type: "raw",
+          type: "authenticated",
           folder: "client-keys",
         },
         async (error, result) => {
           if (error) {
             console.log("CLOUDINARY ERROR:", error);
-            return res.status(500).json({ message: error.message });
+            return res.status(500).json({
+              message: "File upload failed",
+            });
           }
 
-          project.clientKeysFile = result.secure_url;
+          // project.clientKeysFile = result.secure_url;
+          project.clientKeysFile = result.public_id;
           await project.save();
 
-          res.json({
-            message: "Uploaded",
-            url: result.secure_url,
-          });
+         res.json({
+  message: "Uploaded successfully",
+});
         }
       );
 
@@ -330,10 +335,54 @@ router.put(
 
     } catch (err) {
       console.log("UPLOAD ERROR:", err);
-      res.status(500).json({ message: err.message });
+       return res.status(500).json({
+        message: "Upload failed",
+      });
     }
   }
 );
+// router.get(
+//   "/:id/client-keys",
+//   authMiddleware,
+//   businessOnly,
+//   async (req, res) => {
+//     try {
+//       const userId =
+//         req.user._id ||
+//         req.user.id ||
+//         req.user.userId;
+
+//       const project = await Project.findOne({
+//         _id: req.params.id,
+//         business: userId,
+//       });
+
+//       if (!project) {
+//         return res.status(403).json({
+//           message: "Unauthorized",
+//         });
+//       }
+
+//       if (!project.clientKeysFile) {
+//         return res.status(404).json({
+//           message: "Client keys file not found",
+//         });
+//       }
+
+//       // Generate a temporary authenticated Cloudinary URL here
+//       // instead of exposing a permanent public URL.
+
+//       // return temporary URL...
+      
+//     } catch (err) {
+//       console.error("GET CLIENT KEYS ERROR:", err);
+
+//       return res.status(500).json({
+//         message: "Failed to access client keys",
+//       });
+//     }
+//   }
+// );
 
 // ADMIN → GO LIVE
 router.put("/admin/project/:id/go-live", authMiddleware, adminOnly, async (req, res) => {
@@ -351,7 +400,9 @@ router.put("/admin/project/:id/go-live", authMiddleware, adminOnly, async (req, 
 
     res.json({ message: "Project moved to LIVE" });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    return res.status(500).json({
+        message: "Failed to move project live",
+      });
   }
 });
 
@@ -461,8 +512,19 @@ router.put(
   "/:projectId/target-group/:targetGroupId",
   authMiddleware, businessOnly,
   async (req, res) => {
-
-    console.log("BODY:", req.body);
+    const {
+  market,
+  language,
+  targetCompletes,
+  loi,
+  incidence,
+  ageFrom,
+  ageTo,
+  gender,
+  devices,
+  advancedCalendar
+} = req.body;
+    // console.log("BODY:", req.body);
 
     // const project = await Project.findById(
     //   req.params.projectId
@@ -487,7 +549,19 @@ if (!group) {
     message: "Target group not found",
   });
 }
-    Object.assign(group, req.body);
+    // Object.assign(group, req.body);
+    Object.assign(group, {
+  market,
+  language,
+  targetCompletes,
+  loi,
+  incidence,
+  ageFrom,
+  ageTo,
+  gender,
+  devices,
+  advancedCalendar
+});
 
     await project.save();
 
