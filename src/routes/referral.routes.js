@@ -53,6 +53,13 @@
 // export default router;
 
 
+import express from "express";
+import mongoose from "mongoose";
+import { authMiddleware } from "../middleware/auth.middleware.js";
+import User from "../models/User.model.js";
+import WalletTransaction from "../models/WalletTransaction.model.js";
+const router = express.Router();
+
 router.get("/stats", authMiddleware, async (req, res) => {
   try {
     // Get authenticated user ID
