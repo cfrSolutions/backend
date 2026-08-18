@@ -152,9 +152,9 @@ router.get("/", async (req, res) => {
     console.log("QUERY:", req.query);
     console.log("=================================");
 
-    // =========================================
+    // =====================================================
     // 1. GET RID
-    // =========================================
+    // =====================================================
 
     const rid = String(
       req.query.rid ||
@@ -172,44 +172,77 @@ router.get("/", async (req, res) => {
       });
     }
 
-    // =========================================
+    // =====================================================
     // 2. GET STATUS
-    // =========================================
+    // =====================================================
+    //
+    // Inputify is sending:
+    //
+    // st=com  -> COMPLETED
+    // st=dq   -> SCREENOUT
+    // st=qf   -> QUOTA_FULL
+    //
+    // We ALSO support your old:
+    //
+    // status=COMPLETED
+    // status=SCREENOUT
+    // status=QUOTA_FULL
+    //
+    // =====================================================
 
-    const status = String(
+    const rawStatus = String(
       req.query.status ||
-      req.query.STATUS ||
       req.query.st ||
       ""
     )
       .trim()
-      .toUpperCase();
+      .toLowerCase();
 
-    const allowedStatuses = [
-      "COMPLETED",
-      "SCREENOUT",
-      "QUOTA_FULL",
-    ];
+    let status;
 
-    if (!allowedStatuses.includes(status)) {
-      console.error(
-        "Invalid postback status:",
-        status
-      );
+    switch (rawStatus) {
+      case "com":
+      case "complete":
+      case "completed":
+        status = "COMPLETED";
+        break;
 
-      return res.status(400).json({
-        success: false,
-        message: "Invalid status",
-      });
+      case "dq":
+      case "screenout":
+      case "disqualified":
+        status = "SCREENOUT";
+        break;
+
+      case "qf":
+      case "quota":
+      case "quota_full":
+      case "quotafull":
+        status = "QUOTA_FULL";
+        break;
+
+      default:
+        return res.status(400).json({
+          success: false,
+          message: "Invalid postback status",
+        });
     }
 
-    // =========================================
-    // 3. GET TOKEN
-    // =========================================
+    console.log("RID:", rid);
+    console.log("RAW STATUS:", rawStatus);
+    console.log("NORMALIZED STATUS:", status);
+
+    // =====================================================
+    // 3. GET POSTBACK TOKEN
+    // =====================================================
 
     const tk = String(
       req.query.tk || ""
     ).trim();
+
+    console.log(
+      "TK RECEIVED:",
+      tk ? "YES" : "NO"
+    );
 
     if (!tk) {
       return res.status(401).json({
@@ -218,25 +251,14 @@ router.get("/", async (req, res) => {
       });
     }
 
-    console.log("RID:", rid);
-    console.log("STATUS:", status);
-    console.log("TOKEN RECEIVED:", !!tk);
-
-    // =========================================
+    // =====================================================
     // 4. FIND RESPONSE
-    // =========================================
+    // =====================================================
 
     const response =
-      await SurveyResponse.findOne({
-        rid,
-      });
+      await SurveyResponse.findOne({ rid });
 
     if (!response) {
-      console.error(
-        "RID NOT FOUND:",
-        rid
-      );
-
       return res.status(404).json({
         success: false,
         message: "RID not found",
@@ -244,7 +266,7 @@ router.get("/", async (req, res) => {
     }
 
     console.log(
-      "Response:",
+      "Response found:",
       response._id.toString()
     );
 
@@ -253,14 +275,12 @@ router.get("/", async (req, res) => {
       response.status
     );
 
-    // =========================================
+    // =====================================================
     // 5. FIND SURVEY
-    // =========================================
+    // =====================================================
 
     const survey =
-      await Survey.findById(
-        response.survey
-      );
+      await Survey.findById(response.survey);
 
     if (!survey) {
       return res.status(404).json({
@@ -269,25 +289,27 @@ router.get("/", async (req, res) => {
       });
     }
 
-    // =========================================
-    // 6. SELECT EXPECTED TOKEN
-    // =========================================
+    // =====================================================
+    // 6. GET EXPECTED TOKEN
+    // =====================================================
 
     let expectedToken = "";
 
-    if (status === "COMPLETED") {
-      expectedToken =
-        response.expectedCompleteTk;
-    }
+    switch (status) {
+      case "COMPLETED":
+        expectedToken =
+          response.expectedCompleteTk;
+        break;
 
-    if (status === "SCREENOUT") {
-      expectedToken =
-        response.expectedDqTk;
-    }
+      case "SCREENOUT":
+        expectedToken =
+          response.expectedDqTk;
+        break;
 
-    if (status === "QUOTA_FULL") {
-      expectedToken =
-        response.expectedQuotaTk;
+      case "QUOTA_FULL":
+        expectedToken =
+          response.expectedQuotaTk;
+        break;
     }
 
     if (!expectedToken) {
@@ -303,9 +325,9 @@ router.get("/", async (req, res) => {
       });
     }
 
-    // =========================================
+    // =====================================================
     // 7. CONSTANT-TIME TOKEN CHECK
-    // =========================================
+    // =====================================================
 
     const providedBuffer =
       Buffer.from(tk, "utf8");
@@ -326,169 +348,175 @@ router.get("/", async (req, res) => {
       });
     }
 
-    if (
-      !crypto.timingSafeEqual(
+    const tokenValid =
+      crypto.timingSafeEqual(
         providedBuffer,
         expectedBuffer
-      )
-    ) {
+      );
+
+    if (!tokenValid) {
       return res.status(403).json({
         success: false,
         message: "Invalid postback token",
       });
     }
 
-    console.log(
-      "POSTBACK TOKEN VALID"
-    );
+    console.log("POSTBACK TOKEN VERIFIED");
 
-    // =========================================
-    // 8. ALREADY PROCESSED
-    // =========================================
+    // =====================================================
+    // 8. HANDLE DUPLICATE CALLBACK
+    // =====================================================
 
     if (response.status !== "STARTED") {
 
+      // Same callback received again
       if (response.status === status) {
+        console.log(
+          "Duplicate postback:",
+          status
+        );
+
         return res.json({
           success: true,
           message: "Already processed",
+        });
+      }
+
+      // Completed response can never become DQ/QF
+      if (response.status === "COMPLETED") {
+        return res.status(409).json({
+          success: false,
+          message:
+            "Completed response cannot be changed",
         });
       }
 
       return res.status(409).json({
         success: false,
         message:
-          `Response already has status ${response.status}`,
+          "Survey response is no longer active",
       });
     }
 
-    // =========================================
+    // =====================================================
     // 9. COMPLETED
-    // =========================================
+    // =====================================================
 
     if (status === "COMPLETED") {
 
       const points =
-        Math.max(
-          Number(survey.points) || 0,
-          0
-        );
+        Number(survey.points) || 0;
 
       const completedAt =
         new Date();
 
-      const durationSeconds =
-        response.startedAt
-          ? Math.max(
-              Math.floor(
-                (
-                  completedAt -
-                  response.startedAt
-                ) / 1000
-              ),
-              10
-            )
-          : 10;
+      let durationSeconds = 10;
 
-      // =======================================
-      // ATOMIC STATUS CHANGE
-      // =======================================
+      if (response.startedAt) {
+        durationSeconds =
+          Math.max(
+            Math.floor(
+              (
+                completedAt -
+                response.startedAt
+              ) / 1000
+            ),
+            10
+          );
+      }
 
-      const completedResponse =
-        await SurveyResponse.findOneAndUpdate(
+      // ---------------------------------------------------
+      // UPDATE RESPONSE
+      // ---------------------------------------------------
+
+      response.status = "COMPLETED";
+
+      response.completedAt =
+        completedAt;
+
+      response.durationSeconds =
+        durationSeconds;
+
+      await response.save();
+
+      console.log(
+        "Response marked COMPLETED:",
+        response.rid
+      );
+
+      // ---------------------------------------------------
+      // WALLET
+      // ---------------------------------------------------
+
+      if (points > 0) {
+
+        await Wallet.findOneAndUpdate(
           {
-            _id: response._id,
-            status: "STARTED",
+            user: response.user,
           },
           {
-            $set: {
-              status: "COMPLETED",
-              completedAt,
-              durationSeconds,
+            $inc: {
+              balance: points,
+              totalEarned: points,
             },
           },
           {
+            upsert: true,
             new: true,
           }
         );
 
-      // Another request already completed it
-      if (!completedResponse) {
-        return res.json({
-          success: true,
-          message: "Already processed",
+        console.log(
+          "Wallet credited:",
+          points
+        );
+
+        // -------------------------------------------------
+        // WALLET TRANSACTION
+        // -------------------------------------------------
+
+        await WalletTransaction.create({
+          user: response.user,
+          type: "EARN",
+          points,
+          description:
+            `Completed: ${survey.title}`,
+          survey: survey._id,
         });
+
+        console.log(
+          "Wallet transaction created"
+        );
       }
 
-      console.log(
-        "RESPONSE MARKED COMPLETED:",
-        completedResponse._id
-      );
-
-      // =======================================
-      // CREDIT WALLET
-      // =======================================
-
-      await Wallet.findOneAndUpdate(
-        {
-          user: completedResponse.user,
-        },
-        {
-          $inc: {
-            balance: points,
-            totalEarned: points,
-          },
-        },
-        {
-          upsert: true,
-          new: true,
-        }
-      );
-
-      console.log(
-        "WALLET CREDITED:",
-        points
-      );
-
-      // =======================================
-      // WALLET TRANSACTION
-      // =======================================
-
-      await WalletTransaction.create({
-        user: completedResponse.user,
-        type: "EARN",
-        points,
-        description:
-          `Completed: ${survey.title}`,
-        survey: survey._id,
-      });
-
-      // =======================================
+      // ---------------------------------------------------
       // SURVEY COMPLETION COUNT
-      // =======================================
+      // ---------------------------------------------------
 
-      await Survey.updateOne(
-        {
-          _id: survey._id,
-        },
-        {
-          $inc: {
-            responsesCount: 1,
+      const surveyUpdate =
+        await Survey.updateOne(
+          {
+            _id: survey._id,
           },
-        }
-      );
+          {
+            $inc: {
+              responsesCount: 1,
+            },
+          }
+        );
 
       console.log(
-        "SURVEY responsesCount INCREMENTED"
+        "Survey responsesCount updated:",
+        surveyUpdate
       );
 
-      // =======================================
-      // USER FLAG
-      // =======================================
+      // ---------------------------------------------------
+      // USER
+      // ---------------------------------------------------
 
       await User.updateOne(
         {
-          _id: completedResponse.user,
+          _id: response.user,
         },
         {
           $set: {
@@ -498,7 +526,7 @@ router.get("/", async (req, res) => {
       );
 
       console.log(
-        "SURVEY COMPLETION SUCCESS"
+        "USER COMPLETION UPDATED"
       );
 
       return res.json({
@@ -508,35 +536,19 @@ router.get("/", async (req, res) => {
       });
     }
 
-    // =========================================
+    // =====================================================
     // 10. SCREENOUT
-    // =========================================
+    // =====================================================
 
     if (status === "SCREENOUT") {
 
-      const updated =
-        await SurveyResponse.findOneAndUpdate(
-          {
-            _id: response._id,
-            status: "STARTED",
-          },
-          {
-            $set: {
-              status: "SCREENOUT",
-              completedAt: new Date(),
-            },
-          },
-          {
-            new: true,
-          }
-        );
+      response.status =
+        "SCREENOUT";
 
-      if (!updated) {
-        return res.json({
-          success: true,
-          message: "Already processed",
-        });
-      }
+      response.completedAt =
+        new Date();
+
+      await response.save();
 
       await Survey.updateOne(
         {
@@ -549,41 +561,31 @@ router.get("/", async (req, res) => {
         }
       );
 
+      console.log(
+        "SCREENOUT recorded:",
+        rid
+      );
+
       return res.json({
         success: true,
         message: "SCREENOUT",
+        rid,
       });
     }
 
-    // =========================================
+    // =====================================================
     // 11. QUOTA FULL
-    // =========================================
+    // =====================================================
 
     if (status === "QUOTA_FULL") {
 
-      const updated =
-        await SurveyResponse.findOneAndUpdate(
-          {
-            _id: response._id,
-            status: "STARTED",
-          },
-          {
-            $set: {
-              status: "QUOTA_FULL",
-              completedAt: new Date(),
-            },
-          },
-          {
-            new: true,
-          }
-        );
+      response.status =
+        "QUOTA_FULL";
 
-      if (!updated) {
-        return res.json({
-          success: true,
-          message: "Already processed",
-        });
-      }
+      response.completedAt =
+        new Date();
+
+      await response.save();
 
       await Survey.updateOne(
         {
@@ -596,11 +598,22 @@ router.get("/", async (req, res) => {
         }
       );
 
+      console.log(
+        "QUOTA FULL recorded:",
+        rid
+      );
+
       return res.json({
         success: true,
         message: "QUOTA_FULL",
+        rid,
       });
     }
+
+    return res.status(400).json({
+      success: false,
+      message: "Unsupported status",
+    });
 
   } catch (err) {
 
