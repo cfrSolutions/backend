@@ -155,6 +155,7 @@ router.post(
     status: project.status,
     surveyId: project.surveyId,
     createdAt: project.createdAt,
+    redirects: project.redirects,
   },
 });
 
