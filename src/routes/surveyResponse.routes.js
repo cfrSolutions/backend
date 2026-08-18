@@ -138,13 +138,12 @@ redirectUrl =
 export default router;
 
 
-
-
 // import express from "express";
 // import SurveyResponse from "../models/SurveyResponse.model.js";
 // import Survey from "../models/Survey.model.js";
-// import crypto from "crypto";
 // import { authMiddleware } from "../middleware/auth.middleware.js";
+// import crypto from "crypto";
+// import RouterSession from "../models/RouterSession.model.js";
 
 // const router = express.Router();
 
@@ -152,201 +151,99 @@ export default router;
 //   try {
 //     const { surveyId } = req.body;
 
-//     // -----------------------------------------
-//     // 1. Validate surveyId
-//     // -----------------------------------------
-//     if (!surveyId || !crypto.isValidUUID?.(surveyId)) {
-//       // Remove this validation if surveyId is Mongo ObjectId
-//     }
-
+    
 //     const userId = req.user._id || req.user.id || req.user.userId;
-
 //     if (!userId) {
-//       return res.status(401).json({
-//         success: false,
-//         message: "Unauthorized",
-//       });
+//       return res.status(401).json({ message: "Unauthorized" });
 //     }
 
-//     // -----------------------------------------
-//     // 2. Find survey FIRST
-//     // -----------------------------------------
-//     const survey = await Survey.findById(surveyId);
+//     // ✅ CHECK IF ALREADY COMPLETED
+//   const existingCompleted = await SurveyResponse.findOne({
+//     survey: surveyId,
+//     user: userId,
+//     status: "COMPLETED",
+//   });
 
-//     if (!survey) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "Survey not found",
-//       });
-//     }
-
-//     // -----------------------------------------
-//     // 3. Check already finished
-//     // -----------------------------------------
-//     const existingResponse = await SurveyResponse.findOne({
-//       survey: surveyId,
-//       user: userId,
-//       status: {
-//         $in: [
-//           "COMPLETED",
-//           "SCREENOUT",
-//           "QUOTA_FULL",
-//         ],
-//       },
+//   if (existingCompleted) {
+//     return res.status(400).json({
+//       message: "Survey already completed",
 //     });
+//   }
 
-//     if (existingResponse) {
-//       return res.status(400).json({
-//         success: false,
-//         status: existingResponse.status,
-//         message: "Survey already finished",
-//       });
-//     }
+//   // ✅ CHECK IF ALREADY STARTED (resume instead)
+//   const existingStarted = await SurveyResponse.findOne({
+//     survey: surveyId,
+//     user: userId,
+//     status: "STARTED",
+//   });
 
-//     // -----------------------------------------
-//     // 4. Check already started
-//     // -----------------------------------------
-//     const existingStarted = await SurveyResponse.findOne({
-//       survey: surveyId,
-//       user: userId,
-//       status: "STARTED",
+//   if (existingStarted) {
+//     return res.json({
+//       redirectUrl:
+//         `${existingStarted.survey.companySurveyUrl}?uid=${existingStarted._id}`
 //     });
-
-//     if (existingStarted) {
-//       let redirectUrl;
-
-//       if (survey.surveyType === "INTERNAL") {
-//         redirectUrl =
-//           `${process.env.FRONTEND_URL}/user/survey/${surveyId}?uid=${existingStarted._id}`;
-//       } else {
-//         redirectUrl = survey.companySurveyUrl;
-
-//         if (!survey.trackingParam) {
-//           return res.status(400).json({
-//             success: false,
-//             message: "Tracking placeholder not configured",
-//           });
-//         }
-
-//         const separator = redirectUrl.includes("?") ? "&" : "?";
-
-//         redirectUrl =
-//           `${redirectUrl}${separator}${survey.trackingParam}=${encodeURIComponent(existingStarted.rid)}`;
-//       }
-
-//       return res.json({
-//         success: true,
-//         redirectUrl,
-//       });
-//     }
-
-//     // -----------------------------------------
-//     // 5. Generate secure RID
-//     // -----------------------------------------
-//     const rid = crypto
-//       .randomBytes(16)
-//       .toString("hex")
-//       .toUpperCase();
-
-//     // -----------------------------------------
-//     // 6. Get vendor postback tokens
-//     // -----------------------------------------
-//     let completeTk = "";
-//     let dqTk = "";
-//     let quotaTk = "";
-
-//     try {
-//       if (survey.vendorCompleteUrl) {
-//         completeTk = new URL(
-//           survey.vendorCompleteUrl
-//         ).searchParams.get("tk") || "";
-//       }
-
-//       if (survey.vendorDisqualifyUrl) {
-//         dqTk = new URL(
-//           survey.vendorDisqualifyUrl
-//         ).searchParams.get("tk") || "";
-//       }
-
-//       if (survey.vendorQuotaUrl) {
-//         quotaTk = new URL(
-//           survey.vendorQuotaUrl
-//         ).searchParams.get("tk") || "";
-//       }
-//     } catch (urlError) {
-//       console.error("INVALID VENDOR URL:", urlError);
-
-//       return res.status(400).json({
-//         success: false,
-//         message: "Invalid vendor postback URL configuration",
-//       });
-//     }
-
-//     // -----------------------------------------
-//     // 7. Create response
-//     // -----------------------------------------
+//   }
+//     // ✅ CREATE RESPONSE (THIS IS THE UID)
 //     const response = await SurveyResponse.create({
 //       survey: surveyId,
 //       user: userId,
-//       rid,
-
 //       status: "STARTED",
 //       startedAt: new Date(),
-
-//       expectedCompleteTk: completeTk,
-//       expectedDqTk: dqTk,
-//       expectedQuotaTk: quotaTk,
 //     });
 
-//     // -----------------------------------------
-//     // 8. Internal survey
-//     // -----------------------------------------
+//     const survey = await Survey.findById(surveyId);
+//     if (!survey) {
+//       return res.status(404).json({ message: "Survey not found" });
+//     }
+
+//     if (!response.user) {
+//       return res.status(400).send("Response has no user attached");
+//     }
+
+//     // ✅ INTERNAL SURVEY → YOUR FORM
 //     if (survey.surveyType === "INTERNAL") {
 //       return res.json({
-//         success: true,
-//         redirectUrl:
-//           `${process.env.FRONTEND_URL}/user/survey/${surveyId}?uid=${response._id}`,
+//         redirectUrl: `${process.env.FRONTEND_URL}/user/survey/${surveyId}?uid=${response._id}`,
 //       });
 //     }
 
-//     // -----------------------------------------
-//     // 9. External survey
-//     // -----------------------------------------
-//     if (!survey.companySurveyUrl) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Company survey URL not configured",
-//       });
-//     }
+//     // ✅ Generate secure token
+//     const token = crypto.randomBytes(16).toString("hex");
+
+//     await RouterSession.create({
+//       token,
+//       response: response._id,
+//       survey: surveyId,
+//       user: userId,
+//     });
+
+//     // ✅ EXTERNAL SURVEY → COMPANY FORM
+//     let redirectUrl = survey.companySurveyUrl;
 
 //     if (!survey.trackingParam) {
 //       return res.status(400).json({
-//         success: false,
-//         message: "Tracking parameter not configured",
+//         message: "Tracking placeholder not configured for this survey",
 //       });
 //     }
 
-//     let redirectUrl = survey.companySurveyUrl;
+//     // // 🔥 REPLACE COMPANY PLACEHOLDER WITH RESPONSE ID
+//     // redirectUrl = redirectUrl.replace(
+//     //   survey.trackingParam,
+//     //   response._id.toString()
+//     // );
+// const separator = redirectUrl.includes("?") ? "&" : "?";
 
-//     const separator =
-//       redirectUrl.includes("?") ? "&" : "?";
+// redirectUrl =
+//   `${redirectUrl}${separator}${survey.trackingParam}=${token}`;
 
-//     redirectUrl =
-//       `${redirectUrl}${separator}${survey.trackingParam}=${encodeURIComponent(rid)}`;
 
-//     return res.json({
-//       success: true,
-//       redirectUrl,
-//     });
+//     return res.json({ redirectUrl });
 
 //   } catch (err) {
 //     console.error("START SURVEY ERROR:", err);
-
-//     return res.status(500).json({
-//       success: false,
-//       message: "Server error",
-//     });
+//     res.status(500).json({ message: "Server error" });
 //   }
 // });
 
 // export default router;
+
