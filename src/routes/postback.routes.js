@@ -145,57 +145,32 @@ import User from "../models/User.model.js";
 
 const router = express.Router();
 
-/*
-|--------------------------------------------------------------------------
-| SURVEY POSTBACK
-|--------------------------------------------------------------------------
-|
-| Vendor calls:
-|
-| /postback?rid=RID&tk=VENDOR_TOKEN&status=COMPLETED
-|
-| Security:
-|
-| 1. RID identifies the response
-| 2. TK authorizes the postback
-| 3. TK is compared against the correct server-side token
-| 4. Status is strictly validated
-| 5. Only STARTED responses can be completed
-| 6. Points are taken from the database
-|
-|--------------------------------------------------------------------------
-*/
-
 router.get("/", async (req, res) => {
   try {
+    // =========================================
+    // 1. Get RID
+    // =========================================
 
-    // ==================================================
-    // 1. GET RID
-    // ==================================================
+    const rid =
+      req.query.rid ||
+      req.query.RID ||
+      req.query.pid ||
+      req.query.PID ||
+      req.query.uid;
 
-    const rid = req.query.rid;
-
-    if (!rid || typeof rid !== "string") {
+    if (!rid) {
       return res.status(400).json({
         success: false,
         message: "Missing RID",
       });
     }
 
-    // Prevent excessively large input
-    if (rid.length > 100) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid RID",
-      });
-    }
-
-    // ==================================================
-    // 2. GET STATUS
-    // ==================================================
+    // =========================================
+    // 2. Get status
+    // =========================================
 
     const status = String(
-      req.query.status || "COMPLETED"
+      req.query.status || ""
     ).toUpperCase();
 
     const allowedStatuses = [
@@ -211,33 +186,26 @@ router.get("/", async (req, res) => {
       });
     }
 
-    // ==================================================
-    // 3. GET VENDOR TOKEN
-    // ==================================================
+    // =========================================
+    // 3. Get vendor token
+    // =========================================
 
-    const tk = req.query.tk;
+    const tk = String(req.query.tk || "");
 
-    if (!tk || typeof tk !== "string") {
+    if (!tk) {
       return res.status(401).json({
         success: false,
         message: "Missing postback token",
       });
     }
 
-    // Prevent huge token abuse
-    if (tk.length > 500) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid postback token",
-      });
-    }
+    // =========================================
+    // 4. Find response
+    // =========================================
 
-    // ==================================================
-    // 4. FIND RESPONSE
-    // ==================================================
-
-    const response =
-      await SurveyResponse.findOne({ rid });
+    const response = await SurveyResponse.findOne({
+      rid,
+    });
 
     if (!response) {
       return res.status(404).json({
@@ -246,55 +214,47 @@ router.get("/", async (req, res) => {
       });
     }
 
-    // ==================================================
-    // 5. SELECT EXPECTED TOKEN
-    // ==================================================
+    // =========================================
+    // 5. Select expected token
+    // =========================================
 
     let expectedToken = null;
 
     if (status === "COMPLETED") {
-      expectedToken =
-        response.expectedCompleteTk;
+      expectedToken = response.expectedCompleteTk;
     }
 
     if (status === "SCREENOUT") {
-      expectedToken =
-        response.expectedDqTk;
+      expectedToken = response.expectedDqTk;
     }
 
     if (status === "QUOTA_FULL") {
-      expectedToken =
-        response.expectedQuotaTk;
+      expectedToken = response.expectedQuotaTk;
     }
 
-    // ==================================================
-    // 6. TOKEN MUST EXIST
-    // ==================================================
-
-    if (
-      !expectedToken ||
-      typeof expectedToken !== "string"
-    ) {
+    if (!expectedToken) {
       return res.status(403).json({
         success: false,
-        message:
-          "Postback authorization not configured",
+        message: "Postback authorization not configured",
       });
     }
 
-    // ==================================================
-    // 7. CONSTANT-TIME TOKEN COMPARISON
-    // ==================================================
+    // =========================================
+    // 6. Constant-time token comparison
+    // =========================================
 
-    const providedBuffer =
-      Buffer.from(String(tk));
+    const providedBuffer = Buffer.from(
+      tk,
+      "utf8"
+    );
 
-    const expectedBuffer =
-      Buffer.from(String(expectedToken));
+    const expectedBuffer = Buffer.from(
+      String(expectedToken),
+      "utf8"
+    );
 
     if (
-      providedBuffer.length !==
-        expectedBuffer.length ||
+      providedBuffer.length !== expectedBuffer.length ||
       !crypto.timingSafeEqual(
         providedBuffer,
         expectedBuffer
@@ -306,12 +266,13 @@ router.get("/", async (req, res) => {
       });
     }
 
-    // ==================================================
-    // 8. FIND SURVEY
-    // ==================================================
+    // =========================================
+    // 7. Find survey
+    // =========================================
 
-    const survey =
-      await Survey.findById(response.survey);
+    const survey = await Survey.findById(
+      response.survey
+    );
 
     if (!survey) {
       return res.status(404).json({
@@ -320,16 +281,13 @@ router.get("/", async (req, res) => {
       });
     }
 
-    // ==================================================
-    // 9. COMPLETED
-    // ==================================================
+    // =========================================
+    // 8. COMPLETED
+    // =========================================
 
     if (status === "COMPLETED") {
 
-      // -----------------------------------------------
       // Already completed
-      // -----------------------------------------------
-
       if (response.status === "COMPLETED") {
         return res.json({
           success: true,
@@ -337,59 +295,50 @@ router.get("/", async (req, res) => {
         });
       }
 
-      // -----------------------------------------------
       // Only STARTED can become COMPLETED
-      // -----------------------------------------------
-
       if (response.status !== "STARTED") {
         return res.status(409).json({
           success: false,
-          message:
-            "Survey response is not active",
+          message: "Survey response is not active",
         });
       }
-
-      // -----------------------------------------------
-      // Points MUST come from database
-      // -----------------------------------------------
 
       const points =
         Number(survey.points) || 0;
 
-      // -----------------------------------------------
-      // Mark response completed
-      // -----------------------------------------------
+      const completedAt = new Date();
 
-      response.status = "COMPLETED";
-      response.completedAt = new Date();
-
-      // -----------------------------------------------
-      // Calculate duration
-      // -----------------------------------------------
+      let durationSeconds = null;
 
       if (response.startedAt) {
-
-        response.durationSeconds =
-          Math.max(
-            Math.floor(
-              (
-                response.completedAt -
-                response.startedAt
-              ) / 1000
-            ),
-            10
-          );
+        durationSeconds = Math.max(
+          Math.floor(
+            (
+              completedAt -
+              response.startedAt
+            ) / 1000
+          ),
+          10
+        );
       }
 
-      // -----------------------------------------------
-      // Save response
-      // -----------------------------------------------
+      // -----------------------------------------
+      // Update response
+      // -----------------------------------------
+
+      response.status = "COMPLETED";
+      response.completedAt = completedAt;
+
+      if (durationSeconds !== null) {
+        response.durationSeconds =
+          durationSeconds;
+      }
 
       await response.save();
 
-      // -----------------------------------------------
-      // Credit wallet
-      // -----------------------------------------------
+      // -----------------------------------------
+      // Wallet
+      // -----------------------------------------
 
       await Wallet.findOneAndUpdate(
         {
@@ -403,13 +352,13 @@ router.get("/", async (req, res) => {
         },
         {
           upsert: true,
-          returnDocument: "after",
+          setDefaultsOnInsert: true,
         }
       );
 
-      // -----------------------------------------------
-      // Create wallet transaction
-      // -----------------------------------------------
+      // -----------------------------------------
+      // Wallet transaction
+      // -----------------------------------------
 
       await WalletTransaction.create({
         user: response.user,
@@ -420,9 +369,9 @@ router.get("/", async (req, res) => {
         survey: survey._id,
       });
 
-      // -----------------------------------------------
-      // Update survey statistics
-      // -----------------------------------------------
+      // -----------------------------------------
+      // Survey completion count
+      // -----------------------------------------
 
       await Survey.updateOne(
         {
@@ -435,9 +384,9 @@ router.get("/", async (req, res) => {
         }
       );
 
-      // -----------------------------------------------
-      // Update user statistics
-      // -----------------------------------------------
+      // -----------------------------------------
+      // User
+      // -----------------------------------------
 
       await User.updateOne(
         {
@@ -449,22 +398,13 @@ router.get("/", async (req, res) => {
           },
         }
       );
-
-      return res.json({
-        success: true,
-        message: "COMPLETED",
-      });
     }
 
-    // ==================================================
+    // =========================================
     // SCREENOUT
-    // ==================================================
+    // =========================================
 
-    if (status === "SCREENOUT") {
-
-      // -----------------------------------------------
-      // Completed cannot become screenout
-      // -----------------------------------------------
+    else if (status === "SCREENOUT") {
 
       if (response.status === "COMPLETED") {
         return res.status(409).json({
@@ -474,10 +414,6 @@ router.get("/", async (req, res) => {
         });
       }
 
-      // -----------------------------------------------
-      // Already processed
-      // -----------------------------------------------
-
       if (response.status !== "STARTED") {
         return res.json({
           success: true,
@@ -485,29 +421,16 @@ router.get("/", async (req, res) => {
         });
       }
 
-      // -----------------------------------------------
-      // Mark screenout
-      // -----------------------------------------------
-
       response.status = "SCREENOUT";
 
       await response.save();
-
-      return res.json({
-        success: true,
-        message: "SCREENOUT",
-      });
     }
 
-    // ==================================================
+    // =========================================
     // QUOTA FULL
-    // ==================================================
+    // =========================================
 
-    if (status === "QUOTA_FULL") {
-
-      // -----------------------------------------------
-      // Completed cannot become quota full
-      // -----------------------------------------------
+    else if (status === "QUOTA_FULL") {
 
       if (response.status === "COMPLETED") {
         return res.status(409).json({
@@ -517,10 +440,6 @@ router.get("/", async (req, res) => {
         });
       }
 
-      // -----------------------------------------------
-      // Already processed
-      // -----------------------------------------------
-
       if (response.status !== "STARTED") {
         return res.json({
           success: true,
@@ -528,27 +447,18 @@ router.get("/", async (req, res) => {
         });
       }
 
-      // -----------------------------------------------
-      // Mark quota full
-      // -----------------------------------------------
-
       response.status = "QUOTA_FULL";
 
       await response.save();
-
-      return res.json({
-        success: true,
-        message: "QUOTA_FULL",
-      });
     }
 
-    // ==================================================
-    // SHOULD NEVER REACH HERE
-    // ==================================================
+    // =========================================
+    // 9. Success
+    // =========================================
 
-    return res.status(400).json({
-      success: false,
-      message: "Invalid postback request",
+    return res.json({
+      success: true,
+      message: status,
     });
 
   } catch (err) {
