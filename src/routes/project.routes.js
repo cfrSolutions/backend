@@ -134,7 +134,7 @@ router.post(
         },
       });
 
-      return res.status(201).json({
+     return res.status(201).json({
   message: "Project created successfully",
   project: {
     _id: project._id,
@@ -152,10 +152,14 @@ router.post(
     timeline: project.timeline,
     openEnded: project.openEnded,
     devices: project.devices,
+
     status: project.status,
     surveyId: project.surveyId,
-    createdAt: project.createdAt,
+
+    // ✅ SEND REDIRECTS TO FRONTEND
     redirects: project.redirects,
+
+    createdAt: project.createdAt,
   },
 });
 
