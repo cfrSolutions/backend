@@ -173,6 +173,15 @@ if (!response) {
     message: "RID not found",
   });
 }
+console.log(
+      "Response found:",
+      response._id
+    );
+
+    console.log(
+      "Current status:",
+      response.status
+    );
 
    const status = req.query.status || "COMPLETED";
 
@@ -200,6 +209,10 @@ if (status === "COMPLETED") {
   }
 
   await response.save();
+  console.log(
+        "RESPONSE MARKED COMPLETED:",
+        response.rid
+      );
 
   await Wallet.findOneAndUpdate(
     { user: response.user },
@@ -222,7 +235,7 @@ if (status === "COMPLETED") {
     survey: survey._id,
   });
 
-  await Survey.updateOne(
+  const surveyUpdate = await Survey.updateOne(
     { _id: survey._id },
     {
       $inc: {
@@ -230,6 +243,11 @@ if (status === "COMPLETED") {
       },
     }
   );
+
+  console.log(
+        "SURVEY COUNT UPDATED:",
+        surveyUpdate
+      );
 
   await User.updateOne(
   { _id: response.user },
@@ -239,7 +257,11 @@ if (status === "COMPLETED") {
     },
   }
 );
+ console.log(
+        "COMPLETION PROCESS FINISHED"
+      );
 }
+
 
 else if (status === "SCREENOUT") {
 
