@@ -696,17 +696,340 @@ router.post(
   }
 );
 
+// router.post(
+//   "/:projectId/target-groups",
+//   authMiddleware,
+//   businessOnly,
+//   async (req, res) => {
+//     const userId = req.user._id || req.user.id || req.user.userId;
+
+//     // const project =
+//     //   await Project.findById(
+//     //     req.params.projectId
+//     //   );
+
+//     if (!userId) {
+//         return res.status(401).json({
+//           message: "User not found in authentication token",
+//         });
+//       }
+      
+//       const project = await Project.findOne({
+//         _id: req.params.projectId,
+//         business: userId,
+//       });
+
+//       if (!project) {
+//   return res.status(404).json({
+//     message: "Project not found",
+//   });
+// }
+
+
+//     project.targetGroups.push({
+//        ...req.body,
+//       name:
+//         `Target Group ${
+//           project.targetGroups.length + 1
+//         }`,
+
+//       status: "DRAFT",
+//     });
+
+//     await project.save();
+
+//     res.json(
+//       project.targetGroups[
+//         project.targetGroups.length - 1
+//       ]
+//     );
+//   }
+// );
+
 router.post(
   "/:projectId/target-groups",
   authMiddleware,
   businessOnly,
   async (req, res) => {
-    const userId = req.user._id || req.user.id || req.user.userId;
+    try {
+      const userId =
+        req.user._id ||
+        req.user.id ||
+        req.user.userId;
 
-    // const project =
-    //   await Project.findById(
-    //     req.params.projectId
-    //   );
+      if (!userId) {
+        return res.status(401).json({
+          message: "User not found in authentication token",
+        });
+      }
+
+      // 🔐 Ownership check
+      const project = await Project.findOne({
+        _id: req.params.projectId,
+        business: userId,
+      });
+
+      if (!project) {
+        return res.status(404).json({
+          message: "Project not found",
+        });
+      }
+
+      // 🔐 ONLY allow fields that business is allowed to submit
+      const {
+        market,
+        language,
+        targetCompletes,
+        loi,
+        incidence,
+        ageFrom,
+        ageTo,
+        gender,
+        devices,
+        advancedCalendar,
+      } = req.body;
+
+      // -----------------------------
+      // Validation
+      // -----------------------------
+
+      if (
+        targetCompletes !== undefined &&
+        (!Number.isFinite(Number(targetCompletes)) ||
+          Number(targetCompletes) <= 0)
+      ) {
+        return res.status(400).json({
+          message: "Invalid target completes",
+        });
+      }
+
+      if (
+        loi !== undefined &&
+        (!Number.isFinite(Number(loi)) ||
+          Number(loi) <= 0)
+      ) {
+        return res.status(400).json({
+          message: "Invalid LOI",
+        });
+      }
+
+      if (
+        incidence !== undefined &&
+        (!Number.isFinite(Number(incidence)) ||
+          Number(incidence) < 0 ||
+          Number(incidence) > 100)
+      ) {
+        return res.status(400).json({
+          message: "Invalid incidence rate",
+        });
+      }
+
+      if (
+        ageFrom !== undefined &&
+        (!Number.isFinite(Number(ageFrom)) ||
+          Number(ageFrom) < 0)
+      ) {
+        return res.status(400).json({
+          message: "Invalid minimum age",
+        });
+      }
+
+      if (
+        ageTo !== undefined &&
+        (!Number.isFinite(Number(ageTo)) ||
+          Number(ageTo) < 0)
+      ) {
+        return res.status(400).json({
+          message: "Invalid maximum age",
+        });
+      }
+
+      if (
+        ageFrom !== undefined &&
+        ageTo !== undefined &&
+        Number(ageFrom) > Number(ageTo)
+      ) {
+        return res.status(400).json({
+          message: "Minimum age cannot be greater than maximum age",
+        });
+      }
+
+      // 🔐 Server-controlled fields
+      const targetGroupData = {
+        market,
+        language,
+        targetCompletes:
+          targetCompletes !== undefined
+            ? Number(targetCompletes)
+            : undefined,
+        loi:
+          loi !== undefined
+            ? Number(loi)
+            : undefined,
+        incidence:
+          incidence !== undefined
+            ? Number(incidence)
+            : undefined,
+        ageFrom:
+          ageFrom !== undefined
+            ? Number(ageFrom)
+            : undefined,
+        ageTo:
+          ageTo !== undefined
+            ? Number(ageTo)
+            : undefined,
+        gender,
+        devices,
+        advancedCalendar,
+
+        // 🔐 NEVER accept these from req.body
+        // cpi
+        // totalCost
+        // name
+        // status
+      };
+
+      // Remove undefined values
+      Object.keys(targetGroupData).forEach((key) => {
+        if (targetGroupData[key] === undefined) {
+          delete targetGroupData[key];
+        }
+      });
+
+      // 🔐 Server controlled
+      project.targetGroups.push({
+        ...targetGroupData,
+
+        name: `Target Group ${
+          project.targetGroups.length + 1
+        }`,
+
+        status: "DRAFT",
+      });
+
+      await project.save();
+
+      const group =
+        project.targetGroups[
+          project.targetGroups.length - 1
+        ];
+
+      // 🔐 Return only frontend-required fields
+      return res.status(201).json({
+        targetGroup: {
+          _id: group._id,
+          name: group.name,
+          market: group.market,
+          language: group.language,
+          targetCompletes: group.targetCompletes,
+          loi: group.loi,
+          incidence: group.incidence,
+          ageFrom: group.ageFrom,
+          ageTo: group.ageTo,
+          gender: group.gender,
+          devices: group.devices,
+          advancedCalendar: group.advancedCalendar,
+          cpi: group.cpi,
+          totalCost: group.totalCost,
+          status: group.status,
+        },
+      });
+
+    } catch (err) {
+      console.error("CREATE TARGET GROUP ERROR:", err);
+
+      return res.status(500).json({
+        message: "Failed to create target group",
+      });
+    }
+  }
+);
+
+// router.put(
+//   "/:projectId/target-group/:targetGroupId",
+//   authMiddleware, businessOnly,
+//   async (req, res) => {
+//     const {
+//   market,
+//   language,
+//   targetCompletes,
+//   loi,
+//   incidence,
+//   ageFrom,
+//   ageTo,
+//   gender,
+//   devices,
+//   advancedCalendar
+// } = req.body;
+//     // console.log("BODY:", req.body);
+
+//     // const project = await Project.findById(
+//     //   req.params.projectId
+//     // );
+//     const userId = req.user._id || req.user.id || req.user.userId;
+
+//     if (!userId) {
+//         return res.status(401).json({
+//           message: "User not found in authentication token",
+//         });
+//       }
+
+//      const project = await Project.findOne({
+//         _id: req.params.projectId,
+//         business: userId,
+//       });
+
+//       if (!project) {
+//   return res.status(404).json({
+//     message: "Project not found",
+//   });
+// }
+//     const group =
+//       project.targetGroups.id(
+//         req.params.targetGroupId
+//       );
+// if (!group) {
+//   return res.status(404).json({
+//     message: "Target group not found",
+//   });
+// }
+//     // Object.assign(group, req.body);
+//     Object.assign(group, {
+//   market,
+//   language,
+//   targetCompletes,
+//   loi,
+//   incidence,
+//   ageFrom,
+//   ageTo,
+//   gender,
+//   devices,
+//   advancedCalendar
+// });
+
+//     await project.save();
+
+//     res.json(group);
+//   }
+// );
+
+
+router.put(
+  "/:projectId/target-group/:targetGroupId",
+  authMiddleware,
+  businessOnly,
+  async (req, res) => {
+    try {
+      const userId =
+        req.user._id ||
+        req.user.id ||
+        req.user.userId;
+
+      if (!userId) {
+        return res.status(401).json({
+          message: "User not found in authentication token",
+        });
+      }
 
       const project = await Project.findOne({
         _id: req.params.projectId,
@@ -714,90 +1037,168 @@ router.post(
       });
 
       if (!project) {
-  return res.status(404).json({
-    message: "Project not found",
-  });
-}
+        return res.status(404).json({
+          message: "Project not found",
+        });
+      }
 
-
-    project.targetGroups.push({
-       ...req.body,
-      name:
-        `Target Group ${
-          project.targetGroups.length + 1
-        }`,
-
-      status: "DRAFT",
-    });
-
-    await project.save();
-
-    res.json(
-      project.targetGroups[
-        project.targetGroups.length - 1
-      ]
-    );
-  }
-);
-
-router.put(
-  "/:projectId/target-group/:targetGroupId",
-  authMiddleware, businessOnly,
-  async (req, res) => {
-    const {
-  market,
-  language,
-  targetCompletes,
-  loi,
-  incidence,
-  ageFrom,
-  ageTo,
-  gender,
-  devices,
-  advancedCalendar
-} = req.body;
-    // console.log("BODY:", req.body);
-
-    // const project = await Project.findById(
-    //   req.params.projectId
-    // );
-    const userId = req.user._id || req.user.id || req.user.userId;
-
-     const project = await Project.findOne({
-        _id: req.params.projectId,
-        business: userId,
-      });
-      if (!project) {
-  return res.status(404).json({
-    message: "Project not found",
-  });
-}
-    const group =
-      project.targetGroups.id(
+      const group = project.targetGroups.id(
         req.params.targetGroupId
       );
-if (!group) {
-  return res.status(404).json({
-    message: "Target group not found",
-  });
-}
-    // Object.assign(group, req.body);
-    Object.assign(group, {
-  market,
-  language,
-  targetCompletes,
-  loi,
-  incidence,
-  ageFrom,
-  ageTo,
-  gender,
-  devices,
-  advancedCalendar
-});
 
-    await project.save();
+      if (!group) {
+        return res.status(404).json({
+          message: "Target group not found",
+        });
+      }
 
-    res.json(group);
+      const {
+        market,
+        language,
+        targetCompletes,
+        loi,
+        incidence,
+        ageFrom,
+        ageTo,
+        gender,
+        devices,
+        advancedCalendar,
+      } = req.body;
+
+      // -----------------------------
+      // Validation
+      // -----------------------------
+
+      if (
+        targetCompletes !== undefined &&
+        (!Number.isFinite(Number(targetCompletes)) ||
+          Number(targetCompletes) <= 0)
+      ) {
+        return res.status(400).json({
+          message: "Invalid target completes",
+        });
+      }
+
+      if (
+        loi !== undefined &&
+        (!Number.isFinite(Number(loi)) ||
+          Number(loi) <= 0)
+      ) {
+        return res.status(400).json({
+          message: "Invalid LOI",
+        });
+      }
+
+      if (
+        incidence !== undefined &&
+        (!Number.isFinite(Number(incidence)) ||
+          Number(incidence) < 0 ||
+          Number(incidence) > 100)
+      ) {
+        return res.status(400).json({
+          message: "Invalid incidence rate",
+        });
+      }
+
+      if (
+        ageFrom !== undefined &&
+        (!Number.isFinite(Number(ageFrom)) ||
+          Number(ageFrom) < 0)
+      ) {
+        return res.status(400).json({
+          message: "Invalid minimum age",
+        });
+      }
+
+      if (
+        ageTo !== undefined &&
+        (!Number.isFinite(Number(ageTo)) ||
+          Number(ageTo) < 0)
+      ) {
+        return res.status(400).json({
+          message: "Invalid maximum age",
+        });
+      }
+
+      if (
+        ageFrom !== undefined &&
+        ageTo !== undefined &&
+        Number(ageFrom) > Number(ageTo)
+      ) {
+        return res.status(400).json({
+          message: "Minimum age cannot be greater than maximum age",
+        });
+      }
+
+      // -----------------------------
+      // 🔐 Update only supplied fields
+      // -----------------------------
+
+      if (market !== undefined)
+        group.market = market;
+
+      if (language !== undefined)
+        group.language = language;
+
+      if (targetCompletes !== undefined)
+        group.targetCompletes = Number(targetCompletes);
+
+      if (loi !== undefined)
+        group.loi = Number(loi);
+
+      if (incidence !== undefined)
+        group.incidence = Number(incidence);
+
+      if (ageFrom !== undefined)
+        group.ageFrom = Number(ageFrom);
+
+      if (ageTo !== undefined)
+        group.ageTo = Number(ageTo);
+
+      if (gender !== undefined)
+        group.gender = gender;
+
+      if (devices !== undefined)
+        group.devices = devices;
+
+      if (advancedCalendar !== undefined)
+        group.advancedCalendar = advancedCalendar;
+
+      // ❌ DO NOT allow:
+      // group.cpi = req.body.cpi
+      // group.totalCost = req.body.totalCost
+      // group.status = req.body.status
+      // group.name = req.body.name
+
+      await project.save();
+
+      return res.json({
+        targetGroup: {
+          _id: group._id,
+          name: group.name,
+          market: group.market,
+          language: group.language,
+          targetCompletes: group.targetCompletes,
+          loi: group.loi,
+          incidence: group.incidence,
+          ageFrom: group.ageFrom,
+          ageTo: group.ageTo,
+          gender: group.gender,
+          devices: group.devices,
+          advancedCalendar: group.advancedCalendar,
+          cpi: group.cpi,
+          totalCost: group.totalCost,
+          status: group.status,
+        },
+      });
+
+    } catch (err) {
+      console.error("UPDATE TARGET GROUP ERROR:", err);
+
+      return res.status(500).json({
+        message: "Failed to update target group",
+      });
+    }
   }
 );
 
@@ -837,7 +1238,26 @@ router.get(
         });
     }
 
-    res.json(group);
+    // res.json(group);
+    return res.json({
+  targetGroup: {
+    _id: group._id,
+    name: group.name,
+    market: group.market,
+    language: group.language,
+    targetCompletes: group.targetCompletes,
+    loi: group.loi,
+    incidence: group.incidence,
+    ageFrom: group.ageFrom,
+    ageTo: group.ageTo,
+    gender: group.gender,
+    devices: group.devices,
+    advancedCalendar: group.advancedCalendar,
+    cpi: group.cpi,
+    totalCost: group.totalCost,
+    status: group.status,
+  },
+});
   }
 );
 
