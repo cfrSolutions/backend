@@ -30,6 +30,12 @@ const surveyResponseSchema = new mongoose.Schema(
       index: true,
     },
 
+    postbackToken: {
+  type: String,
+  unique: true,
+  index: true,
+},
+
     expectedCompleteTk: {
   type: String,
   default: "",
