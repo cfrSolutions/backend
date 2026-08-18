@@ -151,6 +151,11 @@ router.get("/", async (req, res) => {
     // 1. GET RID
     // =========================================
 
+     console.log("=================================");
+    console.log("POSTBACK RECEIVED");
+    console.log("QUERY:", req.query);
+    console.log("=================================");
+
     const rid =
       req.query.rid ||
       req.query.RID ||
@@ -193,7 +198,9 @@ router.get("/", async (req, res) => {
     const tk = String(
       req.query.tk || ""
     );
-
+    console.log("RID:", rid);
+    console.log("STATUS:", status);
+    console.log("TK RECEIVED:", tk ? "YES" : "NO");
     if (!tk) {
       return res.status(401).json({
         success: false,
@@ -216,7 +223,8 @@ router.get("/", async (req, res) => {
         message: "RID not found",
       });
     }
-
+    console.log("Response found:", response._id);
+    console.log("Current status:", response.status);
     // =========================================
     // 5. FIND SURVEY
     // =========================================
