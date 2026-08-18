@@ -864,7 +864,7 @@ router.post(
         });
       }
 
-      // 🔐 Ownership check
+      // 🔐 Business can only access its own project
       const project = await Project.findOne({
         _id: req.params.projectId,
         business: userId,
@@ -876,7 +876,7 @@ router.post(
         });
       }
 
-      // 🔐 Only accept fields used by your existing frontend
+      // 🔐 Only accept fields that the frontend is allowed to send
       const {
         market,
         language,
@@ -888,18 +888,12 @@ router.post(
         gender,
         devices,
         advancedCalendar,
-
-        // Existing fields your frontend may save
-        cpi,
-        totalCost,
       } = req.body;
 
-      // -----------------------------
       // Validation
-      // -----------------------------
-
       if (
         targetCompletes !== undefined &&
+        targetCompletes !== "" &&
         (!Number.isFinite(Number(targetCompletes)) ||
           Number(targetCompletes) <= 0)
       ) {
@@ -910,6 +904,7 @@ router.post(
 
       if (
         loi !== undefined &&
+        loi !== "" &&
         (!Number.isFinite(Number(loi)) ||
           Number(loi) <= 0)
       ) {
@@ -920,6 +915,7 @@ router.post(
 
       if (
         incidence !== undefined &&
+        incidence !== "" &&
         (!Number.isFinite(Number(incidence)) ||
           Number(incidence) < 0 ||
           Number(incidence) > 100)
@@ -931,6 +927,7 @@ router.post(
 
       if (
         ageFrom !== undefined &&
+        ageFrom !== "" &&
         (!Number.isFinite(Number(ageFrom)) ||
           Number(ageFrom) < 0)
       ) {
@@ -941,6 +938,7 @@ router.post(
 
       if (
         ageTo !== undefined &&
+        ageTo !== "" &&
         (!Number.isFinite(Number(ageTo)) ||
           Number(ageTo) < 0)
       ) {
@@ -951,62 +949,49 @@ router.post(
 
       if (
         ageFrom !== undefined &&
+        ageFrom !== "" &&
         ageTo !== undefined &&
+        ageTo !== "" &&
         Number(ageFrom) > Number(ageTo)
       ) {
         return res.status(400).json({
-          message:
-            "Minimum age cannot be greater than maximum age",
+          message: "Minimum age cannot be greater than maximum age",
         });
       }
 
-      // -----------------------------
-      // 🔐 Build allowed data
-      // -----------------------------
-
+      // 🔐 Whitelisted data only
       const targetGroupData = {
         market,
         language,
 
         targetCompletes:
-          targetCompletes !== undefined
+          targetCompletes !== undefined && targetCompletes !== ""
             ? Number(targetCompletes)
             : undefined,
 
         loi:
-          loi !== undefined
+          loi !== undefined && loi !== ""
             ? Number(loi)
             : undefined,
 
         incidence:
-          incidence !== undefined
+          incidence !== undefined && incidence !== ""
             ? Number(incidence)
             : undefined,
 
         ageFrom:
-          ageFrom !== undefined
+          ageFrom !== undefined && ageFrom !== ""
             ? Number(ageFrom)
             : undefined,
 
         ageTo:
-          ageTo !== undefined
+          ageTo !== undefined && ageTo !== ""
             ? Number(ageTo)
             : undefined,
 
         gender,
         devices,
         advancedCalendar,
-
-        // Keep existing behavior
-        cpi:
-          cpi !== undefined
-            ? Number(cpi)
-            : undefined,
-
-        totalCost:
-          totalCost !== undefined
-            ? Number(totalCost)
-            : undefined,
       };
 
       // Remove undefined fields
@@ -1016,7 +1001,7 @@ router.post(
         }
       });
 
-      // 🔐 Server-controlled fields
+      // 🔐 Server controls these
       project.targetGroups.push({
         ...targetGroupData,
 
@@ -1034,26 +1019,8 @@ router.post(
           project.targetGroups.length - 1
         ];
 
-      // 🔐 Return only fields frontend needs
-      return res.status(201).json({
-        targetGroup: {
-          _id: group._id,
-          name: group.name,
-          market: group.market,
-          language: group.language,
-          targetCompletes: group.targetCompletes,
-          loi: group.loi,
-          incidence: group.incidence,
-          ageFrom: group.ageFrom,
-          ageTo: group.ageTo,
-          gender: group.gender,
-          devices: group.devices,
-          advancedCalendar: group.advancedCalendar,
-          cpi: group.cpi,
-          totalCost: group.totalCost,
-          status: group.status,
-        },
-      });
+      // Keep your original response style
+      return res.status(201).json(group);
 
     } catch (err) {
       console.error(
@@ -1097,7 +1064,6 @@ router.put(
         });
       }
 
-      // Find target group inside owned project
       const group = project.targetGroups.id(
         req.params.targetGroupId
       );
@@ -1108,6 +1074,7 @@ router.put(
         });
       }
 
+      // 🔐 Only accept allowed fields
       const {
         market,
         language,
@@ -1119,18 +1086,15 @@ router.put(
         gender,
         devices,
         advancedCalendar,
-
-        // Existing frontend fields
-        cpi,
-        totalCost,
       } = req.body;
 
-      // -----------------------------
-      // Validation
-      // -----------------------------
+      // --------------------------------
+      // VALIDATION
+      // --------------------------------
 
       if (
         targetCompletes !== undefined &&
+        targetCompletes !== "" &&
         (!Number.isFinite(Number(targetCompletes)) ||
           Number(targetCompletes) <= 0)
       ) {
@@ -1141,6 +1105,7 @@ router.put(
 
       if (
         loi !== undefined &&
+        loi !== "" &&
         (!Number.isFinite(Number(loi)) ||
           Number(loi) <= 0)
       ) {
@@ -1151,6 +1116,7 @@ router.put(
 
       if (
         incidence !== undefined &&
+        incidence !== "" &&
         (!Number.isFinite(Number(incidence)) ||
           Number(incidence) < 0 ||
           Number(incidence) > 100)
@@ -1162,6 +1128,7 @@ router.put(
 
       if (
         ageFrom !== undefined &&
+        ageFrom !== "" &&
         (!Number.isFinite(Number(ageFrom)) ||
           Number(ageFrom) < 0)
       ) {
@@ -1172,6 +1139,7 @@ router.put(
 
       if (
         ageTo !== undefined &&
+        ageTo !== "" &&
         (!Number.isFinite(Number(ageTo)) ||
           Number(ageTo) < 0)
       ) {
@@ -1182,18 +1150,19 @@ router.put(
 
       if (
         ageFrom !== undefined &&
+        ageFrom !== "" &&
         ageTo !== undefined &&
+        ageTo !== "" &&
         Number(ageFrom) > Number(ageTo)
       ) {
         return res.status(400).json({
-          message:
-            "Minimum age cannot be greater than maximum age",
+          message: "Minimum age cannot be greater than maximum age",
         });
       }
 
-      // -----------------------------
-      // 🔐 Update only allowed fields
-      // -----------------------------
+      // --------------------------------
+      // UPDATE EXISTING VALUES
+      // --------------------------------
 
       if (market !== undefined) {
         group.market = market;
@@ -1203,26 +1172,41 @@ router.put(
         group.language = language;
       }
 
-      if (targetCompletes !== undefined) {
+      if (
+        targetCompletes !== undefined &&
+        targetCompletes !== ""
+      ) {
         group.targetCompletes =
           Number(targetCompletes);
       }
 
-      if (loi !== undefined) {
+      if (
+        loi !== undefined &&
+        loi !== ""
+      ) {
         group.loi = Number(loi);
       }
 
-      if (incidence !== undefined) {
+      if (
+        incidence !== undefined &&
+        incidence !== ""
+      ) {
         group.incidence =
           Number(incidence);
       }
 
-      if (ageFrom !== undefined) {
+      if (
+        ageFrom !== undefined &&
+        ageFrom !== ""
+      ) {
         group.ageFrom =
           Number(ageFrom);
       }
 
-      if (ageTo !== undefined) {
+      if (
+        ageTo !== undefined &&
+        ageTo !== ""
+      ) {
         group.ageTo =
           Number(ageTo);
       }
@@ -1240,45 +1224,17 @@ router.put(
           advancedCalendar;
       }
 
-      // Keep existing behavior
-      if (cpi !== undefined) {
-        group.cpi = Number(cpi);
-      }
-
-      if (totalCost !== undefined) {
-        group.totalCost =
-          Number(totalCost);
-      }
-
       // ❌ Never allow frontend to modify:
       // group._id
       // group.name
       // group.status
-      // project.business
-      // project._id
+      // group.cpi
+      // group.totalCost
 
       await project.save();
 
-      return res.json({
-        targetGroup: {
-          _id: group._id,
-          name: group.name,
-          market: group.market,
-          language: group.language,
-          targetCompletes: group.targetCompletes,
-          loi: group.loi,
-          incidence: group.incidence,
-          ageFrom: group.ageFrom,
-          ageTo: group.ageTo,
-          gender: group.gender,
-          devices: group.devices,
-          advancedCalendar:
-            group.advancedCalendar,
-          cpi: group.cpi,
-          totalCost: group.totalCost,
-          status: group.status,
-        },
-      });
+      // Return the actual saved group
+      return res.json(group);
 
     } catch (err) {
       console.error(
@@ -1332,26 +1288,7 @@ router.get(
         });
       }
 
-      return res.json({
-        targetGroup: {
-          _id: group._id,
-          name: group.name,
-          market: group.market,
-          language: group.language,
-          targetCompletes: group.targetCompletes,
-          loi: group.loi,
-          incidence: group.incidence,
-          ageFrom: group.ageFrom,
-          ageTo: group.ageTo,
-          gender: group.gender,
-          devices: group.devices,
-          advancedCalendar:
-            group.advancedCalendar,
-          cpi: group.cpi,
-          totalCost: group.totalCost,
-          status: group.status,
-        },
-      });
+      return res.json(group);
 
     } catch (err) {
       console.error(
@@ -1365,5 +1302,6 @@ router.get(
     }
   }
 );
+
 
 export default router;
