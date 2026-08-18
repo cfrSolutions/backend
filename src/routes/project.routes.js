@@ -345,7 +345,7 @@ router.get(
         _id: req.params.id,
         business: userId,
       }).select(
-        "_id name description sector market targetCompletes ageFrom ageTo gender loi incidence budget timeline openEnded devices status surveyId surveyLinks targetGroups completes disqualified quotaFull totalResponses createdAt updatedAt"
+        "_id name description sector market targetCompletes ageFrom ageTo gender loi incidence budget timeline openEnded devices status surveyId redirects surveyLinks targetGroups completes disqualified quotaFull totalResponses createdAt updatedAt"
       );
 
       if (!project) {
