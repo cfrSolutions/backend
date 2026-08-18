@@ -696,154 +696,673 @@ router.post(
   }
 );
 
+// router.post(
+//   "/:projectId/target-groups",
+//   authMiddleware,
+//   businessOnly,
+//   async (req, res) => {
+//     const userId = req.user._id || req.user.id || req.user.userId;
+
+//     // const project =
+//     //   await Project.findById(
+//     //     req.params.projectId
+//     //   );
+
+//     if (!userId) {
+//         return res.status(401).json({
+//           message: "User not found in authentication token",
+//         });
+//       }
+      
+//       const project = await Project.findOne({
+//         _id: req.params.projectId,
+//         business: userId,
+//       });
+
+//       if (!project) {
+//   return res.status(404).json({
+//     message: "Project not found",
+//   });
+// }
+
+
+//     project.targetGroups.push({
+//        ...req.body,
+//       name:
+//         `Target Group ${
+//           project.targetGroups.length + 1
+//         }`,
+
+//       status: "DRAFT",
+//     });
+
+//     await project.save();
+
+//     res.json(
+//       project.targetGroups[
+//         project.targetGroups.length - 1
+//       ]
+//     );
+//   }
+// );
+
+// router.put(
+//   "/:projectId/target-group/:targetGroupId",
+//   authMiddleware, businessOnly,
+//   async (req, res) => {
+//     const {
+//   market,
+//   language,
+//   targetCompletes,
+//   loi,
+//   incidence,
+//   ageFrom,
+//   ageTo,
+//   gender,
+//   devices,
+//   advancedCalendar
+// } = req.body;
+//     // console.log("BODY:", req.body);
+
+//     // const project = await Project.findById(
+//     //   req.params.projectId
+//     // );
+//     const userId = req.user._id || req.user.id || req.user.userId;
+
+//      const project = await Project.findOne({
+//         _id: req.params.projectId,
+//         business: userId,
+//       });
+//       if (!project) {
+//   return res.status(404).json({
+//     message: "Project not found",
+//   });
+// }
+//     const group =
+//       project.targetGroups.id(
+//         req.params.targetGroupId
+//       );
+// if (!group) {
+//   return res.status(404).json({
+//     message: "Target group not found",
+//   });
+// }
+//     // Object.assign(group, req.body);
+//     Object.assign(group, {
+//   market,
+//   language,
+//   targetCompletes,
+//   loi,
+//   incidence,
+//   ageFrom,
+//   ageTo,
+//   gender,
+//   devices,
+//   advancedCalendar
+// });
+
+//     await project.save();
+
+//     res.json(group);
+//   }
+// );
+
+// router.get(
+//   "/:projectId/target-group/:targetGroupId",
+//   authMiddleware, businessOnly,
+//   async (req, res) => {
+
+//     // const project =
+//     //   await Project.findById(
+//     //     req.params.projectId
+//     //   );
+
+//     const userId = req.user._id || req.user.id || req.user.userId;
+
+//      const project = await Project.findOne({
+//         _id: req.params.projectId,
+//         business: userId,
+//       });
+    
+//       if (!project) {
+//   return res.status(404).json({
+//     message: "Project not found",
+//   });
+// }
+//     const group =
+//       project.targetGroups.id(
+//         req.params.targetGroupId
+//       );
+
+//     if (!group) {
+//       return res
+//         .status(404)
+//         .json({
+//           message:
+//             "Target group not found",
+//         });
+//     }
+
+//     res.json(group);
+//   }
+// );
+
 router.post(
   "/:projectId/target-groups",
   authMiddleware,
   businessOnly,
   async (req, res) => {
-    const userId = req.user._id || req.user.id || req.user.userId;
+    try {
+      const userId =
+        req.user._id ||
+        req.user.id ||
+        req.user.userId;
 
-    // const project =
-    //   await Project.findById(
-    //     req.params.projectId
-    //   );
-
-    if (!userId) {
+      if (!userId) {
         return res.status(401).json({
           message: "User not found in authentication token",
         });
       }
-      
+
+      // 🔐 Ownership check
       const project = await Project.findOne({
         _id: req.params.projectId,
         business: userId,
       });
 
       if (!project) {
-  return res.status(404).json({
-    message: "Project not found",
-  });
-}
+        return res.status(404).json({
+          message: "Project not found",
+        });
+      }
 
+      // 🔐 Only accept fields used by your existing frontend
+      const {
+        market,
+        language,
+        targetCompletes,
+        loi,
+        incidence,
+        ageFrom,
+        ageTo,
+        gender,
+        devices,
+        advancedCalendar,
 
-    project.targetGroups.push({
-       ...req.body,
-      name:
-        `Target Group ${
+        // Existing fields your frontend may save
+        cpi,
+        totalCost,
+      } = req.body;
+
+      // -----------------------------
+      // Validation
+      // -----------------------------
+
+      if (
+        targetCompletes !== undefined &&
+        (!Number.isFinite(Number(targetCompletes)) ||
+          Number(targetCompletes) <= 0)
+      ) {
+        return res.status(400).json({
+          message: "Invalid target completes",
+        });
+      }
+
+      if (
+        loi !== undefined &&
+        (!Number.isFinite(Number(loi)) ||
+          Number(loi) <= 0)
+      ) {
+        return res.status(400).json({
+          message: "Invalid LOI",
+        });
+      }
+
+      if (
+        incidence !== undefined &&
+        (!Number.isFinite(Number(incidence)) ||
+          Number(incidence) < 0 ||
+          Number(incidence) > 100)
+      ) {
+        return res.status(400).json({
+          message: "Invalid incidence rate",
+        });
+      }
+
+      if (
+        ageFrom !== undefined &&
+        (!Number.isFinite(Number(ageFrom)) ||
+          Number(ageFrom) < 0)
+      ) {
+        return res.status(400).json({
+          message: "Invalid minimum age",
+        });
+      }
+
+      if (
+        ageTo !== undefined &&
+        (!Number.isFinite(Number(ageTo)) ||
+          Number(ageTo) < 0)
+      ) {
+        return res.status(400).json({
+          message: "Invalid maximum age",
+        });
+      }
+
+      if (
+        ageFrom !== undefined &&
+        ageTo !== undefined &&
+        Number(ageFrom) > Number(ageTo)
+      ) {
+        return res.status(400).json({
+          message:
+            "Minimum age cannot be greater than maximum age",
+        });
+      }
+
+      // -----------------------------
+      // 🔐 Build allowed data
+      // -----------------------------
+
+      const targetGroupData = {
+        market,
+        language,
+
+        targetCompletes:
+          targetCompletes !== undefined
+            ? Number(targetCompletes)
+            : undefined,
+
+        loi:
+          loi !== undefined
+            ? Number(loi)
+            : undefined,
+
+        incidence:
+          incidence !== undefined
+            ? Number(incidence)
+            : undefined,
+
+        ageFrom:
+          ageFrom !== undefined
+            ? Number(ageFrom)
+            : undefined,
+
+        ageTo:
+          ageTo !== undefined
+            ? Number(ageTo)
+            : undefined,
+
+        gender,
+        devices,
+        advancedCalendar,
+
+        // Keep existing behavior
+        cpi:
+          cpi !== undefined
+            ? Number(cpi)
+            : undefined,
+
+        totalCost:
+          totalCost !== undefined
+            ? Number(totalCost)
+            : undefined,
+      };
+
+      // Remove undefined fields
+      Object.keys(targetGroupData).forEach((key) => {
+        if (targetGroupData[key] === undefined) {
+          delete targetGroupData[key];
+        }
+      });
+
+      // 🔐 Server-controlled fields
+      project.targetGroups.push({
+        ...targetGroupData,
+
+        name: `Target Group ${
           project.targetGroups.length + 1
         }`,
 
-      status: "DRAFT",
-    });
+        status: "DRAFT",
+      });
 
-    await project.save();
+      await project.save();
 
-    res.json(
-      project.targetGroups[
-        project.targetGroups.length - 1
-      ]
-    );
+      const group =
+        project.targetGroups[
+          project.targetGroups.length - 1
+        ];
+
+      // 🔐 Return only fields frontend needs
+      return res.status(201).json({
+        targetGroup: {
+          _id: group._id,
+          name: group.name,
+          market: group.market,
+          language: group.language,
+          targetCompletes: group.targetCompletes,
+          loi: group.loi,
+          incidence: group.incidence,
+          ageFrom: group.ageFrom,
+          ageTo: group.ageTo,
+          gender: group.gender,
+          devices: group.devices,
+          advancedCalendar: group.advancedCalendar,
+          cpi: group.cpi,
+          totalCost: group.totalCost,
+          status: group.status,
+        },
+      });
+
+    } catch (err) {
+      console.error(
+        "CREATE TARGET GROUP ERROR:",
+        err
+      );
+
+      return res.status(500).json({
+        message: "Failed to create target group",
+      });
+    }
   }
 );
 
 router.put(
   "/:projectId/target-group/:targetGroupId",
-  authMiddleware, businessOnly,
+  authMiddleware,
+  businessOnly,
   async (req, res) => {
-    const {
-  market,
-  language,
-  targetCompletes,
-  loi,
-  incidence,
-  ageFrom,
-  ageTo,
-  gender,
-  devices,
-  advancedCalendar
-} = req.body;
-    // console.log("BODY:", req.body);
+    try {
+      const userId =
+        req.user._id ||
+        req.user.id ||
+        req.user.userId;
 
-    // const project = await Project.findById(
-    //   req.params.projectId
-    // );
-    const userId = req.user._id || req.user.id || req.user.userId;
+      if (!userId) {
+        return res.status(401).json({
+          message: "User not found in authentication token",
+        });
+      }
 
-     const project = await Project.findOne({
+      // 🔐 Ownership check
+      const project = await Project.findOne({
         _id: req.params.projectId,
         business: userId,
       });
+
       if (!project) {
-  return res.status(404).json({
-    message: "Project not found",
-  });
-}
-    const group =
-      project.targetGroups.id(
+        return res.status(404).json({
+          message: "Project not found",
+        });
+      }
+
+      // Find target group inside owned project
+      const group = project.targetGroups.id(
         req.params.targetGroupId
       );
-if (!group) {
-  return res.status(404).json({
-    message: "Target group not found",
-  });
-}
-    // Object.assign(group, req.body);
-    Object.assign(group, {
-  market,
-  language,
-  targetCompletes,
-  loi,
-  incidence,
-  ageFrom,
-  ageTo,
-  gender,
-  devices,
-  advancedCalendar
-});
 
-    await project.save();
+      if (!group) {
+        return res.status(404).json({
+          message: "Target group not found",
+        });
+      }
 
-    res.json(group);
+      const {
+        market,
+        language,
+        targetCompletes,
+        loi,
+        incidence,
+        ageFrom,
+        ageTo,
+        gender,
+        devices,
+        advancedCalendar,
+
+        // Existing frontend fields
+        cpi,
+        totalCost,
+      } = req.body;
+
+      // -----------------------------
+      // Validation
+      // -----------------------------
+
+      if (
+        targetCompletes !== undefined &&
+        (!Number.isFinite(Number(targetCompletes)) ||
+          Number(targetCompletes) <= 0)
+      ) {
+        return res.status(400).json({
+          message: "Invalid target completes",
+        });
+      }
+
+      if (
+        loi !== undefined &&
+        (!Number.isFinite(Number(loi)) ||
+          Number(loi) <= 0)
+      ) {
+        return res.status(400).json({
+          message: "Invalid LOI",
+        });
+      }
+
+      if (
+        incidence !== undefined &&
+        (!Number.isFinite(Number(incidence)) ||
+          Number(incidence) < 0 ||
+          Number(incidence) > 100)
+      ) {
+        return res.status(400).json({
+          message: "Invalid incidence rate",
+        });
+      }
+
+      if (
+        ageFrom !== undefined &&
+        (!Number.isFinite(Number(ageFrom)) ||
+          Number(ageFrom) < 0)
+      ) {
+        return res.status(400).json({
+          message: "Invalid minimum age",
+        });
+      }
+
+      if (
+        ageTo !== undefined &&
+        (!Number.isFinite(Number(ageTo)) ||
+          Number(ageTo) < 0)
+      ) {
+        return res.status(400).json({
+          message: "Invalid maximum age",
+        });
+      }
+
+      if (
+        ageFrom !== undefined &&
+        ageTo !== undefined &&
+        Number(ageFrom) > Number(ageTo)
+      ) {
+        return res.status(400).json({
+          message:
+            "Minimum age cannot be greater than maximum age",
+        });
+      }
+
+      // -----------------------------
+      // 🔐 Update only allowed fields
+      // -----------------------------
+
+      if (market !== undefined) {
+        group.market = market;
+      }
+
+      if (language !== undefined) {
+        group.language = language;
+      }
+
+      if (targetCompletes !== undefined) {
+        group.targetCompletes =
+          Number(targetCompletes);
+      }
+
+      if (loi !== undefined) {
+        group.loi = Number(loi);
+      }
+
+      if (incidence !== undefined) {
+        group.incidence =
+          Number(incidence);
+      }
+
+      if (ageFrom !== undefined) {
+        group.ageFrom =
+          Number(ageFrom);
+      }
+
+      if (ageTo !== undefined) {
+        group.ageTo =
+          Number(ageTo);
+      }
+
+      if (gender !== undefined) {
+        group.gender = gender;
+      }
+
+      if (devices !== undefined) {
+        group.devices = devices;
+      }
+
+      if (advancedCalendar !== undefined) {
+        group.advancedCalendar =
+          advancedCalendar;
+      }
+
+      // Keep existing behavior
+      if (cpi !== undefined) {
+        group.cpi = Number(cpi);
+      }
+
+      if (totalCost !== undefined) {
+        group.totalCost =
+          Number(totalCost);
+      }
+
+      // ❌ Never allow frontend to modify:
+      // group._id
+      // group.name
+      // group.status
+      // project.business
+      // project._id
+
+      await project.save();
+
+      return res.json({
+        targetGroup: {
+          _id: group._id,
+          name: group.name,
+          market: group.market,
+          language: group.language,
+          targetCompletes: group.targetCompletes,
+          loi: group.loi,
+          incidence: group.incidence,
+          ageFrom: group.ageFrom,
+          ageTo: group.ageTo,
+          gender: group.gender,
+          devices: group.devices,
+          advancedCalendar:
+            group.advancedCalendar,
+          cpi: group.cpi,
+          totalCost: group.totalCost,
+          status: group.status,
+        },
+      });
+
+    } catch (err) {
+      console.error(
+        "UPDATE TARGET GROUP ERROR:",
+        err
+      );
+
+      return res.status(500).json({
+        message: "Failed to update target group",
+      });
+    }
   }
 );
 
 router.get(
   "/:projectId/target-group/:targetGroupId",
-  authMiddleware, businessOnly,
+  authMiddleware,
+  businessOnly,
   async (req, res) => {
+    try {
+      const userId =
+        req.user._id ||
+        req.user.id ||
+        req.user.userId;
 
-    // const project =
-    //   await Project.findById(
-    //     req.params.projectId
-    //   );
+      if (!userId) {
+        return res.status(401).json({
+          message: "User not found in authentication token",
+        });
+      }
 
-    const userId = req.user._id || req.user.id || req.user.userId;
-
-     const project = await Project.findOne({
+      const project = await Project.findOne({
         _id: req.params.projectId,
         business: userId,
       });
-    
+
       if (!project) {
-  return res.status(404).json({
-    message: "Project not found",
-  });
-}
-    const group =
-      project.targetGroups.id(
-        req.params.targetGroupId
+        return res.status(404).json({
+          message: "Project not found",
+        });
+      }
+
+      const group =
+        project.targetGroups.id(
+          req.params.targetGroupId
+        );
+
+      if (!group) {
+        return res.status(404).json({
+          message: "Target group not found",
+        });
+      }
+
+      return res.json({
+        targetGroup: {
+          _id: group._id,
+          name: group.name,
+          market: group.market,
+          language: group.language,
+          targetCompletes: group.targetCompletes,
+          loi: group.loi,
+          incidence: group.incidence,
+          ageFrom: group.ageFrom,
+          ageTo: group.ageTo,
+          gender: group.gender,
+          devices: group.devices,
+          advancedCalendar:
+            group.advancedCalendar,
+          cpi: group.cpi,
+          totalCost: group.totalCost,
+          status: group.status,
+        },
+      });
+
+    } catch (err) {
+      console.error(
+        "GET TARGET GROUP ERROR:",
+        err
       );
 
-    if (!group) {
-      return res
-        .status(404)
-        .json({
-          message:
-            "Target group not found",
-        });
+      return res.status(500).json({
+        message: "Failed to fetch target group",
+      });
     }
-
-    res.json(group);
   }
 );
 
