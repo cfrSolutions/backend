@@ -296,419 +296,7 @@
 
 
 
-// import express from "express";
-// import SurveyResponse from "../models/SurveyResponse.model.js";
-// import Wallet from "../models/Wallet.model.js";
-// import WalletTransaction from "../models/WalletTransaction.model.js";
-// import Survey from "../models/Survey.model.js";
-// import User from "../models/User.model.js";
-
-// const router = express.Router();
-
-// router.get("/", async (req, res) => {
-//   try {
-//     console.log("=================================");
-//     console.log("POSTBACK RECEIVED");
-//     console.log("QUERY:", req.query);
-//     console.log("=================================");
-
-//     // =====================================================
-//     // 1. GET RID
-//     // =====================================================
-
-//     const rid =
-//       req.query.rid ||
-//       req.query.RID ||
-//       req.query.pid ||
-//       req.query.PID ||
-//       req.query.uid;
-
-    
-
-//     if (!rid) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Missing RID",
-//       });
-//     }
-
-//     // =====================================================
-//     // 2. FIND RESPONSE
-//     // =====================================================
-
-//     const response = await SurveyResponse.findOne({ rid });
-
-//     if (!response) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "RID not found",
-//       });
-//     }
-
-//     console.log(
-//       "Response found:",
-//       response._id
-//     );
-
-//     console.log(
-//       "Current status:",
-//       response.status
-//     );
-
-//     // =====================================================
-//     // 3. GET STATUS
-//     // =====================================================
-
-//     const status = String(
-//       req.query.status || "COMPLETED"
-//     ).toUpperCase();
-
-//     const allowedStatuses = [
-//       "COMPLETED",
-//       "SCREENOUT",
-//       "QUOTA_FULL",
-//     ];
-
-//     if (!allowedStatuses.includes(status)) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Invalid status",
-//       });
-//     }
-
-//     // =====================================================
-//     // 4. FIND SURVEY
-//     // =====================================================
-
-//     const survey = await Survey.findById(
-//       response.survey
-//     );
-
-//     if (!survey) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "Survey not found",
-//       });
-//     }
-
-//     // =====================================================
-//     // 5. COMPLETED
-//     // =====================================================
-
-//     if (status === "COMPLETED") {
-
-//       // Already completed
-//       if (response.status === "COMPLETED") {
-//         return res.json({
-//           success: true,
-//           message: "Already completed",
-//         });
-//       }
-
-//       // IMPORTANT:
-//       // SCREENOUT and QUOTA_FULL are FINAL.
-//       // User cannot go back and complete the survey.
-//       if (
-//         response.status === "SCREENOUT" ||
-//         response.status === "QUOTA_FULL"
-//       ) {
-//         console.log(
-//           "COMPLETION REJECTED - RESPONSE ALREADY FINALIZED:",
-//           response.rid,
-//           response.status
-//         );
-
-//         return res.status(409).json({
-//           success: false,
-//           message: "Survey response is already finalized",
-//         });
-//       }
-
-//       // Only STARTED responses can become COMPLETED
-//       if (response.status !== "STARTED") {
-//         return res.status(409).json({
-//           success: false,
-//           message: "Survey response is not active",
-//         });
-//       }
-
-//       // ===================================================
-//       // POINTS
-//       // ===================================================
-
-//       const points = Number(
-//         survey.points || 0
-//       );
-
-//       const completedAt = new Date();
-
-//       // ===================================================
-//       // DURATION
-//       // ===================================================
-
-//       if (response.startedAt) {
-//         response.durationSeconds = Math.max(
-//           Math.floor(
-//             (completedAt - response.startedAt) /
-//               1000
-//           ),
-//           10
-//         );
-//       }
-
-//       // ===================================================
-//       // MARK COMPLETED
-//       // ===================================================
-
-//       response.status = "COMPLETED";
-//       response.completedAt = completedAt;
-
-//       await response.save();
-
-//       // console.log(
-//       //   "RESPONSE MARKED COMPLETED:",
-//       //   response.rid
-//       // );
-
-//       // ===================================================
-//       // CREDIT WALLET
-//       // ===================================================
-
-//       await Wallet.findOneAndUpdate(
-//         {
-//           user: response.user,
-//         },
-//         {
-//           $inc: {
-//             balance: points,
-//             totalEarned: points,
-//           },
-//         },
-//         {
-//           upsert: true,
-//         }
-//       );
-
-//       // console.log(
-//       //   "WALLET CREDITED:",
-//       //   points
-//       // );
-
-//       // ===================================================
-//       // WALLET TRANSACTION
-//       // ===================================================
-
-//       await WalletTransaction.create({
-//         user: response.user,
-//         type: "EARN",
-//         points,
-//         description:
-//           `Completed: ${survey.title}`,
-//         survey: survey._id,
-//       });
-
-//       // console.log(
-//       //   "WALLET TRANSACTION CREATED"
-//       // );
-
-//       // ===================================================
-//       // INCREASE COMPLETION COUNT
-//       // ===================================================
-
-//       const surveyUpdate =
-//         await Survey.updateOne(
-//           {
-//             _id: survey._id,
-//           },
-//           {
-//             $inc: {
-//               responsesCount: 1,
-//             },
-//           }
-//         );
-
-//       // console.log(
-//       //   "SURVEY COUNT UPDATED:",
-//       //   surveyUpdate
-//       // );
-
-//       // ===================================================
-//       // USER STATISTICS
-//       // ===================================================
-
-//       await User.updateOne(
-//         {
-//           _id: response.user,
-//         },
-//         {
-//           $set: {
-//             hasCompletedSurvey: true,
-//           },
-//         }
-//       );
-
-//       // console.log(
-//       //   "COMPLETION PROCESS FINISHED"
-//       // );
-//     }
-
-//     // =====================================================
-//     // 6. SCREENOUT
-//     // =====================================================
-
-//     else if (status === "SCREENOUT") {
-
-//       // Already completed → cannot become SCREENOUT
-//       if (response.status === "COMPLETED") {
-//         return res.status(409).json({
-//           success: false,
-//           message:
-//             "Completed response cannot be screenout",
-//         });
-//       }
-
-//       // Already quota full → cannot change
-//       if (response.status === "QUOTA_FULL") {
-//         return res.status(409).json({
-//           success: false,
-//           message:
-//             "Survey response is already finalized",
-//         });
-//       }
-
-//       // Already screenout
-//       if (response.status === "SCREENOUT") {
-//         return res.json({
-//           success: true,
-//           message: "Already screenout",
-//         });
-//       }
-
-//       // Only STARTED can become SCREENOUT
-//       if (response.status !== "STARTED") {
-//         return res.status(409).json({
-//           success: false,
-//           message:
-//             "Survey response is not active",
-//         });
-//       }
-
-//       response.status = "SCREENOUT";
-//       response.completedAt = new Date();
-
-//       await response.save();
-
-//       // Increase disqualified count
-//       await Survey.updateOne(
-//         {
-//           _id: survey._id,
-//         },
-//         {
-//           $inc: {
-//             disqualified: 1,
-//           },
-//         }
-//       );
-
-//       // console.log(
-//       //   "SCREENOUT PROCESSED:",
-//       //   response.rid
-//       // );
-//     }
-
-//     // =====================================================
-//     // 7. QUOTA FULL
-//     // =====================================================
-
-//     else if (status === "QUOTA_FULL") {
-
-//       // Already completed → cannot change
-//       if (response.status === "COMPLETED") {
-//         return res.status(409).json({
-//           success: false,
-//           message:
-//             "Completed response cannot be quota full",
-//         });
-//       }
-
-//       // Already screenout → cannot change
-//       if (response.status === "SCREENOUT") {
-//         return res.status(409).json({
-//           success: false,
-//           message:
-//             "Survey response is already finalized",
-//         });
-//       }
-
-//       // Already quota full
-//       if (response.status === "QUOTA_FULL") {
-//         return res.json({
-//           success: true,
-//           message: "Already quota full",
-//         });
-//       }
-
-//       // Only STARTED can become QUOTA_FULL
-//       if (response.status !== "STARTED") {
-//         return res.status(409).json({
-//           success: false,
-//           message:
-//             "Survey response is not active",
-//         });
-//       }
-
-//       response.status = "QUOTA_FULL";
-//       response.completedAt = new Date();
-
-//       await response.save();
-
-//       // Increase quota full count
-//       await Survey.updateOne(
-//         {
-//           _id: survey._id,
-//         },
-//         {
-//           $inc: {
-//             quotaFull: 1,
-//           },
-//         }
-//       );
-
-//       // console.log(
-//       //   "QUOTA FULL PROCESSED:",
-//       //   response.rid
-//       // );
-//     }
-
-//     // =====================================================
-//     // 8. FINAL RESPONSE
-//     // =====================================================
-
-//     return res.json({
-//       success: true,
-//       message: status,
-//     });
-
-//   } catch (err) {
-//     console.error(
-//       "POSTBACK ERROR:",
-//       err
-//     );
-
-//     return res.status(500).json({
-//       success: false,
-//       message:
-//         "Unable to process postback",
-//     });
-//   }
-// });
-
-// export default router;
-
-
 import express from "express";
-import crypto from "crypto";
-
 import SurveyResponse from "../models/SurveyResponse.model.js";
 import Wallet from "../models/Wallet.model.js";
 import WalletTransaction from "../models/WalletTransaction.model.js";
@@ -721,11 +309,12 @@ router.get("/", async (req, res) => {
   try {
     console.log("=================================");
     console.log("POSTBACK RECEIVED");
+    console.log("QUERY:", req.query);
     console.log("=================================");
 
-    // =========================================
+    // =====================================================
     // 1. GET RID
-    // =========================================
+    // =====================================================
 
     const rid =
       req.query.rid ||
@@ -734,6 +323,8 @@ router.get("/", async (req, res) => {
       req.query.PID ||
       req.query.uid;
 
+    
+
     if (!rid) {
       return res.status(400).json({
         success: false,
@@ -741,65 +332,11 @@ router.get("/", async (req, res) => {
       });
     }
 
-    // =========================================
-    // 2. GET STATUS
-    // =========================================
+    // =====================================================
+    // 2. FIND RESPONSE
+    // =====================================================
 
-    const status = String(
-      req.query.status || "COMPLETED"
-    ).toUpperCase();
-
-    const allowedStatuses = [
-      "COMPLETED",
-      "SCREENOUT",
-      "QUOTA_FULL",
-    ];
-
-    if (
-      !allowedStatuses.includes(status)
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid status",
-      });
-    }
-
-    // =========================================
-    // 3. GET POSTBACK TOKEN
-    // =========================================
-
-    const token = String(
-      req.query.token ||
-      req.query.postbackToken ||
-      ""
-    );
-
-    if (!token) {
-      console.warn(
-        "UNAUTHORIZED POSTBACK - TOKEN MISSING",
-        {
-          rid,
-          status,
-        }
-      );
-
-      return res.status(403).json({
-        success: false,
-        message:
-          "Unauthorized postback",
-      });
-    }
-
-    // =========================================
-    // 4. FIND RESPONSE
-    // =========================================
-
-    const response =
-      await SurveyResponse
-        .findOne({ rid })
-        .select(
-          "+postbackToken"
-        );
+    const response = await SurveyResponse.findOne({ rid });
 
     if (!response) {
       return res.status(404).json({
@@ -818,95 +355,34 @@ router.get("/", async (req, res) => {
       response.status
     );
 
-    // =========================================
-    // 5. VERIFY RESPONSE TOKEN
-    // =========================================
+    // =====================================================
+    // 3. GET STATUS
+    // =====================================================
 
-    const expectedToken =
-      String(
-        response.postbackToken || ""
-      );
+    const status = String(
+      req.query.status || "COMPLETED"
+    ).toUpperCase();
 
-    if (!expectedToken) {
-      console.warn(
-        "POSTBACK TOKEN NOT CONFIGURED",
-        {
-          rid,
-        }
-      );
+    const allowedStatuses = [
+      "COMPLETED",
+      "SCREENOUT",
+      "QUOTA_FULL",
+    ];
 
-      return res.status(403).json({
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({
         success: false,
-        message:
-          "Postback authorization not configured",
+        message: "Invalid status",
       });
     }
 
-    const providedBuffer =
-      Buffer.from(
-        token,
-        "utf8"
-      );
+    // =====================================================
+    // 4. FIND SURVEY
+    // =====================================================
 
-    const expectedBuffer =
-      Buffer.from(
-        expectedToken,
-        "utf8"
-      );
-
-    if (
-      providedBuffer.length !==
-      expectedBuffer.length
-    ) {
-      console.warn(
-        "INVALID POSTBACK TOKEN",
-        {
-          rid,
-          status,
-        }
-      );
-
-      return res.status(403).json({
-        success: false,
-        message:
-          "Unauthorized postback",
-      });
-    }
-
-    const validToken =
-      crypto.timingSafeEqual(
-        providedBuffer,
-        expectedBuffer
-      );
-
-    if (!validToken) {
-      console.warn(
-        "INVALID POSTBACK TOKEN",
-        {
-          rid,
-          status,
-        }
-      );
-
-      return res.status(403).json({
-        success: false,
-        message:
-          "Unauthorized postback",
-      });
-    }
-
-    console.log(
-      "POSTBACK TOKEN VERIFIED"
+    const survey = await Survey.findById(
+      response.survey
     );
-
-    // =========================================
-    // 6. FIND SURVEY
-    // =========================================
-
-    const survey =
-      await Survey.findById(
-        response.survey
-      );
 
     if (!survey) {
       return res.status(404).json({
@@ -915,122 +391,97 @@ router.get("/", async (req, res) => {
       });
     }
 
-    // =========================================
-    // 7. COMPLETED
-    // =========================================
+    // =====================================================
+    // 5. COMPLETED
+    // =====================================================
 
-    if (
-      status === "COMPLETED"
-    ) {
+    if (status === "COMPLETED") {
 
       // Already completed
-      if (
-        response.status ===
-        "COMPLETED"
-      ) {
+      if (response.status === "COMPLETED") {
         return res.json({
           success: true,
-          message:
-            "Already completed",
+          message: "Already completed",
         });
       }
 
-      // Screenout is final
+      // IMPORTANT:
+      // SCREENOUT and QUOTA_FULL are FINAL.
+      // User cannot go back and complete the survey.
       if (
-        response.status ===
-        "SCREENOUT"
+        response.status === "SCREENOUT" ||
+        response.status === "QUOTA_FULL"
       ) {
-        return res.status(409).json({
-          success: false,
-          message:
-            "Survey response is already screenout",
-        });
-      }
-
-      // Quota full is final
-      if (
-        response.status ===
-        "QUOTA_FULL"
-      ) {
-        return res.status(409).json({
-          success: false,
-          message:
-            "Survey response is already quota full",
-        });
-      }
-
-      // Only STARTED can complete
-      if (
-        response.status !==
-        "STARTED"
-      ) {
-        return res.status(409).json({
-          success: false,
-          message:
-            "Survey response is not active",
-        });
-      }
-
-      // =======================================
-      // POINTS
-      // =======================================
-
-      const points =
-        Number(
-          survey.points || 0
+        console.log(
+          "COMPLETION REJECTED - RESPONSE ALREADY FINALIZED:",
+          response.rid,
+          response.status
         );
 
-      const completedAt =
-        new Date();
-
-      // =======================================
-      // DURATION
-      // =======================================
-
-      if (response.startedAt) {
-        response.durationSeconds =
-          Math.max(
-            Math.floor(
-              (
-                completedAt -
-                response.startedAt
-              ) / 1000
-            ),
-            10
-          );
+        return res.status(409).json({
+          success: false,
+          message: "Survey response is already finalized",
+        });
       }
 
-      // =======================================
+      // Only STARTED responses can become COMPLETED
+      if (response.status !== "STARTED") {
+        return res.status(409).json({
+          success: false,
+          message: "Survey response is not active",
+        });
+      }
+
+      // ===================================================
+      // POINTS
+      // ===================================================
+
+      const points = Number(
+        survey.points || 0
+      );
+
+      const completedAt = new Date();
+
+      // ===================================================
+      // DURATION
+      // ===================================================
+
+      if (response.startedAt) {
+        response.durationSeconds = Math.max(
+          Math.floor(
+            (completedAt - response.startedAt) /
+              1000
+          ),
+          10
+        );
+      }
+
+      // ===================================================
       // MARK COMPLETED
-      // =======================================
+      // ===================================================
 
-      response.status =
-        "COMPLETED";
-
-      response.completedAt =
-        completedAt;
+      response.status = "COMPLETED";
+      response.completedAt = completedAt;
 
       await response.save();
 
-      console.log(
-        "RESPONSE MARKED COMPLETED:",
-        response.rid
-      );
+      // console.log(
+      //   "RESPONSE MARKED COMPLETED:",
+      //   response.rid
+      // );
 
-      // =======================================
-      // WALLET
-      // =======================================
+      // ===================================================
+      // CREDIT WALLET
+      // ===================================================
 
       await Wallet.findOneAndUpdate(
         {
-          user:
-            response.user,
+          user: response.user,
         },
         {
           $inc: {
             balance: points,
-            totalEarned:
-              points,
+            totalEarned: points,
           },
         },
         {
@@ -1038,34 +489,36 @@ router.get("/", async (req, res) => {
         }
       );
 
-      // =======================================
-      // TRANSACTION
-      // =======================================
+      // console.log(
+      //   "WALLET CREDITED:",
+      //   points
+      // );
+
+      // ===================================================
+      // WALLET TRANSACTION
+      // ===================================================
 
       await WalletTransaction.create({
-        user:
-          response.user,
-
+        user: response.user,
         type: "EARN",
-
         points,
-
         description:
           `Completed: ${survey.title}`,
-
-        survey:
-          survey._id,
+        survey: survey._id,
       });
 
-      // =======================================
-      // SURVEY COUNT
-      // =======================================
+      // console.log(
+      //   "WALLET TRANSACTION CREATED"
+      // );
+
+      // ===================================================
+      // INCREASE COMPLETION COUNT
+      // ===================================================
 
       const surveyUpdate =
         await Survey.updateOne(
           {
-            _id:
-              survey._id,
+            _id: survey._id,
           },
           {
             $inc: {
@@ -1074,51 +527,39 @@ router.get("/", async (req, res) => {
           }
         );
 
-      console.log(
-        "SURVEY COUNT UPDATED:",
-        surveyUpdate
-      );
+      // console.log(
+      //   "SURVEY COUNT UPDATED:",
+      //   surveyUpdate
+      // );
 
-      // =======================================
-      // USER
-      // =======================================
+      // ===================================================
+      // USER STATISTICS
+      // ===================================================
 
       await User.updateOne(
         {
-          _id:
-            response.user,
+          _id: response.user,
         },
         {
           $set: {
-            hasCompletedSurvey:
-              true,
+            hasCompletedSurvey: true,
           },
         }
       );
 
-      console.log(
-        "COMPLETION PROCESS FINISHED"
-      );
-
-      return res.json({
-        success: true,
-        message:
-          "COMPLETED",
-      });
+      // console.log(
+      //   "COMPLETION PROCESS FINISHED"
+      // );
     }
 
-    // =========================================
-    // 8. SCREENOUT
-    // =========================================
+    // =====================================================
+    // 6. SCREENOUT
+    // =====================================================
 
-    if (
-      status === "SCREENOUT"
-    ) {
+    else if (status === "SCREENOUT") {
 
-      if (
-        response.status ===
-        "COMPLETED"
-      ) {
+      // Already completed → cannot become SCREENOUT
+      if (response.status === "COMPLETED") {
         return res.status(409).json({
           success: false,
           message:
@@ -1126,10 +567,8 @@ router.get("/", async (req, res) => {
         });
       }
 
-      if (
-        response.status ===
-        "QUOTA_FULL"
-      ) {
+      // Already quota full → cannot change
+      if (response.status === "QUOTA_FULL") {
         return res.status(409).json({
           success: false,
           message:
@@ -1137,21 +576,16 @@ router.get("/", async (req, res) => {
         });
       }
 
-      if (
-        response.status ===
-        "SCREENOUT"
-      ) {
+      // Already screenout
+      if (response.status === "SCREENOUT") {
         return res.json({
           success: true,
-          message:
-            "Already screenout",
+          message: "Already screenout",
         });
       }
 
-      if (
-        response.status !==
-        "STARTED"
-      ) {
+      // Only STARTED can become SCREENOUT
+      if (response.status !== "STARTED") {
         return res.status(409).json({
           success: false,
           message:
@@ -1159,18 +593,15 @@ router.get("/", async (req, res) => {
         });
       }
 
-      response.status =
-        "SCREENOUT";
-
-      response.completedAt =
-        new Date();
+      response.status = "SCREENOUT";
+      response.completedAt = new Date();
 
       await response.save();
 
+      // Increase disqualified count
       await Survey.updateOne(
         {
-          _id:
-            survey._id,
+          _id: survey._id,
         },
         {
           $inc: {
@@ -1179,30 +610,20 @@ router.get("/", async (req, res) => {
         }
       );
 
-      console.log(
-        "SCREENOUT PROCESSED:",
-        response.rid
-      );
-
-      return res.json({
-        success: true,
-        message:
-          "SCREENOUT",
-      });
+      // console.log(
+      //   "SCREENOUT PROCESSED:",
+      //   response.rid
+      // );
     }
 
-    // =========================================
-    // 9. QUOTA FULL
-    // =========================================
+    // =====================================================
+    // 7. QUOTA FULL
+    // =====================================================
 
-    if (
-      status === "QUOTA_FULL"
-    ) {
+    else if (status === "QUOTA_FULL") {
 
-      if (
-        response.status ===
-        "COMPLETED"
-      ) {
+      // Already completed → cannot change
+      if (response.status === "COMPLETED") {
         return res.status(409).json({
           success: false,
           message:
@@ -1210,10 +631,8 @@ router.get("/", async (req, res) => {
         });
       }
 
-      if (
-        response.status ===
-        "SCREENOUT"
-      ) {
+      // Already screenout → cannot change
+      if (response.status === "SCREENOUT") {
         return res.status(409).json({
           success: false,
           message:
@@ -1221,21 +640,16 @@ router.get("/", async (req, res) => {
         });
       }
 
-      if (
-        response.status ===
-        "QUOTA_FULL"
-      ) {
+      // Already quota full
+      if (response.status === "QUOTA_FULL") {
         return res.json({
           success: true,
-          message:
-            "Already quota full",
+          message: "Already quota full",
         });
       }
 
-      if (
-        response.status !==
-        "STARTED"
-      ) {
+      // Only STARTED can become QUOTA_FULL
+      if (response.status !== "STARTED") {
         return res.status(409).json({
           success: false,
           message:
@@ -1243,18 +657,15 @@ router.get("/", async (req, res) => {
         });
       }
 
-      response.status =
-        "QUOTA_FULL";
-
-      response.completedAt =
-        new Date();
+      response.status = "QUOTA_FULL";
+      response.completedAt = new Date();
 
       await response.save();
 
+      // Increase quota full count
       await Survey.updateOne(
         {
-          _id:
-            survey._id,
+          _id: survey._id,
         },
         {
           $inc: {
@@ -1263,26 +674,22 @@ router.get("/", async (req, res) => {
         }
       );
 
-      console.log(
-        "QUOTA FULL PROCESSED:",
-        response.rid
-      );
-
-      return res.json({
-        success: true,
-        message:
-          "QUOTA_FULL",
-      });
+      // console.log(
+      //   "QUOTA FULL PROCESSED:",
+      //   response.rid
+      // );
     }
 
-    return res.status(400).json({
-      success: false,
-      message:
-        "Unsupported status",
+    // =====================================================
+    // 8. FINAL RESPONSE
+    // =====================================================
+
+    return res.json({
+      success: true,
+      message: status,
     });
 
   } catch (err) {
-
     console.error(
       "POSTBACK ERROR:",
       err
