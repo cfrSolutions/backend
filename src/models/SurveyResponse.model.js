@@ -28,27 +28,36 @@ const surveyResponseSchema = new mongoose.Schema(
     rid: {
       type: String,
       index: true,
+      required: true,
+      unique: true,
+      uppercase: true,
+      trim: true,
     },
 
     postbackToken: {
   type: String,
   unique: true,
-  index: true,
+  sparse: true,
+      index: true,
+      select: false,
 },
 
     expectedCompleteTk: {
   type: String,
   default: "",
+  select: false,
 },
 
 expectedDqTk: {
   type: String,
   default: "",
+  select: false,
 },
 
 expectedQuotaTk: {
   type: String,
   default: "",
+  select: false,
 },
 
     pid: String,
