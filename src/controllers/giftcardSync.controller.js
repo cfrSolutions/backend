@@ -164,7 +164,9 @@ export const syncGiftCards = async (req, res) => {
 
 for (const p of data.products) {
   if (!Array.isArray(p.skus)) continue;
-const logo = `https://testflight.tremendous.com/product_images/${p.id}/logo`;
+// const logo = `https://testflight.tremendous.com/product_images/${p.id}/logo`;
+const logo =
+        `https://api.tremendous.com/product_images/${p.id}/logo`;
 
   const cardImg = p.images?.find(i => i.type === "card")?.src || "";
 
