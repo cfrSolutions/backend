@@ -6,6 +6,7 @@ import GiftCardRedemption from "../models/GiftCardRedemption.model.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { syncGiftCards } from "../controllers/giftcardSync.controller.js";
 import { sendTremendousReward } from "../services/tremendous.service.js";
+import adminOnly from "../middleware/admin.middleware.js";
 import User from "../models/User.model.js";
 import axios from "axios";
 import UserProfile from "../models/UserProfile.model.js";
@@ -48,7 +49,7 @@ const currency = getCurrencyFromCountry(countryCode);
 //   res.json(cards);
 // });
 
-router.post("/sync", authMiddleware, syncGiftCards);
+router.post("/sync", authMiddleware, adminOnly, syncGiftCards);
 
 
 /* REDEEM */

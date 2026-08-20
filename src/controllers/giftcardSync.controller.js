@@ -155,6 +155,13 @@ const tremendous = axios.create({
 });
 
 export const syncGiftCards = async (req, res) => {
+   try {
+    if (!process.env.TREMENDOUS_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        message: "Tremendous API key is not configured",
+      });
+    }
   const { data } = await tremendous.get("/products");
 
   // console.log("TOTAL PRODUCTS:", data.products.length);
@@ -165,11 +172,21 @@ export const syncGiftCards = async (req, res) => {
 for (const p of data.products) {
   if (!Array.isArray(p.skus)) continue;
 // const logo = `https://testflight.tremendous.com/product_images/${p.id}/logo`;
+// const logo =
+//         `https://api.tremendous.com/product_images/${p.id}/logo`;
+
+//   const cardImg = p.images?.find(i => i.type === "card")?.src || "";
+
+const cardImg =
+  p.images?.find(
+    (image) => image.type === "card"
+  )?.src || "";
+
 const logo =
-        `https://api.tremendous.com/product_images/${p.id}/logo`;
-
-  const cardImg = p.images?.find(i => i.type === "card")?.src || "";
-
+  p.images?.find(
+    (image) => image.type === "logo"
+  )?.src || cardImg;
+  
   for (const sku of p.skus) {
     if (!sku.min) continue;
 
@@ -253,5 +270,16 @@ const pointsRequired = Math.ceil(sku.min * 100 * margin);
 // }
 
 
-  res.json({ success: true, created });
+  return res.json({ success: true, created });
+} catch (err) {
+    console.error(
+      "GIFT CARD SYNC ERROR:",
+      err.response?.data || err.message
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Gift card sync failed",
+    });
+  }
 };
