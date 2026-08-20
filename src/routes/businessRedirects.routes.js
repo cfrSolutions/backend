@@ -1230,11 +1230,16 @@ if (!response) return res.send("Response not found");
     await response.save();
     try {
   const postbackUrl =
-    `https://api.inputify.io/api/postback` +
-    `?rid=${encodeURIComponent(RID)}` +
-    `&status=COMPLETED`;
+  `https://api.inputify.io/api/postback` +
+  `?rid=${encodeURIComponent(RID)}` +
+  `&status=COMPLETED`;
 
-  const result = await fetch(postbackUrl);
+const result = await fetch(postbackUrl, {
+  headers: {
+    "X-Inputify-Postback-Secret":
+      process.env.INPUTIFY_POSTBACK_SECRET,
+  },
+});
 
   // console.log(
   //   "USER POSTBACK:",
