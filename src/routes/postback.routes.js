@@ -416,36 +416,30 @@ import {
 
 const router = express.Router();
 
-
-// =====================================================
-// INTERNAL POSTBACK
-// =====================================================
-
 router.get("/", async (req, res) => {
   try {
+    console.log("=================================");
+    console.log("POSTBACK RECEIVED");
+    console.log("=================================");
 
-    console.log(
-      "================================="
+    // =========================================
+    // 1. AUTHENTICATE INTERNAL POSTBACK
+    // =========================================
+
+    const providedSecret = req.get(
+      "X-Inputify-Postback-Secret"
     );
 
-    console.log(
-      "POSTBACK RECEIVED"
-    );
-
-    console.log(
-      "================================="
-    );
-
-    const incomingSecret =
-      req.get("X-Inputify-Postback-Secret");
+    const internalSecret =
+      process.env.INPUTIFY_POSTBACK_SECRET;
 
     if (
-      !incomingSecret ||
-      incomingSecret !==
-        process.env.INPUTIFY_POSTBACK_SECRET
+      !internalSecret ||
+      !providedSecret ||
+      providedSecret !== internalSecret
     ) {
       console.warn(
-        "UNAUTHORIZED POSTBACK ATTEMPT",
+        "UNAUTHORIZED POSTBACK",
         {
           ip: req.ip,
           rid: req.query.rid,
@@ -459,51 +453,17 @@ router.get("/", async (req, res) => {
       });
     }
 
-    const rid =
+    // =========================================
+    // 2. GET RID
+    // =========================================
+
+    const rid = String(
       req.query.rid ||
-      req.query.RID;
-
-    const status =
-      String(
-        req.query.status || ""
-      ).toUpperCase();
-
-    // =========================================
-    // INTERNAL SECRET
-    // =========================================
-
-    const providedSecret =
-      req.get(
-        "x-inputify-postback-secret"
-      );
-
-    const internalSecret =
-      process.env.INPUTIFY_POSTBACK_SECRET;
-
-    if (
-      !internalSecret ||
-      !providedSecret ||
-      providedSecret !== internalSecret
-    ) {
-
-      console.warn(
-        "UNAUTHORIZED POSTBACK",
-        {
-          rid,
-          status,
-          ip: req.ip,
-        }
-      );
-
-      return res.status(403).json({
-        success: false,
-        message: "Unauthorized",
-      });
-    }
-
-    // =========================================
-    // VALIDATE RID
-    // =========================================
+      req.query.RID ||
+      ""
+    )
+      .trim()
+      .toUpperCase();
 
     if (!rid) {
       return res.status(400).json({
@@ -513,8 +473,14 @@ router.get("/", async (req, res) => {
     }
 
     // =========================================
-    // VALIDATE STATUS
+    // 3. GET STATUS
     // =========================================
+
+    const status = String(
+      req.query.status || ""
+    )
+      .trim()
+      .toUpperCase();
 
     if (
       ![
@@ -530,7 +496,7 @@ router.get("/", async (req, res) => {
     }
 
     // =========================================
-    // PROCESS
+    // 4. PROCESS
     // =========================================
 
     const result =
@@ -554,7 +520,6 @@ router.get("/", async (req, res) => {
     });
 
   } catch (err) {
-
     console.error(
       "POSTBACK ERROR:",
       err

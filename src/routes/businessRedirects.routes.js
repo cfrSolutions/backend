@@ -1327,7 +1327,13 @@ if (response) {
   await fetch(
     `https://api.inputify.io/api/postback` +
     `?rid=${encodeURIComponent(RID)}` +
-    `&status=SCREENOUT`
+    `&status=SCREENOUT`,
+    {
+    headers: {
+      "X-Inputify-Postback-Secret":
+        process.env.INPUTIFY_POSTBACK_SECRET,
+    },
+  }
   );
 } catch (err) {
   console.log(err.message);
@@ -1436,7 +1442,13 @@ if (response) {
   await fetch(
     `https://api.inputify.io/api/postback` +
     `?rid=${encodeURIComponent(RID)}` +
-    `&status=QUOTA_FULL`
+    `&status=QUOTA_FULL`,
+     {
+    headers: {
+      "X-Inputify-Postback-Secret":
+        process.env.INPUTIFY_POSTBACK_SECRET,
+    },
+  }
   );
 } catch (err) {
   console.log(err.message);
