@@ -143,6 +143,56 @@ router.get(
         }
       }
 
+      // =====================================================
+// GOOGLE REFERRAL
+// Only apply referral to a user who does not already
+// have a referrer.
+// =====================================================
+
+if (
+  referralCode &&
+  req.user.role !== "ADMIN" &&
+  req.user.role !== "SUPERADMIN" &&
+  !req.user.referredBy
+) {
+  const refUser = await User.findOne({
+    referralCode: referralCode.trim(),
+  });
+
+  // Prevent self-referral
+  if (
+    refUser &&
+    refUser._id.toString() !== req.user._id.toString()
+  ) {
+    req.user.referredBy = refUser._id;
+
+    await req.user.save();
+
+    const REFERRAL_POINTS = 50;
+
+    await WalletTransaction.create({
+      user: refUser._id,
+      type: "EARN",
+      points: REFERRAL_POINTS,
+      description: "Referral bonus",
+    });
+
+    await Wallet.findOneAndUpdate(
+      { user: refUser._id },
+      {
+        $inc: {
+          balance: REFERRAL_POINTS,
+          totalEarned: REFERRAL_POINTS,
+        },
+      },
+      {
+        upsert: true,
+        new: true,
+      }
+    );
+  }
+}
+
       // console.log("SELECTED ROLE FROM LOGIN:", selectedRole);
 
       // =====================================================
