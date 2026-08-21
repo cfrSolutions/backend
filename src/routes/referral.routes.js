@@ -116,7 +116,7 @@ router.get("/stats", authMiddleware, async (req, res) => {
     });
 
   } catch (err) {
-    // console.error("REFERRAL STATS ERROR:", err);
+    console.error("REFERRAL STATS ERROR:", err);
 
     return res.status(500).json({
       message: "Referral stats error",
