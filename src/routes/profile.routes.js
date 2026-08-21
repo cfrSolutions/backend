@@ -38,56 +38,153 @@
 // export default router;
 
 
+// import express from "express";
+// import Profile from "../models/Profile.model.js";
+// import adminOnly from "../middleware/admin.middleware.js";
+// import { authMiddleware } from "../middleware/auth.middleware.js";
+
+// const router = express.Router();
+
+// /*
+// =====================================================
+// GET ALL PROFILES
+// Authenticated users only
+// =====================================================
+// */
+// router.get("/", authMiddleware, adminOnly, async (req, res) => {
+//   try {
+//     const profiles = await Profile.find();
+
+//     return res.json(profiles);
+//   } catch (error) {
+//     console.error("GET PROFILES ERROR:", error);
+
+//     return res.status(500).json({
+//       success: false,
+//       message: "Failed to load profiles",
+//     });
+//   }
+// });
+
+
+// /*
+// =====================================================
+// PROFILE LIBRARY
+// Authenticated users only
+// =====================================================
+// */
+// router.get(
+//   "/profile-library",
+//   authMiddleware,
+//   async (req, res) => {
+//     try {
+//       const profiles = await Profile.find({
+//         active: true,
+//       });
+
+//       return res.json(profiles);
+//     } catch (error) {
+//       console.error(
+//         "PROFILE LIBRARY ERROR:",
+//         error
+//       );
+
+//       return res.status(500).json({
+//         success: false,
+//         message: "Failed to load profile library",
+//       });
+//     }
+//   }
+// );
+
+
+// /*
+// =====================================================
+// ACTIVE PROFILES
+// Authenticated users only
+// =====================================================
+// */
+// router.get(
+//   "/profiles",
+//   authMiddleware,
+//   async (req, res) => {
+//     try {
+//       const profiles = await Profile.find({
+//         active: true,
+//       });
+
+//       return res.json(profiles);
+//     } catch (error) {
+//       console.error(
+//         "ACTIVE PROFILES ERROR:",
+//         error
+//       );
+
+//       return res.status(500).json({
+//         success: false,
+//         message: "Failed to load profiles",
+//       });
+//     }
+//   }
+// );
+
+// export default router;
+
 import express from "express";
 import Profile from "../models/Profile.model.js";
-import adminOnly from "../middleware/admin.middleware.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
+import adminOnly from "../middleware/admin.middleware.js";
 
 const router = express.Router();
 
-/*
-=====================================================
-GET ALL PROFILES
-Authenticated users only
-=====================================================
-*/
-router.get("/", authMiddleware, adminOnly, async (req, res) => {
-  try {
-    const profiles = await Profile.find();
+// =====================================================
+// ADMIN ONLY — ALL PROFILES
+// =====================================================
 
-    return res.json(profiles);
-  } catch (error) {
-    console.error("GET PROFILES ERROR:", error);
+router.get(
+  "/",
+  authMiddleware,
+  adminOnly,
+  async (req, res) => {
+    try {
+      const profiles = await Profile.find()
+        .select("-__v");
 
-    return res.status(500).json({
-      success: false,
-      message: "Failed to load profiles",
-    });
+      return res.json(profiles);
+    } catch (error) {
+      console.error("GET PROFILES ERROR:", error);
+
+      return res.status(500).json({
+        success: false,
+        message: "Failed to load profiles",
+      });
+    }
   }
-});
+);
 
+// =====================================================
+// AUTHENTICATED USERS — ACTIVE PROFILE LIBRARY
+// Only return fields the frontend actually needs.
+// =====================================================
 
-/*
-=====================================================
-PROFILE LIBRARY
-Authenticated users only
-=====================================================
-*/
 router.get(
   "/profile-library",
   authMiddleware,
   async (req, res) => {
     try {
-      const profiles = await Profile.find({
-        active: true,
-      });
+      const profiles = await Profile.find(
+        { active: true },
+        {
+          name: 1,
+          description: 1,
+          image: 1,
+          category: 1,
+        }
+      );
 
       return res.json(profiles);
     } catch (error) {
-      console.error(
-        "PROFILE LIBRARY ERROR:",
-        error
-      );
+      console.error("PROFILE LIBRARY ERROR:", error);
 
       return res.status(500).json({
         success: false,
@@ -97,28 +194,28 @@ router.get(
   }
 );
 
+// =====================================================
+// AUTHENTICATED USERS — ACTIVE PROFILES
+// =====================================================
 
-/*
-=====================================================
-ACTIVE PROFILES
-Authenticated users only
-=====================================================
-*/
 router.get(
   "/profiles",
   authMiddleware,
   async (req, res) => {
     try {
-      const profiles = await Profile.find({
-        active: true,
-      });
+      const profiles = await Profile.find(
+        { active: true },
+        {
+          name: 1,
+          description: 1,
+          image: 1,
+          category: 1,
+        }
+      );
 
       return res.json(profiles);
     } catch (error) {
-      console.error(
-        "ACTIVE PROFILES ERROR:",
-        error
-      );
+      console.error("ACTIVE PROFILES ERROR:", error);
 
       return res.status(500).json({
         success: false,
