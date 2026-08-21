@@ -169,7 +169,7 @@ if (
 
     await req.user.save();
 
-    const REFERRAL_POINTS = 50;
+    const REFERRAL_POINTS = 1;
 
     await WalletTransaction.create({
       user: refUser._id,
