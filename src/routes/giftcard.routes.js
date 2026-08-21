@@ -550,15 +550,7 @@ router.post(
       let order;
 
       try {
-        if (process.env.REDEMPTION_TEST_MODE === "true") {
-  console.log("🧪 REDEMPTION TEST MODE");
 
-  order = {
-    order: {
-      id: `TEST_${Date.now()}`,
-    },
-  };
-} else {
         order =
           await sendTremendousReward({
             email: user.email,
@@ -577,7 +569,7 @@ router.post(
             // ⭐ IMPORTANT
             externalId,
           });
-        }
+
       } catch (err) {
 
         console.error(
