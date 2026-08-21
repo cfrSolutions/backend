@@ -212,29 +212,51 @@ router.get(
       // this condition to the correct source/type.
       //
 
+      // const referralTx =
+      //   await WalletTransaction.aggregate([
+      //     {
+      //       $match: {
+      //         user: objectUserId,
+      //         source: "SURVEY",
+      //       },
+      //     },
+
+      //     {
+      //       $group: {
+      //         _id: null,
+
+      //         totalPoints: {
+      //           $sum: "$points",
+      //         },
+
+      //         count: {
+      //           $sum: 1,
+      //         },
+      //       },
+      //     },
+      //   ]);
+
       const referralTx =
-        await WalletTransaction.aggregate([
-          {
-            $match: {
-              user: objectUserId,
-              source: "SURVEY",
-            },
-          },
-
-          {
-            $group: {
-              _id: null,
-
-              totalPoints: {
-                $sum: "$points",
-              },
-
-              count: {
-                $sum: 1,
-              },
-            },
-          },
-        ]);
+  await WalletTransaction.aggregate([
+    {
+      $match: {
+        user: objectUserId,
+        type: "EARN",
+        description: "Referral bonus",
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        totalPoints: {
+          $sum: "$points",
+        },
+        count: {
+          $sum: 1,
+        },
+      },
+    },
+  ]);
 
       // =========================================
       // 6. RESPONSE
