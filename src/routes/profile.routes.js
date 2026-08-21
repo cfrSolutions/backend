@@ -169,7 +169,7 @@ router.get(
 
 router.get(
   "/profile-library",
-  authMiddleware,
+  authMiddleware, adminOnly,
   async (req, res) => {
     try {
       const profiles = await Profile.find(
