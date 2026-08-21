@@ -28,6 +28,18 @@ faceValue: {
   type: Number,
 },
 
+externalId: {
+  type: String,
+  unique: true,
+  sparse: true,
+  index: true,
+},
+
+tremendousOrderId: {
+  type: String,
+  default: "",
+},
+
     status: {
       type: String,
       enum: ["PENDING", "SUCCESS", "FAILED","PROCESSING"],

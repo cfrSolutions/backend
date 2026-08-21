@@ -110,8 +110,11 @@ export const sendTremendousReward = async ({
   productId,
   value,
   currency,
+  externalId,
 }) => {
   const payload = {
+    external_id: externalId,
+    
     payment: {
       funding_source_id: process.env.TREMENDOUS_FUNDING_SOURCE_ID,
     },
@@ -131,7 +134,7 @@ export const sendTremendousReward = async ({
     ],
   };
 
-  console.log("FINAL PAYLOAD:", JSON.stringify(payload, null, 2));
+  // console.log("FINAL PAYLOAD:", JSON.stringify(payload, null, 2));
 
   const { data } = await tremendous.post("/orders", payload);
 
