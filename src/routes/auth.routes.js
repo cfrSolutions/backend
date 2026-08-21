@@ -55,6 +55,7 @@ import { changePassword } from "../controllers/auth.controller.js";
 import { me } from "../controllers/auth.controller.js";
 import UserSession from "../models/UserSession.js";
 import { logout } from "../controllers/auth.controller.js";
+import WalletTransaction from "../models/WalletTransaction.model.js";
 import { deleteAccount } from "../controllers/auth.controller.js";
 const router = express.Router();
 
