@@ -134,6 +134,7 @@ import express from "express";
 import Profile from "../models/Profile.model.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import adminOnly from "../middleware/admin.middleware.js";
+import { businessOnly } from "../middleware/business.middleware.js";
 
 const router = express.Router();
 
