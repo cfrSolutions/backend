@@ -4,34 +4,148 @@
 
 // const router = express.Router();
 
-// /* GET PROFILE */
+// /*
+// =====================================================
+// GET PROFILE
+// Authenticated user can only access their own profile
+// =====================================================
+// */
+
 // router.get("/", authMiddleware, async (req, res) => {
-//   const userId = req.user.userId;
+//   try {
+//     const userId =
+//       req.user?._id ||
+//       req.user?.userId ||
+//       req.user?.id;
 
-//   let profile = await UserProfile.findOne({ user: userId });
+//     if (!userId) {
+//       return res.status(401).json({
+//         success: false,
+//         message: "Unauthorized",
+//       });
+//     }
 
-//   // auto create empty profile
-//   if (!profile) {
-//     profile = await UserProfile.create({ user: userId });
+//     let profile = await UserProfile.findOne({
+//       user: userId,
+//     });
+
+//     // Auto-create empty profile
+//     if (!profile) {
+//       profile = await UserProfile.create({
+//         user: userId,
+//       });
+//     }
+
+//     return res.json(profile);
+
+//   } catch (error) {
+//     console.error("GET PROFILE ERROR:", error);
+
+//     return res.status(500).json({
+//       success: false,
+//       message: "Failed to load profile",
+//     });
 //   }
-
-//   res.json(profile);
 // });
 
-// /* UPDATE PROFILE */
+
+// /*
+// =====================================================
+// UPDATE PROFILE
+// Authenticated user can only update their own profile
+// =====================================================
+// */
+
 // router.put("/", authMiddleware, async (req, res) => {
-//   const userId = req.user.userId;
+//   try {
+//     const userId =
+//       req.user?._id ||
+//       req.user?.userId ||
+//       req.user?.id;
 
-//   const profile = await UserProfile.findOneAndUpdate(
-//     { user: userId },
-//     req.body,
-//     { new: true, upsert: true }
-//   );
+//     if (!userId) {
+//       return res.status(401).json({
+//         success: false,
+//         message: "Unauthorized",
+//       });
+//     }
 
-//   res.json(profile);
+//     /*
+//     -------------------------------------------------
+//     Fields that must NEVER be controlled by frontend
+//     -------------------------------------------------
+//     */
+
+//     const protectedFields = new Set([
+//       "_id",
+//       "id",
+//       "user",
+//       "__v",
+//       "createdAt",
+//       "updatedAt",
+//     ]);
+
+//     /*
+//     -------------------------------------------------
+//     Keep all legitimate profile fields.
+//     Only remove protected/system fields.
+//     -------------------------------------------------
+//     */
+
+//     const updates = {};
+
+//     for (const [key, value] of Object.entries(req.body || {})) {
+//       if (!protectedFields.has(key)) {
+//         updates[key] = value;
+//       }
+//     }
+
+//     /*
+//     -------------------------------------------------
+//     IMPORTANT:
+//     The query itself uses authenticated user's ID.
+//     A user cannot choose another user's ID.
+//     -------------------------------------------------
+//     */
+
+//     const profile =
+//       await UserProfile.findOneAndUpdate(
+//         {
+//           user: userId,
+//         },
+//         {
+//           $set: updates,
+
+//           // Only used when profile doesn't exist
+//           $setOnInsert: {
+//             user: userId,
+//           },
+//         },
+//         {
+//           new: true,
+//           upsert: true,
+//           runValidators: true,
+//         }
+//       );
+
+//     return res.json({
+//       success: true,
+//       profile,
+//     });
+
+//   } catch (error) {
+//     console.error("UPDATE PROFILE ERROR:", error);
+
+//     return res.status(500).json({
+//       success: false,
+//       message: "Profile update failed",
+//     });
+//   }
 // });
+
 
 // export default router;
+
 
 
 import express from "express";
@@ -43,7 +157,7 @@ const router = express.Router();
 /*
 =====================================================
 GET PROFILE
-Authenticated user can only access their own profile
+Authenticated user can ONLY access their own profile
 =====================================================
 */
 
@@ -65,14 +179,13 @@ router.get("/", authMiddleware, async (req, res) => {
       user: userId,
     });
 
-    // Auto-create empty profile
     if (!profile) {
       profile = await UserProfile.create({
         user: userId,
       });
     }
 
-    return res.json(profile);
+    return res.status(200).json(profile);
 
   } catch (error) {
     console.error("GET PROFILE ERROR:", error);
@@ -88,7 +201,7 @@ router.get("/", authMiddleware, async (req, res) => {
 /*
 =====================================================
 UPDATE PROFILE
-Authenticated user can only update their own profile
+Authenticated user can ONLY update their own profile
 =====================================================
 */
 
@@ -108,7 +221,7 @@ router.put("/", authMiddleware, async (req, res) => {
 
     /*
     -------------------------------------------------
-    Fields that must NEVER be controlled by frontend
+    NEVER allow these fields from frontend
     -------------------------------------------------
     */
 
@@ -123,48 +236,57 @@ router.put("/", authMiddleware, async (req, res) => {
 
     /*
     -------------------------------------------------
-    Keep all legitimate profile fields.
-    Only remove protected/system fields.
+    Build safe update object
     -------------------------------------------------
     */
 
     const updates = {};
 
     for (const [key, value] of Object.entries(req.body || {})) {
-      if (!protectedFields.has(key)) {
-        updates[key] = value;
+
+      // Block system fields
+      if (protectedFields.has(key)) {
+        continue;
       }
+
+      // Block MongoDB operators
+      if (key.startsWith("$")) {
+        continue;
+      }
+
+      // Block MongoDB dotted paths
+      if (key.includes(".")) {
+        continue;
+      }
+
+      updates[key] = value;
     }
 
     /*
     -------------------------------------------------
-    IMPORTANT:
-    The query itself uses authenticated user's ID.
-    A user cannot choose another user's ID.
+    Update ONLY authenticated user's profile
     -------------------------------------------------
     */
 
-    const profile =
-      await UserProfile.findOneAndUpdate(
-        {
+    const profile = await UserProfile.findOneAndUpdate(
+      {
+        user: userId,
+      },
+      {
+        $set: updates,
+
+        $setOnInsert: {
           user: userId,
         },
-        {
-          $set: updates,
+      },
+      {
+        new: true,
+        upsert: true,
+        runValidators: true,
+      }
+    );
 
-          // Only used when profile doesn't exist
-          $setOnInsert: {
-            user: userId,
-          },
-        },
-        {
-          new: true,
-          upsert: true,
-          runValidators: true,
-        }
-      );
-
-    return res.json({
+    return res.status(200).json({
       success: true,
       profile,
     });
@@ -178,6 +300,5 @@ router.put("/", authMiddleware, async (req, res) => {
     });
   }
 });
-
 
 export default router;
