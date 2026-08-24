@@ -164,7 +164,7 @@ router.post(
 });
 
     } catch (err) {
-      console.error("CREATE PROJECT ERROR:", err);
+      // console.error("CREATE PROJECT ERROR:", err);
 
       return res.status(500).json({
         message: "Failed to create project",
@@ -246,7 +246,7 @@ const projects = await Project.find(
       return res.json(projects);
 
     } catch (err) {
-      console.error("GET BUSINESS PROJECTS ERROR:", err);
+      // console.error("GET BUSINESS PROJECTS ERROR:", err);
 
       return res.status(500).json({
         message: "Failed to fetch projects",

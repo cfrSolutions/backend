@@ -141,16 +141,48 @@ const router = express.Router();
 // ADMIN ONLY — ALL PROFILES
 // =====================================================
 
+// router.get(
+//   "/",
+//   authMiddleware,
+//   businessOnly,
+//   async (req, res) => {
+//     try {
+//       const profiles = await Profile.find()
+//         .select("-__v");
+
+//       return res.json(profiles);
+//     } catch (error) {
+//       // console.error("GET PROFILES ERROR:", error);
+
+//       return res.status(500).json({
+//         success: false,
+//         message: "Failed to load profiles",
+//       });
+//     }
+//   }
+// );
+
 router.get(
   "/",
   authMiddleware,
-  adminOnly,
+  businessOnly,
   async (req, res) => {
     try {
-      const profiles = await Profile.find()
-        .select("-__v");
+      console.log("PROFILES USER:", req.user);
 
-      return res.json(profiles);
+      const profiles = await Profile.find(
+        { active: true },
+        {
+          code: 1,
+          question: 1,
+          type: 1,
+          answerType: 1,
+          options: 1,
+        }
+      ).lean();
+
+      return res.status(200).json(profiles);
+
     } catch (error) {
       console.error("GET PROFILES ERROR:", error);
 
@@ -162,6 +194,18 @@ router.get(
   }
 );
 
+router.get(
+  "/all",
+  authMiddleware,
+  adminOnly,
+  async (req, res) => {
+    const profiles = await Profile.find()
+      .select("-__v")
+      .lean();
+
+    return res.json(profiles);
+  }
+);
 // =====================================================
 // AUTHENTICATED USERS — ACTIVE PROFILE LIBRARY
 // Only return fields the frontend actually needs.
@@ -184,7 +228,7 @@ router.get(
 
       return res.json(profiles);
     } catch (error) {
-      console.error("PROFILE LIBRARY ERROR:", error);
+      // console.error("PROFILE LIBRARY ERROR:", error);
 
       return res.status(500).json({
         success: false,
@@ -215,7 +259,7 @@ router.get(
 
       return res.json(profiles);
     } catch (error) {
-      console.error("ACTIVE PROFILES ERROR:", error);
+      // console.error("ACTIVE PROFILES ERROR:", error);
 
       return res.status(500).json({
         success: false,
