@@ -477,66 +477,272 @@ router.get("/complete", async (req, res) => {
   }
 });
 
+// router.get("/screenout", async (req, res) => {
+//   //const { uid } = req.query;
+// // const uid = Object.values(req.query)[0];
+// const uid =
+//   req.query.rid ||
+//   req.query.RID ||
+//   Object.values(req.query)[0];
+
+//   const tk = req.query.tk || "";
+
+//   // const response = await SurveyResponse.findById(uid).populate("survey");
+//  const response = await SurveyResponse.findOne({
+//   rid: uid,
+//   expectedDqTk: tk,
+// }).populate("survey");
+
+//   if (!response) return res.send("Invalid response");
+
+//   response.status = "SCREENOUT";
+//   await response.save();
+
+//   const surveySlug = response.survey.title
+//     .toLowerCase()
+//     .replace(/\s+/g, "-");
+
+//   res.redirect(
+//     `${process.env.FRONTEND_URL}/${surveySlug}?resid=${response._id}&st=scr`
+//   );
+// });
 router.get("/screenout", async (req, res) => {
-  //const { uid } = req.query;
-// const uid = Object.values(req.query)[0];
-const uid =
-  req.query.rid ||
-  req.query.RID ||
-  Object.values(req.query)[0];
+  try {
+    const uid =
+      req.query.rid ||
+      req.query.RID ||
+      Object.values(req.query)[0];
 
-  const tk = req.query.tk || "";
+    const tk = req.query.tk || "";
 
-  // const response = await SurveyResponse.findById(uid).populate("survey");
- const response = await SurveyResponse.findOne({
-  rid: uid,
-  expectedDqTk: tk,
-}).populate("survey");
+    if (!uid || !tk) {
+      return res.status(400).send("Missing response credentials");
+    }
 
-  if (!response) return res.send("Invalid response");
+    /*
+    =====================================================
+    1. ATOMICALLY CHANGE RESPONSE TO SCREENOUT
+    =====================================================
+    */
 
-  response.status = "SCREENOUT";
-  await response.save();
+    const response = await SurveyResponse.findOneAndUpdate(
+      {
+        rid: uid,
+        expectedDqTk: tk,
 
-  const surveySlug = response.survey.title
-    .toLowerCase()
-    .replace(/\s+/g, "-");
+        // Do not change an already finalized response
+        status: {
+          $nin: [
+            "COMPLETED",
+            "SCREENOUT",
+            "QUOTA_FULL",
+          ],
+        },
+      },
+      {
+        $set: {
+          status: "SCREENOUT",
+        },
+      },
+      {
+        new: true,
+      }
+    ).populate("survey");
 
-  res.redirect(
-    `${process.env.FRONTEND_URL}/${surveySlug}?resid=${response._id}&st=scr`
-  );
+    /*
+    =====================================================
+    2. INVALID / ALREADY FINALIZED RESPONSE
+    =====================================================
+    */
+
+    if (!response) {
+      const existingResponse =
+        await SurveyResponse.findOne({
+          rid: uid,
+          expectedDqTk: tk,
+        }).populate("survey");
+
+      if (!existingResponse) {
+        return res.status(404).send("Invalid response");
+      }
+
+      /*
+      Already finalized.
+      Do NOT change it again.
+      */
+
+      if (
+        [
+          "COMPLETED",
+          "SCREENOUT",
+          "QUOTA_FULL",
+        ].includes(existingResponse.status)
+      ) {
+        return res.redirect(
+          `${existingResponse.survey.returnBaseUrl}/user/dashboard?st=${existingResponse.status}`
+        );
+      }
+
+      return res.status(409).send(
+        "Unable to update response"
+      );
+    }
+
+    /*
+    =====================================================
+    3. REDIRECT
+    =====================================================
+    */
+
+    return res.redirect(
+      `${response.survey.returnBaseUrl}/user/dashboard?st=scr`
+    );
+
+  } catch (error) {
+    console.error(
+      "SCREENOUT ERROR:",
+      error
+    );
+
+    return res.status(500).send(
+      "Internal Server Error"
+    );
+  }
 });
 
 
+// router.get("/quota", async (req, res) => {
+//  //const { uid } = req.query;
+// // const uid = Object.values(req.query)[0];
+// const uid =
+//   req.query.rid ||
+//   req.query.RID ||
+//   Object.values(req.query)[0];
+
+//   const tk = req.query.tk || "";
+
+//   // const response = await SurveyResponse.findById(uid).populate("survey");
+//   const response = await SurveyResponse.findOne({
+//   rid: uid,
+//   expectedQuotaTk: tk,
+// }).populate("survey");
+
+//   if (!response) return res.send("Invalid response");
+
+//   response.status = "QUOTA_FULL";
+//   await response.save();
+
+//   const surveySlug = response.survey.title
+//     .toLowerCase()
+//     .replace(/\s+/g, "-");
+
+//   res.redirect(
+//     `${process.env.FRONTEND_URL}/${surveySlug}?resid=${response._id}&st=quo`
+//   );
+// });
 
 router.get("/quota", async (req, res) => {
- //const { uid } = req.query;
-// const uid = Object.values(req.query)[0];
-const uid =
-  req.query.rid ||
-  req.query.RID ||
-  Object.values(req.query)[0];
+  try {
+    const uid =
+      req.query.rid ||
+      req.query.RID ||
+      Object.values(req.query)[0];
 
-  const tk = req.query.tk || "";
+    const tk = req.query.tk || "";
 
-  // const response = await SurveyResponse.findById(uid).populate("survey");
-  const response = await SurveyResponse.findOne({
-  rid: uid,
-  expectedQuotaTk: tk,
-}).populate("survey");
+    if (!uid || !tk) {
+      return res.status(400).send("Missing response credentials");
+    }
 
-  if (!response) return res.send("Invalid response");
+    /*
+    =====================================================
+    1. ATOMICALLY CHANGE RESPONSE TO QUOTA_FULL
+    =====================================================
+    */
 
-  response.status = "QUOTA_FULL";
-  await response.save();
+    const response = await SurveyResponse.findOneAndUpdate(
+      {
+        rid: uid,
+        expectedQuotaTk: tk,
 
-  const surveySlug = response.survey.title
-    .toLowerCase()
-    .replace(/\s+/g, "-");
+        // Do not modify an already finalized response
+        status: {
+          $nin: [
+            "COMPLETED",
+            "SCREENOUT",
+            "QUOTA_FULL",
+          ],
+        },
+      },
+      {
+        $set: {
+          status: "QUOTA_FULL",
+        },
+      },
+      {
+        new: true,
+      }
+    ).populate("survey");
 
-  res.redirect(
-    `${process.env.FRONTEND_URL}/${surveySlug}?resid=${response._id}&st=quo`
-  );
+    /*
+    =====================================================
+    2. INVALID / ALREADY FINALIZED RESPONSE
+    =====================================================
+    */
+
+    if (!response) {
+      const existingResponse =
+        await SurveyResponse.findOne({
+          rid: uid,
+          expectedQuotaTk: tk,
+        }).populate("survey");
+
+      if (!existingResponse) {
+        return res.status(404).send("Invalid response");
+      }
+
+      /*
+      Already finalized.
+      Do not change the status again.
+      */
+
+      if (
+        [
+          "COMPLETED",
+          "SCREENOUT",
+          "QUOTA_FULL",
+        ].includes(existingResponse.status)
+      ) {
+        return res.redirect(
+          `${existingResponse.survey.returnBaseUrl}/user/dashboard?st=${existingResponse.status}`
+        );
+      }
+
+      return res.status(409).send(
+        "Unable to update response"
+      );
+    }
+
+    /*
+    =====================================================
+    3. REDIRECT
+    =====================================================
+    */
+
+    return res.redirect(
+      `${response.survey.returnBaseUrl}/user/dashboard?st=quo`
+    );
+
+  } catch (error) {
+    console.error(
+      "QUOTA ERROR:",
+      error
+    );
+
+    return res.status(500).send(
+      "Internal Server Error"
+    );
+  }
 });
 
 
