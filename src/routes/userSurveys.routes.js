@@ -507,7 +507,12 @@ router.get("/available", authMiddleware, async (req, res) => {
       req.user.id ||
       req.user.userId;
 
-
+      if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
     // --------------------------------------------------
     // GET USER PROFILE
     // --------------------------------------------------
@@ -613,7 +618,7 @@ router.get("/available", authMiddleware, async (req, res) => {
     const result = availableSurveys.map(
       (survey) => ({
 
-        ...survey,
+       ...survey,
 
         userStatus:
           responseMap[
@@ -624,13 +629,14 @@ router.get("/available", authMiddleware, async (req, res) => {
     );
 
 
-    res.json(result);
+    return res.status(200).json(result);
 
   } catch (err) {
 
     
 
-    res.status(500).json({
+    return res.status(500).json({
+      success: false,
       message: "Failed to load surveys",
     });
 
