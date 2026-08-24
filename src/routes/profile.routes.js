@@ -144,6 +144,7 @@ const router = express.Router();
 router.get(
   "/",
   authMiddleware,
+  adminOnly,
   async (req, res) => {
     try {
       const profiles = await Profile.find()
@@ -168,7 +169,7 @@ router.get(
 
 router.get(
   "/profile-library",
-  authMiddleware,
+  authMiddleware, adminOnly,
   async (req, res) => {
     try {
       const profiles = await Profile.find(
