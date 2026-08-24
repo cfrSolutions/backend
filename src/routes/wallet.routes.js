@@ -15,6 +15,13 @@ router.get("/", authMiddleware, async (req, res) => {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+  return res.status(401).json({
+    success: false,
+    message: "Invalid user ID",
+  });
+}
+
   const userObjectId = new mongoose.Types.ObjectId(userId);
 
   let wallet = await Wallet.findOne({ user: userObjectId });
