@@ -186,24 +186,44 @@ router.get(
 
 
 // ACTIVE PROFILES — AUTHENTICATED USERS
+// router.get(
+//   "/",
+//   authMiddleware,
+//   async (req, res) => {
+//     try {
+//       const profiles = await Profile.find(
+//         { active: true },
+//         {
+//           name: 1,
+//           description: 1,
+//           image: 1,
+//           category: 1,
+//         }
+//       ).lean();
+
+//       return res.json(profiles);
+//     } catch (error) {
+//       console.error("ACTIVE PROFILES ERROR:", error);
+
+//       return res.status(500).json({
+//         success: false,
+//         message: "Failed to load profiles",
+//       });
+//     }
+//   }
+// );
+
 router.get(
   "/",
   authMiddleware,
   async (req, res) => {
     try {
-      const profiles = await Profile.find(
-        { active: true },
-        {
-          name: 1,
-          description: 1,
-          image: 1,
-          category: 1,
-        }
-      ).lean();
+      const profiles = await Profile.find()
+        .select("-__v");
 
       return res.json(profiles);
     } catch (error) {
-      console.error("ACTIVE PROFILES ERROR:", error);
+      console.error("GET PROFILES ERROR:", error);
 
       return res.status(500).json({
         success: false,
@@ -220,7 +240,7 @@ router.get(
 
 router.get(
   "/profile-library",
-  authMiddleware,
+  authMiddleware, adminOnly,
   async (req, res) => {
     try {
       const profiles = await Profile.find(
