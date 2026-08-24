@@ -1150,8 +1150,8 @@ router.get("/start", async (req, res) => {
   try {
     await SurveyResponse.create({
       project: project._id,
-       vendor:
-    project.vendorLinks?.[0]?.vendorName || "",
+      vendor:
+      project.vendorLinks?.[0]?.vendorName || "",
       rid,
       status: "STARTED",
       startedAt: new Date(),
