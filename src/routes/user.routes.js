@@ -113,15 +113,36 @@ const storage = new CloudinaryStorage({
   },
 });
 
+// const upload = multer({
+//   storage,
+
+//   // Prevent unnecessarily large uploads
+//   limits: {
+//     fileSize: 2 * 1024 * 1024, // 2 MB
+//   },
+// });
 const upload = multer({
   storage,
 
-  // Prevent unnecessarily large uploads
   limits: {
-    fileSize: 2 * 1024 * 1024, // 2 MB
+    fileSize: 2 * 1024 * 1024,
+  },
+
+  fileFilter: (req, file, cb) => {
+    const allowed = [
+      "image/jpeg",
+      "image/png",
+    ];
+
+    if (!allowed.includes(file.mimetype)) {
+      return cb(
+        new Error("Only JPG and PNG images are allowed")
+      );
+    }
+
+    cb(null, true);
   },
 });
-
 
 /*
 =====================================================
