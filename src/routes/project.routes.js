@@ -1030,8 +1030,11 @@ router.post(
         numericTargetCompletes <= 0
       ) {
         return res.status(400).json({
-          message: "Invalid target completes",
-        });
+  message: "Validation failed",
+  errors: {
+    targetCompletes: "Target completes must be greater than 0",
+  },
+});
       }
 
       if (
@@ -1039,8 +1042,11 @@ router.post(
         numericLoi <= 0
       ) {
         return res.status(400).json({
-          message: "Invalid LOI",
-        });
+  message: "Validation failed",
+  errors: {
+    loi: "LOI must be greater than 0",
+  },
+});
       }
 
       if (
@@ -1048,9 +1054,12 @@ router.post(
         numericIncidence < 0 ||
         numericIncidence > 100
       ) {
-        return res.status(400).json({
-          message: "Invalid incidence rate",
-        });
+       return res.status(400).json({
+  message: "Validation failed",
+  errors: {
+    incidence: "Incidence must be between 0 and 100",
+  },
+});
       }
 
       if (!market || !String(market).trim()) {
@@ -1073,8 +1082,11 @@ if (
     numericAgeFrom > 120
   ) {
     return res.status(400).json({
-      message: "Invalid minimum age",
-    });
+  message: "Validation failed",
+  errors: {
+    ageFrom: "Age must be between 1 and 120",
+  },
+});
   }
 }
 
@@ -1099,8 +1111,11 @@ if (
     numericAgeTo > 120
   ) {
     return res.status(400).json({
-      message: "Invalid maximum age",
-    });
+  message: "Validation failed",
+  errors: {
+    ageTo: "Age must be between 1 and 120",
+  },
+});
   }
 }
 
@@ -1115,9 +1130,14 @@ if (
   numericAgeFrom > numericAgeTo
 ) {
   return res.status(400).json({
-    message:
+  message: "Validation failed",
+  errors: {
+    ageFrom:
       "Minimum age cannot be greater than maximum age",
-  });
+    ageTo:
+      "Maximum age must be greater than minimum age",
+  },
+});
 }
 
 let numericTimeline;
@@ -1950,8 +1970,17 @@ router.put(
       // -----------------------------------------
 
       if (market !== undefined) {
-        group.market = market;
-      }
+  if (!market || !String(market).trim()) {
+    return res.status(400).json({
+      message: "Validation failed",
+      errors: {
+        market: "Market is required",
+      },
+    });
+  }
+
+  group.market = market;
+}
 
       if (language !== undefined) {
         group.language = language;
@@ -1973,9 +2002,12 @@ router.put(
           value <= 0
         ) {
           return res.status(400).json({
-            message:
-              "Invalid target completes",
-          });
+      message: "Validation failed",
+      errors: {
+        targetCompletes:
+          "Target completes must be greater than 0",
+      },
+    });
         }
 
         group.targetCompletes = value;
@@ -1993,8 +2025,11 @@ router.put(
           value <= 0
         ) {
           return res.status(400).json({
-            message: "Invalid LOI",
-          });
+      message: "Validation failed",
+      errors: {
+        loi: "LOI must be greater than 0",
+      },
+    });
         }
 
         group.loi = value;
@@ -2013,65 +2048,76 @@ router.put(
           value > 100
         ) {
           return res.status(400).json({
-            message:
-              "Invalid incidence rate",
-          });
+      message: "Validation failed",
+      errors: {
+        incidence:
+          "Incidence must be between 0 and 100",
+      },
+    });
         }
 
         group.incidence = value;
       }
 
+     if (
+  ageFrom !== undefined &&
+  ageFrom !== ""
+) {
+  const value = Number(ageFrom);
+
+  if (
+    !Number.isFinite(value) ||
+    value < 1 ||
+    value > 120
+  ) {
+    return res.status(400).json({
+      message: "Validation failed",
+      errors: {
+        ageFrom: "Age must be between 1 and 120",
+      },
+    });
+  }
+
+  group.ageFrom = value;
+}
+
       if (
-        ageFrom !== undefined &&
-        ageFrom !== ""
-      ) {
-        const value =
-          Number(ageFrom);
+  ageTo !== undefined &&
+  ageTo !== ""
+) {
+  const value = Number(ageTo);
 
-        if (
-          !Number.isFinite(value) ||
-          value < 0
-        ) {
-          return res.status(400).json({
-            message:
-              "Invalid minimum age",
-          });
-        }
+  if (
+    !Number.isFinite(value) ||
+    value < 1 ||
+    value > 120
+  ) {
+    return res.status(400).json({
+      message: "Validation failed",
+      errors: {
+        ageTo: "Age must be between 1 and 120",
+      },
+    });
+  }
 
-        group.ageFrom = value;
-      }
-
-      if (
-        ageTo !== undefined &&
-        ageTo !== ""
-      ) {
-        const value =
-          Number(ageTo);
-
-        if (
-          !Number.isFinite(value) ||
-          value < 0
-        ) {
-          return res.status(400).json({
-            message:
-              "Invalid maximum age",
-          });
-        }
-
-        group.ageTo = value;
-      }
+  group.ageTo = value;
+}
 
       // Age validation
-      if (
-        group.ageFrom !== undefined &&
-        group.ageTo !== undefined &&
-        group.ageFrom > group.ageTo
-      ) {
-        return res.status(400).json({
-          message:
-            "Minimum age cannot be greater than maximum age",
-        });
-      }
+     // Age validation
+if (
+  group.ageFrom !== undefined &&
+  group.ageTo !== undefined &&
+  group.ageFrom > group.ageTo
+) {
+  return res.status(400).json({
+    message: "Validation failed",
+    errors: {
+      ageFrom: "Minimum age cannot be greater than maximum age",
+      ageTo: "Maximum age must be greater than minimum age",
+    },
+  });
+}
 
       if (gender !== undefined) {
         group.gender = gender;
