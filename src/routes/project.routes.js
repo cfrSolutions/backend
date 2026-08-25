@@ -1058,64 +1058,7 @@ router.post(
           message: "Market is required",
         });
       }
-      // -----------------------------------------
-// TARGET COMPLETES
-// -----------------------------------------
-
-const numericTargetCompletes =
-  Number(targetCompletes);
-
-if (
-  !Number.isFinite(numericTargetCompletes) ||
-  numericTargetCompletes <= 0
-) {
-  return res.status(400).json({
-    message: "Invalid target completes",
-  });
-}
-
-
-// -----------------------------------------
-// LOI
-// -----------------------------------------
-
-const numericLoi =
-  Number(loi);
-
-if (
-  !Number.isFinite(numericLoi) ||
-  numericLoi <= 0
-) {
-  return res.status(400).json({
-    message: "Invalid LOI",
-  });
-}
-
-
-// -----------------------------------------
-// INCIDENCE
-// -----------------------------------------
-
-const numericIncidence =
-  Number(incidence);
-
-if (
-  !Number.isFinite(numericIncidence) ||
-  numericIncidence < 0 ||
-  numericIncidence > 100
-) {
-  return res.status(400).json({
-    message: "Invalid incidence rate",
-  });
-}
-
-
-// -----------------------------------------
-// AGE FROM
-// OPTIONAL
-// -----------------------------------------
-
-let numericAgeFrom;
+      let numericAgeFrom;
 
 if (
   ageFrom !== undefined &&
@@ -1177,6 +1120,24 @@ if (
   });
 }
 
+let numericTimeline;
+
+if (
+  timeline !== undefined &&
+  timeline !== null &&
+  timeline !== ""
+) {
+  numericTimeline = Number(timeline);
+
+  if (
+    !Number.isFinite(numericTimeline) ||
+    numericTimeline < 0
+  ) {
+    return res.status(400).json({
+      message: "Invalid timeline",
+    });
+  }
+}
       // -----------------------------------------
       // FIND CPI
       // -----------------------------------------
@@ -1277,17 +1238,20 @@ if (
         incidence:
           numericIncidence,
 
-        ageFrom:
-          ageFrom !== undefined &&
-          ageFrom !== ""
-            ? Number(ageFrom)
-            : undefined,
+        // ageFrom:
+        //   ageFrom !== undefined &&
+        //   ageFrom !== ""
+        //     ? Number(ageFrom)
+        //     : undefined,
 
-        ageTo:
-          ageTo !== undefined &&
-          ageTo !== ""
-            ? Number(ageTo)
-            : undefined,
+        // ageTo:
+        //   ageTo !== undefined &&
+        //   ageTo !== ""
+        //     ? Number(ageTo)
+        //     : undefined,
+
+        ageFrom: numericAgeFrom,
+        ageTo: numericAgeTo,
 
         gender,
         devices,
@@ -1295,12 +1259,14 @@ if (
 
         sector,
 
-        timeline:
-          timeline !== undefined &&
-          timeline !== ""
-            ? Number(timeline)
-            : undefined,
+        // timeline:
+        //   timeline !== undefined &&
+        //   timeline !== ""
+        //     ? Number(timeline)
+        //     : undefined,
 
+        timeline: numericTimeline,
+        
         openEnded:
           openEnded !== undefined &&
           openEnded !== ""
