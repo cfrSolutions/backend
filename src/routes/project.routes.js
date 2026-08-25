@@ -1266,7 +1266,7 @@ if (
         //     : undefined,
 
         timeline: numericTimeline,
-        
+
         openEnded:
           openEnded !== undefined &&
           openEnded !== ""
@@ -2315,11 +2315,7 @@ router.put(
       });
 
     } catch (err) {
-      console.error(
-        "UPDATE TARGET GROUP ERROR:",
-        err
-      );
-
+      
       if (
         err.name ===
         "ValidationError"
