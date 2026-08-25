@@ -65,7 +65,11 @@ router.get("/stats", authMiddleware, async (req, res) => {
    
    const userId = req.user._id || req.user.id || req.user.userId;
 
-
+ if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
+    }
     // 1. Get counts directly from MongoDB (more reliable than .filter)
    const completedCount = await SurveyResponse.countDocuments({ 
     user: userId, 
@@ -109,11 +113,22 @@ router.get("/stats", authMiddleware, async (req, res) => {
 router.get("/report-stats", authMiddleware, async (req, res) => {
   try {
     const userId = req.user._id || req.user.id || req.user.userId;
-
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
+    }
+     if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(401).json({
+        message: "Invalid user identity",
+      });
+    }
     const responses = await SurveyResponse.find({
       user: userId,
       status: "COMPLETED"
-    }).sort({ completedAt: -1 });
+    })
+    .select("completedAt durationSeconds")
+    .sort({ completedAt: -1 });
 
     /* ---------- AVG TIME ---------- */
     const totalTime = responses.reduce(
@@ -130,7 +145,7 @@ router.get("/report-stats", authMiddleware, async (req, res) => {
     /* ---------- STREAK DAYS ---------- */
     let streak = 0;
     let currentDate = new Date();
-currentDate.setHours(0,0,0,0);
+    currentDate.setHours(0,0,0,0);
 
 
     for (const r of responses) {
@@ -159,10 +174,21 @@ const diff =
     res.status(500).json({ message: "Report stats error" });
   }
 });
+
+
 router.get("/activity", authMiddleware, async (req, res) => {
   try {
     const userId = req.user._id || req.user.id || req.user.userId;
-
+    if (!userId) {
+  return res.status(401).json({
+    message: "Unauthorized",
+  });
+}
+if (!mongoose.Types.ObjectId.isValid(userId)) {
+  return res.status(401).json({
+    message: "Invalid user identity",
+  });
+}
     const last7Days = await WalletTransaction.aggregate([
       {
         $match: {
