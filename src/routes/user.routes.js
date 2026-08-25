@@ -294,7 +294,7 @@ router.put(
             upsert: true,
             runValidators: true,
           }
-        );
+        ).select("-__v");
 
       return res.json({
         success: true,
