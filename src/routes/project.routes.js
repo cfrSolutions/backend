@@ -1058,6 +1058,124 @@ router.post(
           message: "Market is required",
         });
       }
+      // -----------------------------------------
+// TARGET COMPLETES
+// -----------------------------------------
+
+const numericTargetCompletes =
+  Number(targetCompletes);
+
+if (
+  !Number.isFinite(numericTargetCompletes) ||
+  numericTargetCompletes <= 0
+) {
+  return res.status(400).json({
+    message: "Invalid target completes",
+  });
+}
+
+
+// -----------------------------------------
+// LOI
+// -----------------------------------------
+
+const numericLoi =
+  Number(loi);
+
+if (
+  !Number.isFinite(numericLoi) ||
+  numericLoi <= 0
+) {
+  return res.status(400).json({
+    message: "Invalid LOI",
+  });
+}
+
+
+// -----------------------------------------
+// INCIDENCE
+// -----------------------------------------
+
+const numericIncidence =
+  Number(incidence);
+
+if (
+  !Number.isFinite(numericIncidence) ||
+  numericIncidence < 0 ||
+  numericIncidence > 100
+) {
+  return res.status(400).json({
+    message: "Invalid incidence rate",
+  });
+}
+
+
+// -----------------------------------------
+// AGE FROM
+// OPTIONAL
+// -----------------------------------------
+
+let numericAgeFrom;
+
+if (
+  ageFrom !== undefined &&
+  ageFrom !== null &&
+  ageFrom !== ""
+) {
+  numericAgeFrom = Number(ageFrom);
+
+  if (
+    !Number.isFinite(numericAgeFrom) ||
+    numericAgeFrom < 0 ||
+    numericAgeFrom > 120
+  ) {
+    return res.status(400).json({
+      message: "Invalid minimum age",
+    });
+  }
+}
+
+
+// -----------------------------------------
+// AGE TO
+// OPTIONAL
+// -----------------------------------------
+
+let numericAgeTo;
+
+if (
+  ageTo !== undefined &&
+  ageTo !== null &&
+  ageTo !== ""
+) {
+  numericAgeTo = Number(ageTo);
+
+  if (
+    !Number.isFinite(numericAgeTo) ||
+    numericAgeTo < 0 ||
+    numericAgeTo > 120
+  ) {
+    return res.status(400).json({
+      message: "Invalid maximum age",
+    });
+  }
+}
+
+
+// -----------------------------------------
+// AGE RANGE
+// -----------------------------------------
+
+if (
+  numericAgeFrom !== undefined &&
+  numericAgeTo !== undefined &&
+  numericAgeFrom > numericAgeTo
+) {
+  return res.status(400).json({
+    message:
+      "Minimum age cannot be greater than maximum age",
+  });
+}
 
       // -----------------------------------------
       // FIND CPI
