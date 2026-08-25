@@ -203,7 +203,7 @@ router.post(
       });
 
     } catch (err) {
-      console.error("UPLOAD PROFILE ERROR:", err);
+      // console.error("UPLOAD PROFILE ERROR:", err);
 
       return res.status(500).json({
         success: false,

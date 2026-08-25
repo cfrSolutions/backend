@@ -1247,9 +1247,9 @@ const result = await fetch(postbackUrl, {
   // );
 
 } catch (err) {
-  console.log(
-    "USER POSTBACK FAILED:"
-  );
+  // console.log(
+  //   "USER POSTBACK FAILED:"
+  // );
 }
 
 } else {
@@ -1279,7 +1279,7 @@ await Project.updateOne(
   }
 );
 
-console.log("REDIRECTING TO:", thankYouUrl);
+// console.log("REDIRECTING TO:", thankYouUrl);
 return res.redirect(thankYouUrl);
 });
 

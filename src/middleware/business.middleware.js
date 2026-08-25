@@ -11,10 +11,10 @@ export const businessOnly = (req, res, next) => {
     .trim()
     .toUpperCase();
 
-  console.log("BUSINESS AUTH:", {
-    user: req.user,
-    role,
-  });
+  // console.log("BUSINESS AUTH:", {
+  //   user: req.user,
+  //   role,
+  // });
 
   if (role !== "BUSINESS") {
     return res.status(403).json({
