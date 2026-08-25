@@ -11,44 +11,129 @@ import CPI from "../models/CPI.model.js";
 
 const router = express.Router();
 
-// router.post("/create", authMiddleware, businessOnly, async (req, res) => {
-//   const userId = req.user._id || req.user.id || req.user.userId;
+// router.post(
+//   "/create",
+//   authMiddleware,
+//   businessOnly,
+//   async (req, res) => {
+//     try {
+//       const userId =
+//         req.user._id ||
+//         req.user.id ||
+//         req.user.userId;
 
-//   try {
-//     const generateToken = () => crypto.randomBytes(24).toString("hex");
-    
-//     const project = await Project.create({
-//       ...req.body,
-//        name: req.body.name,
+//       if (!userId) {
+//         return res.status(401).json({
+//           message: "User not found in authentication token",
+//         });
+//       }
 
-//       description:
-//         req.body.description || "",
+//       const generateToken = () =>
+//         crypto.randomBytes(24).toString("hex");
 
-//       business: userId,
-//       status: "DRAFT",
-//       targetGroups: [],
-//       targetCompletes: req.body.targetCompletes,
-//       completes: 0, 
-//       surveyId: "SURV-" + Date.now(),
+//       const {
+//         name,
+//         description,
+//         sector,
+//         market,
+//         targetCompletes,
+//         ageFrom,
+//         ageTo,
+//         gender,
+//         loi,
+//         incidence,
+//         budget,
+//         timeline,
+//         openEnded,
+//         devices,
+//       } = req.body;
 
-//       redirects: {
-//         start: { token: generateToken() },
-//         complete: { token: generateToken() },
-//         disqualified: { token: generateToken() },
-//         quotaFull: { token: generateToken() },
-//       },
+//       const project = await Project.create({
+//         name,
+//         description: description || "",
 
-//       disqualified: 0,
-//       quotaFull: 0,
-//       totalResponses: 0,
-//       business: userId,
-//     });
+//         sector,
+//         market,
+//         targetCompletes,
+//         ageFrom,
+//         ageTo,
+//         gender,
+//         loi,
+//         incidence,
+//         budget,
+//         timeline,
+//         openEnded,
+//         devices,
 
-//     res.json(project);
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
+//         // 🔐 ALWAYS from authenticated user
+//         business: userId,
+
+//         // 🔐 SERVER CONTROLLED
+//         status: "DRAFT",
+//         targetGroups: [],
+//         completes: 0,
+//         disqualified: 0,
+//         quotaFull: 0,
+//         totalResponses: 0,
+
+//         surveyId: "SURV-" + Date.now(),
+
+//         // 🔐 SERVER GENERATED
+//         redirects: {
+//           start: {
+//             token: generateToken(),
+//           },
+//           complete: {
+//             token: generateToken(),
+//           },
+//           disqualified: {
+//             token: generateToken(),
+//           },
+//           quotaFull: {
+//             token: generateToken(),
+//           },
+//         },
+//       });
+
+//      return res.status(201).json({
+//   message: "Project created successfully",
+//   project: {
+//     _id: project._id,
+//     name: project.name,
+//     description: project.description,
+//     sector: project.sector,
+//     market: project.market,
+//     targetCompletes: project.targetCompletes,
+//     ageFrom: project.ageFrom,
+//     ageTo: project.ageTo,
+//     gender: project.gender,
+//     loi: project.loi,
+//     incidence: project.incidence,
+//     budget: project.budget,
+//     timeline: project.timeline,
+//     openEnded: project.openEnded,
+//     devices: project.devices,
+
+//     status: project.status,
+//     surveyId: project.surveyId,
+
+//     // ✅ SEND REDIRECTS TO FRONTEND
+//     redirects: project.redirects,
+
+//     createdAt: project.createdAt,
+//   },
 // });
+
+//     } catch (err) {
+//       // console.error("CREATE PROJECT ERROR:", err);
+
+//       return res.status(500).json({
+//         message: "Failed to create project",
+//       });
+//     }
+//   }
+// );
+
 
 router.post(
   "/create",
@@ -87,24 +172,228 @@ router.post(
         devices,
       } = req.body;
 
+      // =====================================================
+      // VALIDATION
+      // =====================================================
+
+      // Name
+      if (
+        typeof name !== "string" ||
+        !name.trim()
+      ) {
+        return res.status(400).json({
+          message: "Project name is required",
+        });
+      }
+
+      // Optional description
+      if (
+        description !== undefined &&
+        typeof description !== "string"
+      ) {
+        return res.status(400).json({
+          message: "Invalid description",
+        });
+      }
+
+      // Market
+      if (
+        typeof market !== "string" ||
+        !market.trim()
+      ) {
+        return res.status(400).json({
+          message: "Market is required",
+        });
+      }
+
+      // Target completes
+      const numericTargetCompletes =
+        Number(targetCompletes);
+
+      if (
+        !Number.isFinite(numericTargetCompletes) ||
+        numericTargetCompletes <= 0
+      ) {
+        return res.status(400).json({
+          message: "Invalid target completes",
+        });
+      }
+
+      // LOI
+      const numericLoi = Number(loi);
+
+      if (
+        !Number.isFinite(numericLoi) ||
+        numericLoi <= 0
+      ) {
+        return res.status(400).json({
+          message: "Invalid LOI",
+        });
+      }
+
+      // Incidence
+      const numericIncidence =
+        Number(incidence);
+
+      if (
+        !Number.isFinite(numericIncidence) ||
+        numericIncidence < 0 ||
+        numericIncidence > 100
+      ) {
+        return res.status(400).json({
+          message: "Invalid incidence rate",
+        });
+      }
+
+      // Age From
+      let numericAgeFrom;
+
+      if (
+        ageFrom !== undefined &&
+        ageFrom !== ""
+      ) {
+        numericAgeFrom = Number(ageFrom);
+
+        if (
+          !Number.isFinite(numericAgeFrom) ||
+          numericAgeFrom < 0
+        ) {
+          return res.status(400).json({
+            message: "Invalid minimum age",
+          });
+        }
+      }
+
+      // Age To
+      let numericAgeTo;
+
+      if (
+        ageTo !== undefined &&
+        ageTo !== ""
+      ) {
+        numericAgeTo = Number(ageTo);
+
+        if (
+          !Number.isFinite(numericAgeTo) ||
+          numericAgeTo < 0
+        ) {
+          return res.status(400).json({
+            message: "Invalid maximum age",
+          });
+        }
+      }
+
+      // Age range
+      if (
+        numericAgeFrom !== undefined &&
+        numericAgeTo !== undefined &&
+        numericAgeFrom > numericAgeTo
+      ) {
+        return res.status(400).json({
+          message:
+            "Minimum age cannot be greater than maximum age",
+        });
+      }
+
+      // Budget
+      let numericBudget;
+
+      if (
+        budget !== undefined &&
+        budget !== ""
+      ) {
+        numericBudget = Number(budget);
+
+        if (
+          !Number.isFinite(numericBudget) ||
+          numericBudget < 0
+        ) {
+          return res.status(400).json({
+            message: "Invalid budget",
+          });
+        }
+      }
+
+      // Timeline
+      let numericTimeline;
+
+      if (
+        timeline !== undefined &&
+        timeline !== ""
+      ) {
+        numericTimeline = Number(timeline);
+
+        if (
+          !Number.isFinite(numericTimeline) ||
+          numericTimeline < 0
+        ) {
+          return res.status(400).json({
+            message: "Invalid timeline",
+          });
+        }
+      }
+
+      // Open ended
+      let numericOpenEnded;
+
+      if (
+        openEnded !== undefined &&
+        openEnded !== ""
+      ) {
+        numericOpenEnded = Number(openEnded);
+
+        if (
+          !Number.isFinite(numericOpenEnded) ||
+          numericOpenEnded < 0
+        ) {
+          return res.status(400).json({
+            message: "Invalid open ended value",
+          });
+        }
+      }
+
+      // =====================================================
+      // CREATE PROJECT
+      // =====================================================
+
       const project = await Project.create({
-        name,
-        description: description || "",
+        name: name.trim(),
+
+        description:
+          description?.trim() || "",
 
         sector,
-        market,
-        targetCompletes,
-        ageFrom,
-        ageTo,
+        market: market.trim(),
+
+        targetCompletes:
+          numericTargetCompletes,
+
+        ageFrom:
+          numericAgeFrom,
+
+        ageTo:
+          numericAgeTo,
+
         gender,
-        loi,
-        incidence,
-        budget,
-        timeline,
-        openEnded,
+
+        loi:
+          numericLoi,
+
+        incidence:
+          numericIncidence,
+
+        budget:
+          numericBudget,
+
+        timeline:
+          numericTimeline,
+
+        openEnded:
+          numericOpenEnded,
+
         devices,
 
-        // 🔐 ALWAYS from authenticated user
+        // 🔐 ALWAYS FROM AUTHENTICATED USER
         business: userId,
 
         // 🔐 SERVER CONTROLLED
@@ -115,59 +404,110 @@ router.post(
         quotaFull: 0,
         totalResponses: 0,
 
-        surveyId: "SURV-" + Date.now(),
+        surveyId:
+          "SURV-" + Date.now(),
 
         // 🔐 SERVER GENERATED
         redirects: {
           start: {
             token: generateToken(),
           },
+
           complete: {
             token: generateToken(),
           },
+
           disqualified: {
             token: generateToken(),
           },
+
           quotaFull: {
             token: generateToken(),
           },
         },
       });
 
-     return res.status(201).json({
-  message: "Project created successfully",
-  project: {
-    _id: project._id,
-    name: project.name,
-    description: project.description,
-    sector: project.sector,
-    market: project.market,
-    targetCompletes: project.targetCompletes,
-    ageFrom: project.ageFrom,
-    ageTo: project.ageTo,
-    gender: project.gender,
-    loi: project.loi,
-    incidence: project.incidence,
-    budget: project.budget,
-    timeline: project.timeline,
-    openEnded: project.openEnded,
-    devices: project.devices,
+      // =====================================================
+      // RESPONSE
+      // =====================================================
 
-    status: project.status,
-    surveyId: project.surveyId,
+      return res.status(201).json({
+        message: "Project created successfully",
 
-    // ✅ SEND REDIRECTS TO FRONTEND
-    redirects: project.redirects,
+        project: {
+          _id: project._id,
 
-    createdAt: project.createdAt,
-  },
-});
+          name: project.name,
+          description: project.description,
+
+          sector: project.sector,
+          market: project.market,
+
+          targetCompletes:
+            project.targetCompletes,
+
+          ageFrom:
+            project.ageFrom,
+
+          ageTo:
+            project.ageTo,
+
+          gender:
+            project.gender,
+
+          loi:
+            project.loi,
+
+          incidence:
+            project.incidence,
+
+          budget:
+            project.budget,
+
+          timeline:
+            project.timeline,
+
+          openEnded:
+            project.openEnded,
+
+          devices:
+            project.devices,
+
+          status:
+            project.status,
+
+          surveyId:
+            project.surveyId,
+
+          // These are intentionally returned
+          // because your business frontend
+          // needs to copy them for admin.
+          redirects:
+            project.redirects,
+
+          createdAt:
+            project.createdAt,
+        },
+      });
 
     } catch (err) {
-      // console.error("CREATE PROJECT ERROR:", err);
+      console.error(
+        "CREATE PROJECT ERROR:",
+        err
+      );
+
+      if (
+        err.name === "ValidationError"
+      ) {
+        return res.status(400).json({
+          message:
+            "Project validation failed",
+        });
+      }
 
       return res.status(500).json({
-        message: "Failed to create project",
+        message:
+          "Failed to create project",
       });
     }
   }
