@@ -135,7 +135,6 @@ const router = express.Router();
 //   }
 // );
 
-
 router.post(
   "/create",
   authMiddleware,
@@ -173,27 +172,25 @@ router.post(
         devices,
       } = req.body;
 
-      let numericAgeFrom;
-      numericAgeFrom = Number(ageFrom);
-       if (
-          !Number.isFinite(numericAgeFrom) ||
-          numericAgeFrom < 0
-        ) {
-          return res.status(400).json({
-            message: "Invalid minimum age",
-          });
-        }
-      
-      let numericAgeTo;
-       if (
-          !Number.isFinite(numericAgeTo) ||
-          numericAgeTo < 0
-        ) {
-          return res.status(400).json({
-            message: "Invalid maximum age",
-          });
-        }
+      if (
+  typeof name !== "string" ||
+  !name.trim()
+) {
+  return res.status(400).json({
+    message: "Project name is required",
+  });
+}
 
+// Optional description
+if (
+  description !== undefined &&
+  description !== null &&
+  typeof description !== "string"
+) {
+  return res.status(400).json({
+    message: "Invalid description",
+  });
+}
 
       const project = await Project.create({
         name,
@@ -202,8 +199,8 @@ router.post(
         sector,
         market,
         targetCompletes,
-        ageFrom: numericAgeFrom,
-        ageTo: numericAgeTo,
+        ageFrom,
+        ageTo,
         gender,
         loi,
         incidence,
@@ -280,6 +277,7 @@ router.post(
     }
   }
 );
+
 
 router.get(
   "/",
