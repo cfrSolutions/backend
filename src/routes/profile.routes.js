@@ -169,7 +169,7 @@ router.get(
   businessOnly,
   async (req, res) => {
     try {
-      console.log("PROFILES USER:", req.user);
+      // console.log("PROFILES USER:", req.user);
 
       const profiles = await Profile.find(
         { active: true },
@@ -185,7 +185,7 @@ router.get(
       return res.status(200).json(profiles);
 
     } catch (error) {
-      console.error("GET PROFILES ERROR:", error);
+      // console.error("GET PROFILES ERROR:", error);
 
       return res.status(500).json({
         success: false,
