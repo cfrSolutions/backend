@@ -149,7 +149,7 @@ import adminOnly from "../middleware/admin.middleware.js";
 
 import {
   createSurvey,
-  getSurveys,
+  
   getSurveyById,
   surveyStats,
   adminOverviewStats,
@@ -187,6 +187,16 @@ router.get(
   adminOnly,
   async (req, res) => {
     try {
+       console.log("\n\n");
+      console.log("🔥🔥🔥🔥🔥 SURVEY ROUTE HIT 🔥🔥🔥🔥🔥");
+      console.log("USER:", req.user);
+      console.log("ROLE:", req.user?.role);
+      console.log(
+        "ID:",
+        req.user?._id ||
+        req.user?.userId ||
+        req.user?.id
+      );
       const role = String(req.user?.role || "").toUpperCase();
 
       const userId =
@@ -194,10 +204,7 @@ router.get(
         req.user?.userId ||
         req.user?.id;
 
-      console.log("=================================");
-      console.log("GET /admin/surveys");
-      console.log("ROLE:", role);
-      console.log("USER ID:", userId);
+     
 
       if (!userId) {
         return res.status(401).json({
