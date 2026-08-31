@@ -4,7 +4,7 @@ import User from "../models/User.model.js";
 // GET BUSINESS PROFILE
 export const getBusinessProfile = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.userId;
 
     let profile = await BusinessProfile.findOne({ userId });
 
@@ -18,7 +18,7 @@ export const getBusinessProfile = async (req, res) => {
       });
     }
 
-    // Get login email from User
+    // Login email comes from User model
     const user = await User.findById(userId).select("email");
 
     return res.status(200).json({
@@ -38,9 +38,10 @@ export const getBusinessProfile = async (req, res) => {
   }
 };
 
+// UPDATE BUSINESS PROFILE
 export const updateBusinessProfile = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.userId;
 
     const {
       name,
@@ -66,6 +67,7 @@ export const updateBusinessProfile = async (req, res) => {
       }
     );
 
+    // Login email comes from User model
     const user = await User.findById(userId).select("email");
 
     return res.status(200).json({
