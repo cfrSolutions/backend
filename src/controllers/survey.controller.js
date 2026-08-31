@@ -130,22 +130,43 @@ export const createSurvey = async (req, res) => {
 // };
 export const getSurveys = async (req, res) => {
   try {
+    const userId =
+      req.user._id ||
+      req.user.userId ||
+      req.user.id;
+
+    const role = String(req.user.role).toUpperCase();
+
+    console.log("========== GET SURVEYS ==========");
+    console.log("USER ID:", userId);
+    console.log("ROLE:", role);
+
     let filter = {};
 
-    // SUPERADMIN can see all surveys
-    if (req.user.role === "SUPERADMIN") {
+    if (role === "SUPERADMIN") {
       filter = {};
+    } else if (role === "ADMIN") {
+      filter = {
+        createdBy: userId,
+      };
+    } else {
+      return res.status(403).json({
+        message: "Invalid user role",
+      });
     }
 
-    // ADMIN can only see surveys created by themselves
-    else if (req.user.role === "ADMIN") {
-      filter = {
-        createdBy: req.user._id,
-      };
-    }
+    console.log("FILTER:", filter);
 
     const surveys = await Survey.find(filter)
       .sort({ createdAt: -1 });
+
+    console.log(
+      "RETURNED:",
+      surveys.map((s) => ({
+        title: s.title,
+        createdBy: s.createdBy,
+      }))
+    );
 
     res.json(surveys);
   } catch (err) {
