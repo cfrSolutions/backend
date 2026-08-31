@@ -31,6 +31,7 @@
 //   const surveys = await Survey.find().sort({ createdAt: -1 });
 //   res.json(surveys);
 // };
+
 import mongoose from "mongoose";
 import Survey from "../models/Survey.model.js";
 import SurveyResponse from "../models/SurveyResponse.model.js";
