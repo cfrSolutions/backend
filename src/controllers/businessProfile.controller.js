@@ -196,6 +196,19 @@ export const updateBusinessProfile = async (req, res) => {
       });
     }
 
+     const receivedFields = Object.keys(req.body);
+
+    const unexpectedFields = receivedFields.filter(
+      (field) => !ALLOWED_FIELDS.includes(field)
+    );
+
+    if (unexpectedFields.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid profile fields",
+      });
+    }
+
     const {
       name,
       phone,
