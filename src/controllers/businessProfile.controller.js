@@ -108,6 +108,8 @@ const MAX_LENGTHS = {
   postalCode: 20,
 };
 
+const ALLOWED_FIELDS = Object.keys(MAX_LENGTHS);
+
 const cleanString = (value, fieldName) => {
   if (value === undefined || value === null) {
     return "";
