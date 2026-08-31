@@ -1,4 +1,5 @@
 import BusinessProfile from "../models/BusinessProfile.model.js";
+import User from "../models/User.model.js";
 
 // GET BUSINESS PROFILE
 export const getBusinessProfile = async (req, res) => {
@@ -7,21 +8,25 @@ export const getBusinessProfile = async (req, res) => {
 
     let profile = await BusinessProfile.findOne({ userId });
 
-    // Create an empty profile if it doesn't exist yet
     if (!profile) {
       profile = await BusinessProfile.create({
         userId,
         name: "",
-        email: "",
         phone: "",
         company: "",
         location: "",
       });
     }
 
+    // Get login email from User
+    const user = await User.findById(userId).select("email");
+
     return res.status(200).json({
       success: true,
-      profile,
+      profile: {
+        ...profile.toObject(),
+        email: user?.email || "",
+      },
     });
   } catch (error) {
     console.error("Get business profile error:", error);
@@ -33,7 +38,6 @@ export const getBusinessProfile = async (req, res) => {
   }
 };
 
-// UPDATE BUSINESS PROFILE
 export const updateBusinessProfile = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -62,10 +66,15 @@ export const updateBusinessProfile = async (req, res) => {
       }
     );
 
+    const user = await User.findById(userId).select("email");
+
     return res.status(200).json({
       success: true,
       message: "Business profile updated successfully",
-      profile,
+      profile: {
+        ...profile.toObject(),
+        email: user?.email || "",
+      },
     });
   } catch (error) {
     console.error("Update business profile error:", error);
