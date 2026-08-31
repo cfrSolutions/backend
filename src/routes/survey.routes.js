@@ -194,18 +194,25 @@ router.get(
         req.user?.userId ||
         req.user?.id;
 
-      console.log("========== GET SURVEYS ==========");
+      console.log("=================================");
+      console.log("GET /admin/surveys");
       console.log("ROLE:", role);
       console.log("USER ID:", userId);
+
+      if (!userId) {
+        return res.status(401).json({
+          message: "User ID not found",
+        });
+      }
 
       let surveys;
 
       if (role === "SUPERADMIN") {
-        // Super Admin sees everything
+        // Superadmin sees everything
         surveys = await Survey.find({})
           .sort({ createdAt: -1 });
       } else if (role === "ADMIN") {
-        // Admin sees ONLY surveys created by themselves
+        // Admin sees ONLY their own surveys
         surveys = await Survey.find({
           createdBy: userId,
         }).sort({ createdAt: -1 });
@@ -216,14 +223,14 @@ router.get(
       }
 
       console.log(
-        "SURVEYS:",
-        surveys.map((s) => ({
-          title: s.title,
-          createdBy: s.createdBy?.toString(),
+        "RETURNING:",
+        surveys.map((survey) => ({
+          title: survey.title,
+          createdBy: survey.createdBy?.toString(),
         }))
       );
 
-      console.log("================================");
+      console.log("=================================");
 
       res.json(surveys);
     } catch (err) {
@@ -235,7 +242,6 @@ router.get(
     }
   }
 );
-
 
 /* =====================================================
    ADMIN REPORT OVERVIEW
