@@ -116,29 +116,88 @@ export const createSurvey = async (req, res) => {
 //     res.status(400).json({ message: err.message });
 //   }
 // };
+
+
 /* GET ALL SURVEYS (Admin) */
+// export const getSurveys = async (req, res) => {
+//   try {
+//     const surveys = await Survey.find().sort({ createdAt: -1 });
+//     res.json(surveys);
+//   } catch (err) {
+//     res.status(500).json({ message: "Failed to fetch surveys" });
+//   }
+// };
 export const getSurveys = async (req, res) => {
   try {
-    const surveys = await Survey.find().sort({ createdAt: -1 });
+    let filter = {};
+
+    // SUPERADMIN can see all surveys
+    if (req.user.role === "SUPERADMIN") {
+      filter = {};
+    }
+
+    // ADMIN can only see surveys created by themselves
+    else if (req.user.role === "ADMIN") {
+      filter = {
+        createdBy: req.user._id,
+      };
+    }
+
+    const surveys = await Survey.find(filter)
+      .sort({ createdAt: -1 });
+
     res.json(surveys);
   } catch (err) {
-    res.status(500).json({ message: "Failed to fetch surveys" });
+    console.error("GET SURVEYS ERROR:", err);
+
+    res.status(500).json({
+      message: "Failed to fetch surveys",
+    });
   }
 };
 
 /* GET SINGLE SURVEY */
+// export const getSurveyById = async (req, res) => {
+//   try {
+//     const survey = await Survey.findById(req.params.id);
+//     if (!survey) {
+//       return res.status(404).json({ message: "Survey not found" });
+//     }
+//     res.json(survey);
+//   } catch (err) {
+//     res.status(500).json({ message: "Failed to fetch survey" });
+//   }
+// };
+
 export const getSurveyById = async (req, res) => {
   try {
     const survey = await Survey.findById(req.params.id);
+
     if (!survey) {
-      return res.status(404).json({ message: "Survey not found" });
+      return res.status(404).json({
+        message: "Survey not found",
+      });
     }
+
+    // ADMIN can only access surveys created by themselves
+    if (
+      req.user.role === "ADMIN" &&
+      survey.createdBy.toString() !== req.user._id.toString()
+    ) {
+      return res.status(403).json({
+        message: "You are not authorized to access this survey",
+      });
+    }
+
     res.json(survey);
   } catch (err) {
-    res.status(500).json({ message: "Failed to fetch survey" });
+    console.error("GET SURVEY BY ID ERROR:", err);
+
+    res.status(500).json({
+      message: "Failed to fetch survey",
+    });
   }
 };
-
 
 export const surveyStats = async (req, res) => {
   try {
