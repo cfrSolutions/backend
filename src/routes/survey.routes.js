@@ -4,27 +4,24 @@
 // import Survey from "../models/Survey.model.js";
 // import {
 //   createSurvey,
-//   getSurveys,
-//   getSurveyById,
 //   surveyStats,
-//   adminOverviewStats,
-//   adminDashboardSummary,
 // } from "../controllers/survey.controller.js";
 // import UserProfile from "../models/UserProfile.model.js";
 // import SurveyResponse from "../models/SurveyResponse.model.js";
+// import { adminOverviewStats, adminDashboardSummary } from "../controllers/survey.controller.js";
 // const router = express.Router();
 
 
 // router.post("/", authMiddleware, adminOnly, createSurvey);
 
 // /* GET ALL */
-// router.get("/", authMiddleware, adminOnly, getSurveys, async (req, res) => {
+// router.get("/", authMiddleware, adminOnly, async (req, res) => {
 //   const surveys = await Survey.find().sort({ createdAt: -1 });
 //   res.json(surveys);
 // });
 
 // /* GET ONE */
-// router.get("/:id", authMiddleware, getSurveyById, async (req, res) => {
+// router.get("/:id", authMiddleware, async (req, res) => {
 //   const survey = await Survey.findById(req.params.id);
 //   if (!survey) return res.status(404).json({ message: "Not found" });
 //   res.json(survey);
