@@ -185,7 +185,55 @@ router.get(
   "/",
   authMiddleware,
   adminOnly,
-  getSurveys
+  async (req, res) => {
+    try {
+      const role = String(req.user?.role || "").toUpperCase();
+
+      const userId =
+        req.user?._id ||
+        req.user?.userId ||
+        req.user?.id;
+
+      console.log("========== GET SURVEYS ==========");
+      console.log("ROLE:", role);
+      console.log("USER ID:", userId);
+
+      let surveys;
+
+      if (role === "SUPERADMIN") {
+        // Super Admin sees everything
+        surveys = await Survey.find({})
+          .sort({ createdAt: -1 });
+      } else if (role === "ADMIN") {
+        // Admin sees ONLY surveys created by themselves
+        surveys = await Survey.find({
+          createdBy: userId,
+        }).sort({ createdAt: -1 });
+      } else {
+        return res.status(403).json({
+          message: "Unauthorized",
+        });
+      }
+
+      console.log(
+        "SURVEYS:",
+        surveys.map((s) => ({
+          title: s.title,
+          createdBy: s.createdBy?.toString(),
+        }))
+      );
+
+      console.log("================================");
+
+      res.json(surveys);
+    } catch (err) {
+      console.error("GET SURVEYS ERROR:", err);
+
+      res.status(500).json({
+        message: "Failed to fetch surveys",
+      });
+    }
+  }
 );
 
 
