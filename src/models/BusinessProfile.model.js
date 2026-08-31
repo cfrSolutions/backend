@@ -16,13 +16,6 @@ const businessProfileSchema = new mongoose.Schema(
       default: "",
     },
 
-    // email: {
-    //   type: String,
-    //   trim: true,
-    //   lowercase: true,
-    //   default: "",
-    // },
-
     phone: {
       type: String,
       trim: true,
@@ -35,7 +28,19 @@ const businessProfileSchema = new mongoose.Schema(
       default: "",
     },
 
+    country: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
     location: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    postalCode: {
       type: String,
       trim: true,
       default: "",

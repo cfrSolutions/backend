@@ -14,7 +14,9 @@ export const getBusinessProfile = async (req, res) => {
         name: "",
         phone: "",
         company: "",
+        country: "",
         location: "",
+        postalCode:"",
       });
     }
 
@@ -47,7 +49,9 @@ export const updateBusinessProfile = async (req, res) => {
       name,
       phone,
       company,
+      country,
       location,
+      postalCode,
     } = req.body;
 
     const profile = await BusinessProfile.findOneAndUpdate(
@@ -57,7 +61,9 @@ export const updateBusinessProfile = async (req, res) => {
           name: name?.trim() || "",
           phone: phone?.trim() || "",
           company: company?.trim() || "",
+          country: country?.trim() || "",
           location: location?.trim() || "",
+          postalCode: postalCode?.trim() || "",
         },
       },
       {
