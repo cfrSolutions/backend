@@ -146,14 +146,18 @@ import express from "express";
 
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import adminOnly from "../middleware/admin.middleware.js";
+import { adminCanAccessSurvey } from "../middleware/surveyAccess.middleware.js";
 
 import {
   createSurvey,
   getSurveys,
   getSurveyById,
   surveyStats,
+  getDemographics,
   adminOverviewStats,
   adminDashboardSummary,
+  deleteSurvey,
+  updateSurveyStatus,
 } from "../controllers/survey.controller.js";
 
 import Survey from "../models/Survey.model.js";
@@ -286,150 +290,193 @@ router.get(
    SURVEY STATS
 ===================================================== */
 
+// router.get(
+//   "/:surveyId/stats",
+//   authMiddleware,
+//   adminOnly,
+//   adminCanAccessSurvey,
+//   surveyStats,
+//   async (req, res) => {
+//     try {
+//       const { surveyId } = req.params;
+
+//       if (!mongoose.isValidObjectId(surveyId)) {
+//         return res.status(400).json({
+//           message: "Invalid survey ID",
+//         });
+//       }
+
+//       const survey = await Survey.findById(surveyId)
+//         .select("createdBy");
+
+//       if (!survey) {
+//         return res.status(404).json({
+//           message: "Survey not found",
+//         });
+//       }
+
+//       const role = String(req.user?.role || "").toUpperCase();
+//       const userId = String(req.user?.userId || "");
+
+//       if (
+//         role === "ADMIN" &&
+//         String(survey.createdBy) !== userId
+//       ) {
+//         return res.status(403).json({
+//           message: "You are not authorized to view these statistics",
+//         });
+//       }
+
+//       const responses = await SurveyResponse.find({
+//         survey: surveyId,
+//       });
+
+//       const totalStarted = responses.length;
+
+//       const completed = responses.filter(
+//         (r) => r.status === "COMPLETED"
+//       ).length;
+
+//       const pending = responses.filter(
+//         (r) => r.status === "STARTED"
+//       ).length;
+
+//       const screenout = responses.filter(
+//         (r) => r.status === "SCREENOUT"
+//       ).length;
+
+//       const quota = responses.filter(
+//         (r) => r.status === "QUOTA_FULL"
+//       ).length;
+
+//       const cancelled = responses.filter(
+//         (r) => r.status === "CANCELLED"
+//       ).length;
+
+//       const cleaned = responses.filter(
+//         (r) => r.status === "CLEANED"
+//       ).length;
+
+//       const completedDurations = responses
+//         .filter((r) => r.durationSeconds)
+//         .map((r) => r.durationSeconds);
+
+//       const avgDurationSeconds =
+//         completedDurations.length > 0
+//           ? Math.round(
+//               completedDurations.reduce((a, b) => a + b, 0) /
+//                 completedDurations.length
+//             )
+//           : 0;
+
+//       const incidenceRate =
+//         totalStarted > 0
+//           ? ((completed / totalStarted) * 100).toFixed(1)
+//           : "0.0";
+
+//       res.json({
+//         totalStarted,
+//         completed,
+//         pending,
+//         screenout,
+//         quota,
+//         cancelled,
+//         cleaned,
+//         incidenceRate,
+//         avgDurationSeconds,
+//       });
+//     } catch (err) {
+//       console.error("SURVEY STATS ERROR:", err);
+
+//       res.status(500).json({
+//         message: "Failed to load survey stats",
+//       });
+//     }
+//   }
+// );
+
 router.get(
   "/:surveyId/stats",
   authMiddleware,
   adminOnly,
-  async (req, res) => {
-    try {
-      const { surveyId } = req.params;
-
-      const responses = await SurveyResponse.find({
-        survey: surveyId,
-      });
-
-      const totalStarted = responses.length;
-
-      const completed = responses.filter(
-        (r) => r.status === "COMPLETED"
-      ).length;
-
-      const pending = responses.filter(
-        (r) => r.status === "STARTED"
-      ).length;
-
-      const screenout = responses.filter(
-        (r) => r.status === "SCREENOUT"
-      ).length;
-
-      const quota = responses.filter(
-        (r) => r.status === "QUOTA_FULL"
-      ).length;
-
-      const cancelled = responses.filter(
-        (r) => r.status === "CANCELLED"
-      ).length;
-
-      const cleaned = responses.filter(
-        (r) => r.status === "CLEANED"
-      ).length;
-
-      const completedDurations = responses
-        .filter((r) => r.durationSeconds)
-        .map((r) => r.durationSeconds);
-
-      const avgDurationSeconds =
-        completedDurations.length > 0
-          ? Math.round(
-              completedDurations.reduce((a, b) => a + b, 0) /
-                completedDurations.length
-            )
-          : 0;
-
-      const incidenceRate =
-        totalStarted > 0
-          ? ((completed / totalStarted) * 100).toFixed(1)
-          : "0.0";
-
-      res.json({
-        totalStarted,
-        completed,
-        pending,
-        screenout,
-        quota,
-        cancelled,
-        cleaned,
-        incidenceRate,
-        avgDurationSeconds,
-      });
-    } catch (err) {
-      console.error("SURVEY STATS ERROR:", err);
-
-      res.status(500).json({
-        message: "Failed to load survey stats",
-      });
-    }
-  }
+  adminCanAccessSurvey,
+  surveyStats
 );
-
-
 /* =====================================================
    DEMOGRAPHICS
 ===================================================== */
 
+// router.get(
+//   "/:surveyId/demographics",
+//   authMiddleware,
+//   adminOnly,
+//   adminCanAccessSurvey,
+//   getDemographics,
+//   async (req, res) => {
+//     try {
+//       const responses = await SurveyResponse.find({
+//         survey: req.params.surveyId,
+//         status: "COMPLETED",
+//       }).populate("user");
+
+//       const gender = {};
+//       const generations = {};
+
+//       for (const r of responses) {
+//         if (!r.user) continue;
+
+//         const profile = await UserProfile.findOne({
+//           user: r.user._id,
+//         });
+
+//         if (!profile) continue;
+
+//         // Gender
+//         if (profile.gender) {
+//           gender[profile.gender] =
+//             (gender[profile.gender] || 0) + 1;
+//         }
+
+//         // Age
+//         if (profile.dob) {
+//           const age =
+//             new Date().getFullYear() -
+//             new Date(profile.dob).getFullYear();
+
+//           let gen =
+//             age <= 26
+//               ? "Gen Z"
+//               : age <= 42
+//               ? "Millennials"
+//               : age <= 58
+//               ? "Gen X"
+//               : "Boomers";
+
+//           generations[gen] =
+//             (generations[gen] || 0) + 1;
+//         }
+//       }
+
+//       res.json({
+//         gender,
+//         generations,
+//       });
+//     } catch (err) {
+//       console.error("DEMOGRAPHICS ERROR:", err);
+
+//       res.status(500).json({
+//         message: "Demographics error",
+//       });
+//     }
+//   }
+// );
 router.get(
   "/:surveyId/demographics",
   authMiddleware,
   adminOnly,
-  async (req, res) => {
-    try {
-      const responses = await SurveyResponse.find({
-        survey: req.params.surveyId,
-        status: "COMPLETED",
-      }).populate("user");
-
-      const gender = {};
-      const generations = {};
-
-      for (const r of responses) {
-        if (!r.user) continue;
-
-        const profile = await UserProfile.findOne({
-          user: r.user._id,
-        });
-
-        if (!profile) continue;
-
-        // Gender
-        if (profile.gender) {
-          gender[profile.gender] =
-            (gender[profile.gender] || 0) + 1;
-        }
-
-        // Age
-        if (profile.dob) {
-          const age =
-            new Date().getFullYear() -
-            new Date(profile.dob).getFullYear();
-
-          let gen =
-            age <= 26
-              ? "Gen Z"
-              : age <= 42
-              ? "Millennials"
-              : age <= 58
-              ? "Gen X"
-              : "Boomers";
-
-          generations[gen] =
-            (generations[gen] || 0) + 1;
-        }
-      }
-
-      res.json({
-        gender,
-        generations,
-      });
-    } catch (err) {
-      console.error("DEMOGRAPHICS ERROR:", err);
-
-      res.status(500).json({
-        message: "Demographics error",
-      });
-    }
-  }
+  adminCanAccessSurvey,
+  getDemographics
 );
-
 
 /* =====================================================
    GET ONE SURVEY
@@ -439,6 +486,7 @@ router.get(
   "/:id",
   authMiddleware,
   adminOnly,
+  adminCanAccessSurvey,
   getSurveyById
 );
 
@@ -451,6 +499,8 @@ router.delete(
   "/:id",
   authMiddleware,
   adminOnly,
+  adminCanAccessSurvey,
+  deleteSurvey,
   async (req, res) => {
     try {
       const survey = await Survey.findById(req.params.id);
@@ -504,6 +554,8 @@ router.patch(
   "/:id/status",
   authMiddleware,
   adminOnly,
+  adminCanAccessSurvey,
+  updateSurveyStatus,
   async (req, res) => {
     try {
       const survey = await Survey.findById(req.params.id);
