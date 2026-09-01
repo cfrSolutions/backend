@@ -1118,62 +1118,379 @@ const router = express.Router();
 global.sessions = global.sessions || {};
 
 
+// =====================================================
+// URL VARIABLE HELPERS
+// =====================================================
+
+function getDateString() {
+  const now = new Date();
+
+  return now
+    .toISOString()
+    .slice(0, 10)
+    .replace(/-/g, "");
+}
+
+
+function randomHex(length = 8) {
+  return crypto
+    .randomBytes(Math.ceil(length / 2))
+    .toString("hex")
+    .toUpperCase()
+    .slice(0, length);
+}
+
+
+function randomNumber(length = 6) {
+  let result = "";
+
+  for (let i = 0; i < length; i++) {
+    result += Math.floor(Math.random() * 10);
+  }
+
+  return result;
+}
+
+
+// =====================================================
+// GENERATE VALUE FROM PATTERN
+// =====================================================
+
+function generatePatternValue(pattern) {
+
+  const date = getDateString();
+
+  return String(pattern)
+    .replace(
+      /\{date\}/gi,
+      date
+    )
+    .replace(
+      /\{random\}/gi,
+      randomHex(10)
+    )
+    .replace(
+      /\{number\}/gi,
+      randomNumber(6)
+    )
+    .replace(
+      /\{shortRandom\}/gi,
+      randomHex(6)
+    );
+}
+
+
+// router.get("/start", async (req, res) => {
+//   const { tk } = req.query;
+
+//   const project = await Project.findOne({
+//     "redirects.start.token": tk,
+//   });
+
+//   if (!project) {
+//     return res.send("Invalid link");
+//   }
+
+//   let surveyLink = project.surveyLinks?.live;
+
+//   if (!surveyLink) {
+//     return res.send("Survey not Set");
+//   }
+
+//   // console.log("START QUERY:", req.query);
+
+//   const rid =
+//     req.query.pid ||
+//     req.query.PID ||
+//     req.query.rid ||
+//     req.query.RID;
+
+//   if (!rid) {
+//     return res.send("Missing RID");
+//   }
+
+//   try {
+//     await SurveyResponse.create({
+//       project: project._id,
+//       vendor:
+//       project.vendorLinks?.[0]?.vendorName || "",
+//       rid,
+//       status: "STARTED",
+//       startedAt: new Date(),
+//     });
+
+//     // console.log(
+//     //   "CREATED RESPONSE RID:",
+//     //   rid
+//     // );
+//   } catch (err) {
+//     // console.log("CREATE ERROR:", err);
+//     return res.status(500).send(err.message);
+//   }
+
+//   surveyLink = surveyLink.replace(
+//     /\[%RID%\]/g,
+//     rid
+//   );
+
+//   return res.redirect(surveyLink);
+// });
+
 router.get("/start", async (req, res) => {
-  const { tk } = req.query;
-
-  const project = await Project.findOne({
-    "redirects.start.token": tk,
-  });
-
-  if (!project) {
-    return res.send("Invalid link");
-  }
-
-  let surveyLink = project.surveyLinks?.live;
-
-  if (!surveyLink) {
-    return res.send("Survey not Set");
-  }
-
-  // console.log("START QUERY:", req.query);
-
-  const rid =
-    req.query.pid ||
-    req.query.PID ||
-    req.query.rid ||
-    req.query.RID;
-
-  if (!rid) {
-    return res.send("Missing RID");
-  }
-
   try {
-    await SurveyResponse.create({
-      project: project._id,
-      vendor:
-      project.vendorLinks?.[0]?.vendorName || "",
-      rid,
-      status: "STARTED",
-      startedAt: new Date(),
+
+    // =================================================
+    // GET TOKEN
+    // =================================================
+
+    const { tk } = req.query;
+
+    if (!tk) {
+      return res.status(400).send("Invalid link");
+    }
+
+
+    // =================================================
+    // FIND PROJECT
+    // =================================================
+
+    const project = await Project.findOne({
+      "redirects.start.token": tk,
     });
 
-    // console.log(
-    //   "CREATED RESPONSE RID:",
-    //   rid
-    // );
+    if (!project) {
+      return res.status(404).send("Invalid link");
+    }
+
+
+    // =================================================
+    // GET LIVE SURVEY
+    // =================================================
+
+    let surveyLink = project.surveyLinks?.live;
+
+    if (!surveyLink) {
+      return res.send("Survey not Set");
+    }
+
+
+    // =================================================
+    // GENERATE URL VARIABLES
+    // =================================================
+
+    const generatedValues = {};
+
+    const variables =
+      Array.isArray(project.urlVariables)
+        ? project.urlVariables
+        : [];
+
+
+    for (const variable of variables) {
+
+      if (
+        !variable ||
+        !variable.param
+      ) {
+        continue;
+      }
+
+      const param =
+        String(variable.param).trim();
+
+      const pattern =
+        String(
+          variable.pattern || ""
+        ).trim();
+
+
+      if (!param) {
+        continue;
+      }
+
+
+      // -----------------------------------------------
+      // If pattern exists → generate from pattern
+      // -----------------------------------------------
+
+      if (pattern) {
+
+        generatedValues[param] =
+          generatePatternValue(
+            pattern
+          );
+
+      }
+
+    }
+
+
+    // =================================================
+    // RID
+    // =================================================
+    //
+    // RID is the identifier we use for SurveyResponse.
+    //
+    // If RID was configured in Build URL,
+    // use the generated RID.
+    //
+    // Otherwise generate a default RID.
+    // =================================================
+
+    let rid =
+      generatedValues.RID;
+
+
+    if (!rid) {
+
+      rid =
+        `RID-${getDateString()}-${randomHex(10)}`;
+
+      generatedValues.RID = rid;
+    }
+
+
+    // =================================================
+    // SUPPORT EXISTING INCOMING RID
+    // =================================================
+    //
+    // This keeps backward compatibility.
+    //
+    // If an external vendor already sends RID/PID,
+    // we can still use it.
+    // =================================================
+
+    const incomingRid =
+      req.query.rid ||
+      req.query.RID ||
+      req.query.pid ||
+      req.query.PID;
+
+
+    if (incomingRid) {
+
+      rid =
+        String(incomingRid);
+
+      generatedValues.RID =
+        rid;
+    }
+
+
+    // =================================================
+    // CREATE SURVEY RESPONSE
+    // =================================================
+
+    try {
+
+      await SurveyResponse.create({
+
+        project:
+          project._id,
+
+        vendor:
+          project.vendorLinks?.[0]
+            ?.vendorName || "",
+
+        rid,
+
+        status:
+          "STARTED",
+
+        startedAt:
+          new Date(),
+
+      });
+
+    } catch (err) {
+
+      console.error(
+        "CREATE RESPONSE ERROR:",
+        err
+      );
+
+      return res
+        .status(500)
+        .send(
+          "Unable to create survey response"
+        );
+    }
+
+
+    // =================================================
+    // REPLACE %RID%
+    // =================================================
+    //
+    // Your existing survey link can still contain:
+    //
+    // https://supplier.com/survey?RID=%RID%
+    //
+    // We replace it with generated RID.
+    // =================================================
+
+    surveyLink =
+      surveyLink.replace(
+        /%RID%/gi,
+        encodeURIComponent(rid)
+      );
+
+
+    // =================================================
+    // ADD ALL GENERATED VARIABLES
+    // =================================================
+
+    const url =
+      new URL(surveyLink);
+
+
+    for (
+      const [key, value]
+      of Object.entries(
+        generatedValues
+      )
+    ) {
+
+      // Don't add empty values
+
+      if (
+        value === undefined ||
+        value === null ||
+        value === ""
+      ) {
+        continue;
+      }
+
+
+      url.searchParams.set(
+        key,
+        value
+      );
+    }
+
+
+    // =================================================
+    // REDIRECT
+    // =================================================
+
+    return res.redirect(
+      url.toString()
+    );
+
+
   } catch (err) {
-    // console.log("CREATE ERROR:", err);
-    return res.status(500).send(err.message);
+
+    console.error(
+      "START ROUTE ERROR:",
+      err
+    );
+
+    return res
+      .status(500)
+      .send(
+        "Unable to start survey"
+      );
   }
-
-  surveyLink = surveyLink.replace(
-    /\[%RID%\]/g,
-    rid
-  );
-
-  return res.redirect(surveyLink);
 });
-
 
 router.get("/c", async (req, res) => {
 // console.log("COMPLETE ROUTE");

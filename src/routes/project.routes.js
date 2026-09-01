@@ -11,6 +11,106 @@ import CPI from "../models/CPI.model.js";
 
 const router = express.Router();
 
+// =====================================================
+// URL VARIABLE GENERATORS
+// =====================================================
+
+function randomHex(length = 8) {
+  return crypto
+    .randomBytes(Math.ceil(length / 2))
+    .toString("hex")
+    .toUpperCase()
+    .slice(0, length);
+}
+
+function randomNumber(length = 6) {
+  let result = "";
+
+  for (let i = 0; i < length; i++) {
+    result += Math.floor(Math.random() * 10);
+  }
+
+  return result;
+}
+
+function getDateString() {
+  const now = new Date();
+
+  return now
+    .toISOString()
+    .slice(0, 10)
+    .replace(/-/g, "");
+}
+
+function generateVariableValue(param) {
+  const date = getDateString();
+
+  switch (param) {
+
+    // -----------------------------------------
+    // RESPONSE ID
+    // -----------------------------------------
+
+    case "RID":
+      return `RID-${date}-${randomHex(8)}`;
+
+
+    // -----------------------------------------
+    // BID INCIDENCE
+    // -----------------------------------------
+
+    case "BidIncidence":
+      return `BI-${randomNumber(2)}`;
+
+
+    // -----------------------------------------
+    // PANELIST ID
+    // -----------------------------------------
+
+    case "PID":
+      return `PID-${randomHex(10)}`;
+
+
+    // -----------------------------------------
+    // SUPPLIER ID
+    // -----------------------------------------
+
+    case "SupplierID":
+      return `SUP-${randomNumber(6)}`;
+
+
+    // -----------------------------------------
+    // SUPPLIER NAME
+    // -----------------------------------------
+
+    case "SupplierName":
+      return `Supplier-${randomHex(6)}`;
+
+
+    // -----------------------------------------
+    // MID
+    // -----------------------------------------
+
+    case "MID":
+      return `MID-${randomHex(8)}`;
+
+
+    // -----------------------------------------
+    // RSID
+    // -----------------------------------------
+
+    case "RSID":
+      return `RS-${date}-${randomHex(8)}`;
+
+
+    // -----------------------------------------
+    // FALLBACK
+    // -----------------------------------------
+
+    default:
+      return `${param}-${randomHex(10)}`;
+  }
+}
 
 // router.post(
 //   "/create",
@@ -451,7 +551,7 @@ router.get(
         _id: req.params.id,
         business: userId,
       }).select(
-        "_id name description sector market targetCompletes ageFrom ageTo gender loi incidence budget timeline openEnded devices status surveyId redirects surveyLinks targetGroups completes disqualified quotaFull totalResponses createdAt updatedAt"
+        "_id name description sector market targetCompletes ageFrom ageTo gender loi incidence budget timeline openEnded devices status surveyId redirects surveyLinks urlVariables targetGroups completes disqualified quotaFull totalResponses createdAt updatedAt"
       );
 
       if (!project) {
@@ -603,6 +703,159 @@ router.put(
 //     }
 //   }
 // );
+
+
+router.put(
+  "/:id/url-variables",
+  authMiddleware,
+  businessOnly,
+  async (req, res) => {
+    try {
+      const userId =
+        req.user._id ||
+        req.user.id ||
+        req.user.userId;
+
+      if (!userId) {
+        return res.status(401).json({
+          message: "User not found in authentication token",
+        });
+      }
+
+      const project = await Project.findOne({
+        _id: req.params.id,
+        business: userId,
+      });
+
+      if (!project) {
+        return res.status(404).json({
+          message: "Project not found",
+        });
+      }
+
+      const { variables } = req.body;
+
+      if (!Array.isArray(variables)) {
+        return res.status(400).json({
+          message: "Variables must be an array",
+        });
+      }
+
+      // -----------------------------------------
+      // ALLOWED PARAMETERS
+      // -----------------------------------------
+
+      const allowedParameters = [
+        "RID",
+        "BidIncidence",
+        "PID",
+        "SupplierID",
+        "SupplierName",
+        "MID",
+        "RSID",
+      ];
+
+      // -----------------------------------------
+      // VALIDATE VARIABLES
+      // -----------------------------------------
+
+      const cleanedVariables = [];
+
+      for (const variable of variables) {
+        if (!variable || typeof variable !== "object") {
+          return res.status(400).json({
+            message: "Invalid variable",
+          });
+        }
+
+        const param = String(
+          variable.param || ""
+        ).trim();
+
+        const pattern = String(
+          variable.pattern || ""
+        ).trim();
+
+        if (!param) {
+          return res.status(400).json({
+            message: "Variable parameter is required",
+          });
+        }
+
+        if (!allowedParameters.includes(param)) {
+          return res.status(400).json({
+            message: `Invalid variable parameter: ${param}`,
+          });
+        }
+
+        if (!pattern) {
+          return res.status(400).json({
+            message: `Pattern is required for ${param}`,
+          });
+        }
+
+        // Prevent duplicate parameters
+        if (
+          cleanedVariables.some(
+            (item) => item.param === param
+          )
+        ) {
+          return res.status(400).json({
+            message: `Duplicate variable: ${param}`,
+          });
+        }
+
+        cleanedVariables.push({
+          param,
+          pattern,
+        });
+      }
+
+      // -----------------------------------------
+      // RID SHOULD ALWAYS EXIST
+      // -----------------------------------------
+
+      const hasRID = cleanedVariables.some(
+        (item) => item.param === "RID"
+      );
+
+      if (!hasRID) {
+        return res.status(400).json({
+          message:
+            "Response ID (RID) is required",
+        });
+      }
+
+      // -----------------------------------------
+      // SAVE
+      // -----------------------------------------
+
+      project.urlVariables =
+        cleanedVariables;
+
+      await project.save();
+
+      return res.json({
+        message:
+          "URL variables saved successfully",
+
+        variables:
+          project.urlVariables,
+      });
+
+    } catch (err) {
+      console.error(
+        "SAVE URL VARIABLES ERROR:",
+        err
+      );
+
+      return res.status(500).json({
+        message:
+          "Failed to save URL variables",
+      });
+    }
+  }
+);
 
 // ADMIN → GO LIVE
 router.put("/admin/project/:id/go-live", authMiddleware, adminOnly, async (req, res) => {

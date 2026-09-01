@@ -95,6 +95,63 @@ expectedQuotaTk: {
 
     durationSeconds: Number,
     answers: Object,
+    ipHash: {
+      type: String,
+      default: "",
+      index: true,
+    },
+
+    deviceHash: {
+      type: String,
+      default: "",
+      index: true,
+    },
+
+    userAgentHash: {
+      type: String,
+      default: "",
+    },
+
+    fraudScore: {
+      type: Number,
+      default: 0,
+      index: true,
+    },
+
+    fraudStatus: {
+      type: String,
+      enum: [
+        "CLEAR",
+        "REVIEW",
+        "HIGH_RISK",
+        "CONFIRMED",
+      ],
+      default: "CLEAR",
+      index: true,
+    },
+
+    fraudFlags: [
+      {
+        type: {
+          type: String,
+        },
+
+        score: {
+          type: Number,
+          default: 0,
+        },
+
+        message: {
+          type: String,
+          default: "",
+        },
+
+        detectedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
   },
   { timestamps: true }
 );

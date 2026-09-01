@@ -149,6 +149,20 @@ const ProjectSchema = new mongoose.Schema({
   live: { type: String },
 },
 
+urlVariables: [
+  {
+    param: {
+      type: String,
+      required: true,
+    },
+
+    pattern: {
+      type: String,
+      required: true,
+    },
+  },
+],
+
 clientKeysFile: {
   type: String,
 },

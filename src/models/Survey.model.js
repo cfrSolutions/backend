@@ -186,6 +186,20 @@ const surveySchema = new mongoose.Schema(
     type: String,
     default: null // pid | id | user | RID
   },
+  
+  trackingVariables: [
+  {
+    label: {
+      type: String,
+      required: true,
+    },
+    param: {
+      type: String,
+      required: true,
+    },
+  },
+],
+
 screener: [
     {
       field: String,        // "age"
