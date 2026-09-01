@@ -57,6 +57,13 @@ export const authMiddleware = async (req, res, next) => {
       role: decoded.role,
       sessionId: decoded.sessionId, // 🔥 REQUIRED FOR SECURITY PAGE
     };
+    console.log("========== AUTH ==========");
+    console.log("DB USER:", user._id.toString());
+    console.log("DB ROLE:", user.role);
+    console.log("TOKEN USER:", decoded.userId);
+    console.log("TOKEN ROLE:", decoded.role);
+    console.log("==========================");
+
 
     next();
   } catch (err) {
