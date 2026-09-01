@@ -149,7 +149,7 @@ import adminOnly from "../middleware/admin.middleware.js";
 
 import {
   createSurvey,
-  
+  getSurveys,
   getSurveyById,
   surveyStats,
   adminOverviewStats,
@@ -181,75 +181,81 @@ router.post(
    ADMIN      → ONLY OWN
 ===================================================== */
 
+// router.get(
+//   "/",
+//   authMiddleware,
+//   adminOnly,
+//   async (req, res) => {
+//     try {
+//        console.log("\n\n");
+//       console.log("🔥🔥🔥🔥🔥 SURVEY ROUTE HIT 🔥🔥🔥🔥🔥");
+//       console.log("USER:", req.user);
+//       console.log("ROLE:", req.user?.role);
+//       console.log(
+//         "ID:",
+//         req.user?._id ||
+//         req.user?.userId ||
+//         req.user?.id
+//       );
+//       const role = String(req.user?.role || "").toUpperCase();
+
+//       const userId =
+//         req.user?._id ||
+//         req.user?.userId ||
+//         req.user?.id;
+
+     
+
+//       if (!userId) {
+//         return res.status(401).json({
+//           message: "User ID not found",
+//         });
+//       }
+
+//       let surveys;
+
+//       if (role === "SUPERADMIN") {
+//         // Superadmin sees everything
+//         surveys = await Survey.find({})
+//           .sort({ createdAt: -1 });
+//       } else if (role === "ADMIN") {
+//         // Admin sees ONLY their own surveys
+//         surveys = await Survey.find({
+//           createdBy: userId,
+//         }).sort({ createdAt: -1 });
+//       } else {
+//         return res.status(403).json({
+//           message: "Unauthorized",
+//         });
+//       }
+
+//       console.log(
+//         "RETURNING:",
+//         surveys.map((survey) => ({
+//           title: survey.title,
+//           createdBy: survey.createdBy?.toString(),
+//         }))
+//       );
+
+//       console.log("=================================");
+
+//       res.json(surveys);
+//     } catch (err) {
+//       console.error("GET SURVEYS ERROR:", err);
+
+//       res.status(500).json({
+//         message: "Failed to fetch surveys",
+//       });
+//     }
+//   }
+// );
+
 router.get(
   "/",
   authMiddleware,
   adminOnly,
-  async (req, res) => {
-    try {
-       console.log("\n\n");
-      console.log("🔥🔥🔥🔥🔥 SURVEY ROUTE HIT 🔥🔥🔥🔥🔥");
-      console.log("USER:", req.user);
-      console.log("ROLE:", req.user?.role);
-      console.log(
-        "ID:",
-        req.user?._id ||
-        req.user?.userId ||
-        req.user?.id
-      );
-      const role = String(req.user?.role || "").toUpperCase();
-
-      const userId =
-        req.user?._id ||
-        req.user?.userId ||
-        req.user?.id;
-
-     
-
-      if (!userId) {
-        return res.status(401).json({
-          message: "User ID not found",
-        });
-      }
-
-      let surveys;
-
-      if (role === "SUPERADMIN") {
-        // Superadmin sees everything
-        surveys = await Survey.find({})
-          .sort({ createdAt: -1 });
-      } else if (role === "ADMIN") {
-        // Admin sees ONLY their own surveys
-        surveys = await Survey.find({
-          createdBy: userId,
-        }).sort({ createdAt: -1 });
-      } else {
-        return res.status(403).json({
-          message: "Unauthorized",
-        });
-      }
-
-      console.log(
-        "RETURNING:",
-        surveys.map((survey) => ({
-          title: survey.title,
-          createdBy: survey.createdBy?.toString(),
-        }))
-      );
-
-      console.log("=================================");
-
-      res.json(surveys);
-    } catch (err) {
-      console.error("GET SURVEYS ERROR:", err);
-
-      res.status(500).json({
-        message: "Failed to fetch surveys",
-      });
-    }
-  }
+  getSurveys
 );
-
 /* =====================================================
    ADMIN REPORT OVERVIEW
 
