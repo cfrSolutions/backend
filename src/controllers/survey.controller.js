@@ -463,48 +463,49 @@ export const createSurvey = async (req, res) => {
 //   }
 // };
 export const getSurveys = async (req, res) => {
-  console.log("🔥🔥🔥 NEW GET SURVEYS CODE IS RUNNING 🔥🔥🔥");
-  console.log("REQ.USER =", req.user);
   try {
-    const userId =
-      req.user._id ||
-      req.user.userId ||
-      req.user.id;
-
-    const role = String(req.user.role).toUpperCase();
+    const userId = req.user.userId;
+    const role = String(req.user.role || "").toUpperCase();
 
     console.log("========== GET SURVEYS ==========");
     console.log("USER ID:", userId);
     console.log("ROLE:", role);
 
-    let filter = {};
+    if (!userId) {
+      return res.status(401).json({
+        message: "User ID not found",
+      });
+    }
+
+    let surveys;
 
     if (role === "SUPERADMIN") {
-      filter = {};
-    } else if (role === "ADMIN") {
-      filter = {
+      surveys = await Survey.find({})
+        .sort({ createdAt: -1 });
+    } 
+    
+    else if (role === "ADMIN") {
+      surveys = await Survey.find({
         createdBy: userId,
-      };
-    } else {
+      }).sort({ createdAt: -1 });
+    } 
+    
+    else {
       return res.status(403).json({
         message: "Invalid user role",
       });
     }
 
-    console.log("FILTER:", filter);
-
-    const surveys = await Survey.find(filter)
-      .sort({ createdAt: -1 });
-
     console.log(
       "RETURNED:",
       surveys.map((s) => ({
         title: s.title,
-        createdBy: s.createdBy,
+        createdBy: s.createdBy?.toString(),
       }))
     );
 
     res.json(surveys);
+
   } catch (err) {
     console.error("GET SURVEYS ERROR:", err);
 
