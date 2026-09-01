@@ -405,10 +405,14 @@ export const createSurvey = async (req, res) => {
 
       // ✅ AUTO SET BASE URL
       returnBaseUrl: process.env.FRONTEND_URL || "https://inputify.io",
-      createdBy: req.user._id || req.user.userId || req.user.id,
+      createdBy: req.user.userId,
     });
 
     const users = await User.find({ role: "USER" });
+    console.log("========== CREATE SURVEY ==========");
+console.log("CREATED BY:", req.user.userId);
+console.log("ROLE:", req.user.role);
+console.log("===================================");
 
     for (const user of users) {
       await Notification.create({
@@ -464,12 +468,14 @@ export const createSurvey = async (req, res) => {
 // };
 export const getSurveys = async (req, res) => {
   try {
-    const userId = req.user.userId;
-    const role = String(req.user.role || "").toUpperCase();
+    // Your authMiddleware ALWAYS gives us userId
+    const userId = req.user?.userId;
+    const role = String(req.user?.role || "").toUpperCase();
 
-    console.log("========== GET SURVEYS ==========");
-    console.log("USER ID:", userId);
-    console.log("ROLE:", role);
+    console.log("\n=================================");
+    console.log("GET SURVEYS");
+    console.log("AUTH USER ID:", userId);
+    console.log("AUTH ROLE:", role);
 
     if (!userId) {
       return res.status(401).json({
@@ -480,11 +486,13 @@ export const getSurveys = async (req, res) => {
     let surveys;
 
     if (role === "SUPERADMIN") {
+      // SUPERADMIN can see everything
       surveys = await Survey.find({})
         .sort({ createdAt: -1 });
     } 
     
     else if (role === "ADMIN") {
+      // ADMIN can ONLY see surveys created by this admin
       surveys = await Survey.find({
         createdBy: userId,
       }).sort({ createdAt: -1 });
@@ -492,24 +500,27 @@ export const getSurveys = async (req, res) => {
     
     else {
       return res.status(403).json({
-        message: "Invalid user role",
+        message: "Unauthorized",
       });
     }
 
     console.log(
-      "RETURNED:",
-      surveys.map((s) => ({
-        title: s.title,
-        createdBy: s.createdBy?.toString(),
+      "RETURNED SURVEYS:",
+      surveys.map((survey) => ({
+        title: survey.title,
+        id: survey._id.toString(),
+        createdBy: survey.createdBy?.toString(),
       }))
     );
 
-    res.json(surveys);
+    console.log("=================================\n");
+
+    return res.status(200).json(surveys);
 
   } catch (err) {
     console.error("GET SURVEYS ERROR:", err);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Failed to fetch surveys",
     });
   }
@@ -540,13 +551,13 @@ export const getSurveyById = async (req, res) => {
 
     // ADMIN can only access surveys created by themselves
     if (
-      req.user.role === "ADMIN" &&
-      survey.createdBy.toString() !== req.user._id.toString()
-    ) {
-      return res.status(403).json({
-        message: "You are not authorized to access this survey",
-      });
-    }
+  req.user.role === "ADMIN" &&
+  survey.createdBy.toString() !== String(req.user.userId)
+) {
+  return res.status(403).json({
+    message: "You are not authorized to access this survey",
+  });
+}
 
     res.json(survey);
   } catch (err) {
