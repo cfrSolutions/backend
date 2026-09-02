@@ -72,6 +72,12 @@ expectedQuotaTk: {
 
     rsid: String,
 
+    urlVariables: {
+  type: Map,
+  of: String,
+  default: {},
+},
+
     status: {
       type: String,
       uppercase: true,
