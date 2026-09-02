@@ -1435,6 +1435,12 @@ router.get("/start", async (req, res) => {
     // =================================================
 
     try {
+      console.log("========== START RESPONSE ==========");
+console.log("PROJECT:", project._id.toString());
+console.log("RID:", rid);
+console.log("RESPONSE IDENTIFIER:", responseIdentifier);
+console.log("GENERATED VALUES:", generatedValues);
+console.log("====================================");
 
       await SurveyResponse.create({
         project: project._id,
@@ -1453,6 +1459,15 @@ router.get("/start", async (req, res) => {
 
         startedAt: new Date(),
       });
+
+      const savedResponse =
+  await SurveyResponse.findOne({ rid });
+
+console.log("========== SAVED RESPONSE ==========");
+console.log(
+  JSON.stringify(savedResponse, null, 2)
+);
+console.log("====================================");
 
     } catch (err) {
 
