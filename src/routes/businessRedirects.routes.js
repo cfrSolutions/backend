@@ -1347,21 +1347,9 @@ router.get("/start", async (req, res) => {
         `RID-${getDateString()}-${randomHex(10)}`;
 
       generatedValues.RID = rid;
-      
     }
 
-    // =================================================
-// REDIRECT TOKENS FOR SURVEY RUNNER
-// =================================================
 
-generatedValues.CTK =
-  project.redirects?.complete?.token || "";
-
-generatedValues.DQTK =
-  project.redirects?.disqualified?.token || "";
-
-generatedValues.QFTK =
-  project.redirects?.quotaFull?.token || "";
     // =================================================
     // SUPPORT EXISTING INCOMING RID
     // =================================================
