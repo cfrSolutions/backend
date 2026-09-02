@@ -5,11 +5,15 @@ const RedirectSchema = new mongoose.Schema({
   token: {
     type: String,
     required: true,
+    unique: true,
     index: true, // 🔥 important for fast lookup
+    minlength: 32,
+    maxlength: 128,
   },
   url: {
     type: String,
     default: "",
+    maxlength: 2000,
   },
 }, { _id: false });
 
@@ -19,6 +23,7 @@ const ProjectSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required: true,
+        index: true,
     },
 
     surveyId: {
@@ -80,10 +85,11 @@ const ProjectSchema = new mongoose.Schema({
     completes: {
         type: Number,
         default: 0, 
+        min: 0,
     },
     // targetCompletes: { type: Number, required: true },
-    disqualified: { type: Number, default: 0 },
-    quotaFull: { type: Number, default: 0 },
+    disqualified: { type: Number, default: 0, min: 0 },
+    quotaFull: { type: Number, default: 0, min: 0 },
 
     
 //     loi: {
@@ -101,7 +107,7 @@ const ProjectSchema = new mongoose.Schema({
 //   default: 0,
 // },
 
-    totalResponses: { type: Number, default: 0 },
+    totalResponses: { type: Number, default: 0, min: 0 },
 
     // incidence:{
     //     type: Number,
@@ -145,8 +151,8 @@ const ProjectSchema = new mongoose.Schema({
     // },
 
     surveyLinks: {
-  test: { type: String },
-  live: { type: String },
+  test: { type: String, maxlength: 2000, },
+  live: { type: String, maxlength: 2000, },
 },
 
 urlVariables: [
@@ -154,11 +160,13 @@ urlVariables: [
     param: {
       type: String,
       required: true,
+      maxlength: 100,
     },
 
     pattern: {
       type: String,
       required: true,
+      maxlength: 500,
     },
   },
 ],
@@ -200,19 +208,50 @@ clientKeysFile: {
   },
 ],
 
+// vendorLinks: [
+//   {
+//     vendorName: String,
+
+//     capture: String,
+
+//     complete: String,
+
+//     disqualified: String,
+
+//     quotaFull: String,
+//   },
+// ],
+
 vendorLinks: [
   {
-    vendorName: String,
+    vendorName: {
+      type: String,
+      trim: true,
+      maxlength: 100,
+    },
 
-    capture: String,
+    capture: {
+      type: String,
+      maxlength: 2000,
+    },
 
-    complete: String,
+    complete: {
+      type: String,
+      maxlength: 2000,
+    },
 
-    disqualified: String,
+    disqualified: {
+      type: String,
+      maxlength: 2000,
+    },
 
-    quotaFull: String,
+    quotaFull: {
+      type: String,
+      maxlength: 2000,
+    },
   },
 ],
+
 },
 { timestamps: true }
 );

@@ -1145,7 +1145,7 @@ function randomNumber(length = 6) {
   let result = "";
 
   for (let i = 0; i < length; i++) {
-    result += Math.floor(Math.random() * 10);
+    result += crypto.randomInt(0, 10);
   }
 
   return result;
@@ -1167,15 +1167,15 @@ function generatePatternValue(pattern) {
     )
     .replace(
       /\{random\}/gi,
-      randomHex(10)
+      randomHex(32)
     )
     .replace(
       /\{number\}/gi,
-      randomNumber(6)
+      randomNumber(8)
     )
     .replace(
       /\{shortRandom\}/gi,
-      randomHex(6)
+      randomHex(12)
     );
 }
 
