@@ -171,6 +171,13 @@ urlVariables: [
   },
 ],
 
+responseIdentifier: {
+  type: String,
+  default: "",
+  maxlength: 100,
+  trim: true,
+},
+
 clientKeysFile: {
   type: String,
 },

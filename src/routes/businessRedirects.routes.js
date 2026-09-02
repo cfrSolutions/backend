@@ -890,172 +890,515 @@ function generatePatternValue(pattern) {
 //   return res.redirect(surveyLink);
 // });
 
+// router.get("/start", async (req, res) => {
+//   try {
+
+//     // =================================================
+//     // GET TOKEN
+//     // =================================================
+
+//     const { tk } = req.query;
+
+//     if (!tk) {
+//       return res.status(400).send("Invalid link");
+//     }
+
+
+//     // =================================================
+//     // FIND PROJECT
+//     // =================================================
+
+//     const project = await Project.findOne({
+//       "redirects.start.token": tk,
+//     });
+
+//     if (!project) {
+//       return res.status(404).send("Invalid link");
+//     }
+
+
+//     // =================================================
+//     // GET LIVE SURVEY
+//     // =================================================
+
+//     let surveyLink = project.surveyLinks?.live;
+
+//     if (!surveyLink) {
+//       return res.send("Survey not Set");
+//     }
+
+
+//     // =================================================
+//     // GENERATE URL VARIABLES
+//     // =================================================
+
+//     const generatedValues = {};
+
+//     const variables =
+//       Array.isArray(project.urlVariables)
+//         ? project.urlVariables
+//         : [];
+
+
+//     for (const variable of variables) {
+
+//       if (
+//         !variable ||
+//         !variable.param
+//       ) {
+//         continue;
+//       }
+
+//       const param =
+//         String(variable.param).trim();
+
+//       const pattern =
+//         String(
+//           variable.pattern || ""
+//         ).trim();
+
+
+//       if (!param) {
+//         continue;
+//       }
+
+
+//       // -----------------------------------------------
+//       // If pattern exists → generate from pattern
+//       // -----------------------------------------------
+
+//       if (pattern) {
+
+//         generatedValues[param] =
+//           generatePatternValue(
+//             pattern
+//           );
+
+//       }
+
+//     }
+
+
+//     // =================================================
+//     // RID
+//     // =================================================
+//     //
+//     // RID is the identifier we use for SurveyResponse.
+//     //
+//     // If RID was configured in Build URL,
+//     // use the generated RID.
+//     //
+//     // Otherwise generate a default RID.
+//     // =================================================
+
+//     let rid =
+//       generatedValues.RID;
+
+
+//     if (!rid) {
+
+//       rid =
+//         `RID-${getDateString()}-${randomHex(10)}`;
+
+//       generatedValues.RID = rid;
+//     }
+
+
+//     // =================================================
+//     // SUPPORT EXISTING INCOMING RID
+//     // =================================================
+//     //
+//     // This keeps backward compatibility.
+//     //
+//     // If an external vendor already sends RID/PID,
+//     // we can still use it.
+//     // =================================================
+
+//     const incomingRid =
+//       req.query.rid ||
+//       req.query.RID ||
+//       req.query.pid ||
+//       req.query.PID;
+
+
+//     if (incomingRid) {
+
+//       rid =
+//         String(incomingRid);
+
+//       generatedValues.RID =
+//         rid;
+//     }
+
+
+//     // =================================================
+//     // CREATE SURVEY RESPONSE
+//     // =================================================
+
+//     try {
+
+//       await SurveyResponse.create({
+
+//         project:
+//           project._id,
+
+//         vendor:
+//           project.vendorLinks?.[0]
+//             ?.vendorName || "",
+
+//         rid,
+
+//         urlVariables: generatedValues,
+
+//         status:
+//           "STARTED",
+
+//         startedAt:
+//           new Date(),
+
+//       });
+
+//     } catch (err) {
+
+//       console.error(
+//         "CREATE RESPONSE ERROR:",
+//         err
+//       );
+
+//       return res
+//         .status(500)
+//         .send(
+//           "Unable to create survey response"
+//         );
+//     }
+
+
+//     // =================================================
+//     // REPLACE %RID%
+//     // =================================================
+//     //
+//     // Your existing survey link can still contain:
+//     //
+//     // https://supplier.com/survey?RID=%RID%
+//     //
+//     // We replace it with generated RID.
+//     // =================================================
+
+//     surveyLink =
+//       surveyLink.replace(
+//         /%RID%/gi,
+//         encodeURIComponent(rid)
+//       );
+
+
+//     // =================================================
+//     // ADD ALL GENERATED VARIABLES
+//     // =================================================
+
+//     const url =
+//       new URL(surveyLink);
+
+
+//     for (
+//       const [key, value]
+//       of Object.entries(
+//         generatedValues
+//       )
+//     ) {
+
+//       // Don't add empty values
+
+//       if (
+//         value === undefined ||
+//         value === null ||
+//         value === ""
+//       ) {
+//         continue;
+//       }
+
+
+//       url.searchParams.set(
+//         key,
+//         value
+//       );
+//     }
+
+
+//     // =================================================
+//     // REDIRECT
+//     // =================================================
+
+//     return res.redirect(
+//       url.toString()
+//     );
+
+
+//   } catch (err) {
+
+//     console.error(
+//       "START ROUTE ERROR:",
+//       err
+//     );
+
+//     return res
+//       .status(500)
+//       .send(
+//         "Unable to start survey"
+//       );
+//   }
+// });
+
 router.get("/start", async (req, res) => {
   try {
-
     // =================================================
-    // GET TOKEN
+    // 1. GET START TOKEN
     // =================================================
 
     const { tk } = req.query;
 
-    if (!tk) {
+    if (
+      typeof tk !== "string" ||
+      !tk.trim()
+    ) {
       return res.status(400).send("Invalid link");
     }
 
-
     // =================================================
-    // FIND PROJECT
+    // 2. FIND PROJECT
     // =================================================
 
     const project = await Project.findOne({
-      "redirects.start.token": tk,
+      "redirects.start.token": tk.trim(),
     });
 
     if (!project) {
       return res.status(404).send("Invalid link");
     }
 
-
     // =================================================
-    // GET LIVE SURVEY
+    // 3. GET LIVE SURVEY
     // =================================================
 
-    let surveyLink = project.surveyLinks?.live;
+    const surveyLink =
+      project.surveyLinks?.live;
 
-    if (!surveyLink) {
-      return res.send("Survey not Set");
+    if (
+      typeof surveyLink !== "string" ||
+      !surveyLink.trim()
+    ) {
+      return res.status(404).send("Survey not set");
     }
 
+    // =================================================
+    // 4. VALIDATE SURVEY URL
+    // =================================================
+
+    let url;
+
+    try {
+      url = new URL(surveyLink);
+
+      // Only allow HTTP/HTTPS survey destinations
+      if (
+        url.protocol !== "https:" &&
+        url.protocol !== "http:"
+      ) {
+        return res.status(400).send(
+          "Invalid survey URL"
+        );
+      }
+
+    } catch {
+      return res.status(400).send(
+        "Invalid survey URL"
+      );
+    }
 
     // =================================================
-    // GENERATE URL VARIABLES
+    // 5. GET CONFIGURED URL VARIABLES
     // =================================================
-
-    const generatedValues = {};
 
     const variables =
       Array.isArray(project.urlVariables)
         ? project.urlVariables
         : [];
 
+    // =================================================
+    // 6. GET RESPONSE IDENTIFIER
+    // =================================================
+    //
+    // Example:
+    //
+    // responseIdentifier = "PID"
+    //
+    // Then generatedValues will contain:
+    //
+    // PID = PID-ABC123...
+    //
+    // This is the value used to identify the response
+    // later at /c, /dq and /qf.
+    //
+    // RID is NOT required here.
+    // =================================================
+
+    const responseIdentifier =
+      typeof project.responseIdentifier === "string"
+        ? project.responseIdentifier.trim()
+        : "";
+
+    // =================================================
+    // 7. GENERATE ONLY SELECTED VARIABLES
+    // =================================================
+    //
+    // Example selected variables:
+    //
+    // PID
+    // MID
+    //
+    // generatedValues:
+    //
+    // {
+    //   PID: "PID-ABC123...",
+    //   MID: "MID-ABC123..."
+    // }
+    //
+    // If RID was NOT selected, RID will NOT be added.
+    // =================================================
+
+    const generatedValues = {};
 
     for (const variable of variables) {
 
       if (
         !variable ||
-        !variable.param
+        typeof variable !== "object"
       ) {
         continue;
       }
 
       const param =
-        String(variable.param).trim();
+        String(
+          variable.param || ""
+        ).trim();
 
       const pattern =
         String(
           variable.pattern || ""
         ).trim();
 
-
       if (!param) {
         continue;
       }
 
-
-      // -----------------------------------------------
-      // If pattern exists → generate from pattern
-      // -----------------------------------------------
-
-      if (pattern) {
-
-        generatedValues[param] =
-          generatePatternValue(
-            pattern
-          );
-
+      if (!pattern) {
+        continue;
       }
 
+      generatedValues[param] =
+        generatePatternValue(pattern);
     }
 
-
     // =================================================
-    // RID
+    // 8. VALIDATE RESPONSE IDENTIFIER
     // =================================================
     //
-    // RID is the identifier we use for SurveyResponse.
+    // If variables were selected, responseIdentifier
+    // must be one of those variables.
     //
-    // If RID was configured in Build URL,
-    // use the generated RID.
-    //
-    // Otherwise generate a default RID.
+    // This should already be validated by the
+    // /url-variables endpoint, but we verify again
+    // here because /start is a security-sensitive route.
     // =================================================
 
-    let rid =
-      generatedValues.RID;
-
-
-    if (!rid) {
-
-      rid =
-        `RID-${getDateString()}-${randomHex(10)}`;
-
-      generatedValues.RID = rid;
+    if (
+      variables.length > 0 &&
+      !responseIdentifier
+    ) {
+      return res.status(400).send(
+        "Response identifier is not configured"
+      );
     }
 
-
-    // =================================================
-    // SUPPORT EXISTING INCOMING RID
-    // =================================================
-    //
-    // This keeps backward compatibility.
-    //
-    // If an external vendor already sends RID/PID,
-    // we can still use it.
-    // =================================================
-
-    const incomingRid =
-      req.query.rid ||
-      req.query.RID ||
-      req.query.pid ||
-      req.query.PID;
-
-
-    if (incomingRid) {
-
-      rid =
-        String(incomingRid);
-
-      generatedValues.RID =
-        rid;
+    if (
+      responseIdentifier &&
+      !variables.some(
+        (variable) =>
+          String(
+            variable?.param || ""
+          ).trim() === responseIdentifier
+      )
+    ) {
+      return res.status(400).send(
+        "Invalid response identifier configuration"
+      );
     }
 
+    // =================================================
+    // 9. INTERNAL INPUTIFY RID
+    // =================================================
+    //
+    // This RID is ALWAYS created internally.
+    //
+    // IMPORTANT:
+    //
+    // It is used for SurveyResponse internally.
+    //
+    // It is NOT automatically sent to the external
+    // survey.
+    //
+    // It is only sent externally if the business
+    // explicitly selected RID as a URL variable.
+    // =================================================
+
+    const rid =
+      `RID-${getDateString()}-${randomHex(16)}`;
 
     // =================================================
-    // CREATE SURVEY RESPONSE
+    // 10. RESPONSE IDENTIFIER MUST HAVE A VALUE
+    // =================================================
+    //
+    // Example:
+    //
+    // responseIdentifier = "PID"
+    //
+    // generatedValues:
+    //
+    // PID = PID-A8F92...
+    //
+    // We make sure that value actually exists.
+    // =================================================
+
+    if (
+      responseIdentifier &&
+      !generatedValues[responseIdentifier]
+    ) {
+      return res.status(400).send(
+        "Unable to generate response identifier"
+      );
+    }
+
+    // =================================================
+    // 11. CREATE SURVEY RESPONSE
     // =================================================
 
     try {
 
       await SurveyResponse.create({
-
-        project:
-          project._id,
+        project: project._id,
 
         vendor:
           project.vendorLinks?.[0]
             ?.vendorName || "",
 
+        // Internal Inputify response ID
         rid,
 
+        // Only configured external variables
         urlVariables: generatedValues,
 
-        status:
-          "STARTED",
+        status: "STARTED",
 
-        startedAt:
-          new Date(),
-
+        startedAt: new Date(),
       });
 
     } catch (err) {
@@ -1065,48 +1408,31 @@ router.get("/start", async (req, res) => {
         err
       );
 
-      return res
-        .status(500)
-        .send(
-          "Unable to create survey response"
-        );
+      return res.status(500).send(
+        "Unable to create survey response"
+      );
     }
 
-
     // =================================================
-    // REPLACE %RID%
+    // 12. ADD ONLY GENERATED VARIABLES
     // =================================================
     //
-    // Your existing survey link can still contain:
+    // Example:
     //
-    // https://supplier.com/survey?RID=%RID%
+    // Selected:
+    // PID
     //
-    // We replace it with generated RID.
+    // External URL becomes:
+    //
+    // https://client.com/survey?PID=PID-ABC123
+    //
+    // RID will NOT appear unless RID was selected.
     // =================================================
-
-    surveyLink =
-      surveyLink.replace(
-        /%RID%/gi,
-        encodeURIComponent(rid)
-      );
-
-
-    // =================================================
-    // ADD ALL GENERATED VARIABLES
-    // =================================================
-
-    const url =
-      new URL(surveyLink);
-
 
     for (
       const [key, value]
-      of Object.entries(
-        generatedValues
-      )
+      of Object.entries(generatedValues)
     ) {
-
-      // Don't add empty values
 
       if (
         value === undefined ||
@@ -1116,22 +1442,19 @@ router.get("/start", async (req, res) => {
         continue;
       }
 
-
       url.searchParams.set(
         key,
         value
       );
     }
 
-
     // =================================================
-    // REDIRECT
+    // 13. REDIRECT TO CLIENT SURVEY
     // =================================================
 
     return res.redirect(
       url.toString()
     );
-
 
   } catch (err) {
 
@@ -1140,11 +1463,9 @@ router.get("/start", async (req, res) => {
       err
     );
 
-    return res
-      .status(500)
-      .send(
-        "Unable to start survey"
-      );
+    return res.status(500).send(
+      "Unable to start survey"
+    );
   }
 });
 
