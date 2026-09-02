@@ -815,16 +815,16 @@ router.put(
       // RID SHOULD ALWAYS EXIST
       // -----------------------------------------
 
-      const hasRID = cleanedVariables.some(
-        (item) => item.param === "RID"
-      );
+      // const hasRID = cleanedVariables.some(
+      //   (item) => item.param === "RID"
+      // );
 
-      if (!hasRID) {
-        return res.status(400).json({
-          message:
-            "Response ID (RID) is required",
-        });
-      }
+      // if (!hasRID) {
+      //   return res.status(400).json({
+      //     message:
+      //       "Response ID (RID) is required",
+      //   });
+      // }
 
       // -----------------------------------------
       // SAVE
