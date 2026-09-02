@@ -551,7 +551,7 @@ router.get(
         _id: req.params.id,
         business: userId,
       }).select(
-        "_id name description sector market targetCompletes ageFrom ageTo gender loi incidence budget timeline openEnded devices status surveyId redirects surveyLinks urlVariables responseIdentifier targetGroups completes disqualified quotaFull totalResponses createdAt updatedAt"
+        "_id name description sector market targetCompletes ageFrom ageTo gender loi incidence budget timeline openEnded devices status surveyId redirects surveyLinks urlVariables targetGroups completes disqualified quotaFull totalResponses createdAt updatedAt"
       );
 
       if (!project) {
@@ -705,168 +705,12 @@ router.put(
 // );
 
 
-// router.put(
-//   "/:id/url-variables",
-//   authMiddleware,
-//   businessOnly,
-//   async (req, res) => {
-//     try {
-//       const userId =
-//         req.user._id ||
-//         req.user.id ||
-//         req.user.userId;
-
-//       if (!userId) {
-//         return res.status(401).json({
-//           message: "User not found in authentication token",
-//         });
-//       }
-
-//       const project = await Project.findOne({
-//         _id: req.params.id,
-//         business: userId,
-//       });
-
-//       if (!project) {
-//         return res.status(404).json({
-//           message: "Project not found",
-//         });
-//       }
-
-//       const { variables } = req.body;
-
-//       if (!Array.isArray(variables)) {
-//         return res.status(400).json({
-//           message: "Variables must be an array",
-//         });
-//       }
-
-//       // -----------------------------------------
-//       // ALLOWED PARAMETERS
-//       // -----------------------------------------
-
-//       const allowedParameters = [
-//         "RID",
-//         "BidIncidence",
-//         "PID",
-//         "SupplierID",
-//         "SupplierName",
-//         "MID",
-//         "RSID",
-//       ];
-
-//       // -----------------------------------------
-//       // VALIDATE VARIABLES
-//       // -----------------------------------------
-
-//       const cleanedVariables = [];
-
-//       for (const variable of variables) {
-//         if (!variable || typeof variable !== "object") {
-//           return res.status(400).json({
-//             message: "Invalid variable",
-//           });
-//         }
-
-//         const param = String(
-//           variable.param || ""
-//         ).trim();
-
-//         const pattern = String(
-//           variable.pattern || ""
-//         ).trim();
-
-//         if (!param) {
-//           return res.status(400).json({
-//             message: "Variable parameter is required",
-//           });
-//         }
-
-//         if (!allowedParameters.includes(param)) {
-//           return res.status(400).json({
-//             message: `Invalid variable parameter: ${param}`,
-//           });
-//         }
-
-//         if (!pattern) {
-//           return res.status(400).json({
-//             message: `Pattern is required for ${param}`,
-//           });
-//         }
-
-//         // Prevent duplicate parameters
-//         if (
-//           cleanedVariables.some(
-//             (item) => item.param === param
-//           )
-//         ) {
-//           return res.status(400).json({
-//             message: `Duplicate variable: ${param}`,
-//           });
-//         }
-
-//         cleanedVariables.push({
-//           param,
-//           pattern,
-//         });
-//       }
-
-//       // -----------------------------------------
-//       // RID SHOULD ALWAYS EXIST
-//       // -----------------------------------------
-
-//       // const hasRID = cleanedVariables.some(
-//       //   (item) => item.param === "RID"
-//       // );
-
-//       // if (!hasRID) {
-//       //   return res.status(400).json({
-//       //     message:
-//       //       "Response ID (RID) is required",
-//       //   });
-//       // }
-
-//       // -----------------------------------------
-//       // SAVE
-//       // -----------------------------------------
-
-//       project.urlVariables =
-//         cleanedVariables;
-
-//       await project.save();
-
-//       return res.json({
-//         message:
-//           "URL variables saved successfully",
-
-//         variables:
-//           project.urlVariables,
-//       });
-
-//     } catch (err) {
-//       console.error(
-//         "SAVE URL VARIABLES ERROR:",
-//         err
-//       );
-
-//       return res.status(500).json({
-//         message:
-//           "Failed to save URL variables",
-//       });
-//     }
-//   }
-// );
-
 router.put(
   "/:id/url-variables",
   authMiddleware,
   businessOnly,
   async (req, res) => {
     try {
-      // -----------------------------------------
-      // 1. AUTHENTICATED BUSINESS USER
-      // -----------------------------------------
-
       const userId =
         req.user._id ||
         req.user.id ||
@@ -874,20 +718,14 @@ router.put(
 
       if (!userId) {
         return res.status(401).json({
-          message:
-            "User not found in authentication token",
+          message: "User not found in authentication token",
         });
       }
 
-      // -----------------------------------------
-      // 2. FIND ONLY THIS BUSINESS'S PROJECT
-      // -----------------------------------------
-
-      const project =
-        await Project.findOne({
-          _id: req.params.id,
-          business: userId,
-        });
+      const project = await Project.findOne({
+        _id: req.params.id,
+        business: userId,
+      });
 
       if (!project) {
         return res.status(404).json({
@@ -895,24 +733,16 @@ router.put(
         });
       }
 
-      // -----------------------------------------
-      // 3. READ FRONTEND PAYLOAD
-      // -----------------------------------------
-
-      const {
-        variables,
-        responseIdentifier,
-      } = req.body;
+      const { variables } = req.body;
 
       if (!Array.isArray(variables)) {
         return res.status(400).json({
-          message:
-            "Variables must be an array",
+          message: "Variables must be an array",
         });
       }
 
       // -----------------------------------------
-      // 4. STANDARD INPUTIFY ALLOWLIST
+      // ALLOWED PARAMETERS
       // -----------------------------------------
 
       const allowedParameters = [
@@ -926,77 +756,52 @@ router.put(
       ];
 
       // -----------------------------------------
-      // 5. CLEAN + VALIDATE VARIABLES
+      // VALIDATE VARIABLES
       // -----------------------------------------
 
       const cleanedVariables = [];
 
       for (const variable of variables) {
-        if (
-          !variable ||
-          typeof variable !== "object"
-        ) {
+        if (!variable || typeof variable !== "object") {
           return res.status(400).json({
             message: "Invalid variable",
           });
         }
 
-        const param =
-          String(
-            variable.param || ""
-          ).trim();
+        const param = String(
+          variable.param || ""
+        ).trim();
 
-        const pattern =
-          String(
-            variable.pattern || ""
-          ).trim();
+        const pattern = String(
+          variable.pattern || ""
+        ).trim();
 
-        // Parameter must exist
         if (!param) {
           return res.status(400).json({
-            message:
-              "Variable parameter is required",
+            message: "Variable parameter is required",
           });
         }
 
-        // Parameter must be from Inputify's
-        // supported allowlist
-        if (
-          !allowedParameters.includes(param)
-        ) {
+        if (!allowedParameters.includes(param)) {
           return res.status(400).json({
-            message:
-              `Invalid variable parameter: ${param}`,
+            message: `Invalid variable parameter: ${param}`,
           });
         }
 
-        // Pattern is required for the
-        // current BuildSurvey design
         if (!pattern) {
           return res.status(400).json({
-            message:
-              `Pattern is required for ${param}`,
+            message: `Pattern is required for ${param}`,
           });
         }
 
-        // Maximum pattern length
-        if (pattern.length > 500) {
-          return res.status(400).json({
-            message:
-              `Pattern is too long for ${param}`,
-          });
-        }
-
-        // Prevent duplicates
+        // Prevent duplicate parameters
         if (
           cleanedVariables.some(
-            (item) =>
-              item.param === param
+            (item) => item.param === param
           )
         ) {
           return res.status(400).json({
-            message:
-              `Duplicate variable: ${param}`,
+            message: `Duplicate variable: ${param}`,
           });
         }
 
@@ -1007,78 +812,35 @@ router.put(
       }
 
       // -----------------------------------------
-      // 6. NORMALIZE RESPONSE IDENTIFIER
+      // RID SHOULD ALWAYS EXIST
       // -----------------------------------------
 
-      const cleanedResponseIdentifier =
-        String(
-          responseIdentifier || ""
-        ).trim();
+      const hasRID = cleanedVariables.some(
+        (item) => item.param === "RID"
+      );
 
-      // -----------------------------------------
-      // 7. RESPONSE IDENTIFIER VALIDATION
-      // -----------------------------------------
-      //
-      // If variables are selected, one of them
-      // must be selected as the response identifier.
-      //
-      // RID is NOT mandatory.
-      // -----------------------------------------
-
-      if (
-        cleanedVariables.length > 0 &&
-        !cleanedResponseIdentifier
-      ) {
+      if (!hasRID) {
         return res.status(400).json({
           message:
-            "Response identifier is required when URL variables are selected",
+            "Response ID (RID) is required",
         });
       }
 
       // -----------------------------------------
-      // 8. RESPONSE IDENTIFIER MUST BE ONE
-      // OF THE SELECTED VARIABLES
-      // -----------------------------------------
-
-      if (
-        cleanedResponseIdentifier &&
-        !cleanedVariables.some(
-          (item) =>
-            item.param ===
-            cleanedResponseIdentifier
-        )
-      ) {
-        return res.status(400).json({
-          message:
-            "Response identifier must be one of the selected URL variables",
-        });
-      }
-
-      // -----------------------------------------
-      // 9. SAVE
+      // SAVE
       // -----------------------------------------
 
       project.urlVariables =
         cleanedVariables;
 
-      project.responseIdentifier =
-        cleanedResponseIdentifier;
-
       await project.save();
 
-      // -----------------------------------------
-      // 10. RESPONSE
-      // -----------------------------------------
-
-      return res.status(200).json({
+      return res.json({
         message:
           "URL variables saved successfully",
 
         variables:
           project.urlVariables,
-
-        responseIdentifier:
-          project.responseIdentifier,
       });
 
     } catch (err) {
