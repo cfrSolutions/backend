@@ -1048,6 +1048,8 @@ router.get("/start", async (req, res) => {
 
         rid,
 
+        urlVariables: generatedValues,
+
         status:
           "STARTED",
 
