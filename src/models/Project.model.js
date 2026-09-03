@@ -1,21 +1,22 @@
 import mongoose from "mongoose";
 import TargetGroupSchema from "./TargetGroupSchema.js";
+import RedirectSchema from "./RedirectSchema.js";
 
-const RedirectSchema = new mongoose.Schema({
-  token: {
-    type: String,
-    required: true,
-    unique: true,
-    index: true, // 🔥 important for fast lookup
-    minlength: 32,
-    maxlength: 128,
-  },
-  url: {
-    type: String,
-    default: "",
-    maxlength: 2000,
-  },
-}, { _id: false });
+// const RedirectSchema = new mongoose.Schema({
+//   token: {
+//     type: String,
+//     required: true,
+//     unique: true,
+//     index: true, // 🔥 important for fast lookup
+//     minlength: 32,
+//     maxlength: 128,
+//   },
+//   url: {
+//     type: String,
+//     default: "",
+//     maxlength: 2000,
+//   },
+// }, { _id: false });
 
 
 const ProjectSchema = new mongoose.Schema({

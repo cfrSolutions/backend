@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import RedirectSchema from "./RedirectSchema.js";
 
 const TargetGroupSchema = new mongoose.Schema({
   name: {
@@ -71,6 +72,46 @@ containsPII: {
   type: Boolean,
   default: false,
 },
+
+ // =========================================
+  // TARGET GROUP COUNTERS
+  // =========================================
+
+  completes: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+
+  disqualified: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+
+  quotaFull: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+
+  totalResponses: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+
+  // =========================================
+  // TARGET GROUP REDIRECTS
+  // =========================================
+
+  redirects: {
+    start: RedirectSchema,
+    complete: RedirectSchema,
+    disqualified: RedirectSchema,
+    quotaFull: RedirectSchema,
+  },
+
 
 });
 
