@@ -1560,6 +1560,32 @@ if (
           }`,
 
         status: "DRAFT",
+        completes: 0,
+  disqualified: 0,
+  quotaFull: 0,
+  totalResponses: 0,
+
+  // ============================
+  // NEW UNIQUE REDIRECTS
+  // ============================
+
+  redirects: {
+    start: {
+      token: generateToken(),
+    },
+
+    complete: {
+      token: generateToken(),
+    },
+
+    disqualified: {
+      token: generateToken(),
+    },
+
+    quotaFull: {
+      token: generateToken(),
+    },
+  },
       });
 
       await project.save();
