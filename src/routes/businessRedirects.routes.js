@@ -841,64 +841,270 @@ function generatePatternValue(pattern) {
 
 
 // router.get("/start", async (req, res) => {
-//   const { tk } = req.query;
-
-//   const project = await Project.findOne({
-//     "redirects.start.token": tk,
-//   });
-
-//   if (!project) {
-//     return res.send("Invalid link");
-//   }
-
-//   let surveyLink = project.surveyLinks?.live;
-
-//   if (!surveyLink) {
-//     return res.send("Survey not Set");
-//   }
-
-//   // console.log("START QUERY:", req.query);
-
-//   const rid =
-//     req.query.pid ||
-//     req.query.PID ||
-//     req.query.rid ||
-//     req.query.RID;
-
-//   if (!rid) {
-//     return res.send("Missing RID");
-//   }
-
 //   try {
-//     await SurveyResponse.create({
-//       project: project._id,
-//       vendor:
-//       project.vendorLinks?.[0]?.vendorName || "",
-//       rid,
-//       status: "STARTED",
-//       startedAt: new Date(),
+
+//     // =================================================
+//     // GET TOKEN
+//     // =================================================
+
+//     const { tk } = req.query;
+
+//     if (!tk) {
+//       return res.status(400).send("Invalid link");
+//     }
+
+
+//     // =================================================
+//     // FIND PROJECT
+//     // =================================================
+
+//     const project = await Project.findOne({
+//       "redirects.start.token": tk,
 //     });
 
-//     // console.log(
-//     //   "CREATED RESPONSE RID:",
-//     //   rid
-//     // );
+//     if (!project) {
+//       return res.status(404).send("Invalid link");
+//     }
+
+
+//     // =================================================
+//     // GET LIVE SURVEY
+//     // =================================================
+
+//     let surveyLink = project.surveyLinks?.live;
+
+//     if (!surveyLink) {
+//       return res.send("Survey not Set");
+//     }
+
+
+//     // =================================================
+//     // GENERATE URL VARIABLES
+//     // =================================================
+
+//     const generatedValues = {};
+
+//     const variables =
+//       Array.isArray(targetGroup.urlVariables)
+//         ? targetGroup.urlVariables
+//         : [];
+
+
+//     for (const variable of variables) {
+
+//       if (
+//         !variable ||
+//         !variable.param
+//       ) {
+//         continue;
+//       }
+
+//       const param =
+//         String(variable.param).trim();
+
+//       const pattern =
+//         String(
+//           variable.pattern || ""
+//         ).trim();
+
+
+//       if (!param) {
+//         continue;
+//       }
+
+
+//       // -----------------------------------------------
+//       // If pattern exists → generate from pattern
+//       // -----------------------------------------------
+
+//       if (pattern) {
+
+//         generatedValues[param] =
+//           generatePatternValue(
+//             pattern
+//           );
+
+//       }
+
+//     }
+
+
+//     // =================================================
+//     // RID
+//     // =================================================
+//     //
+//     // RID is the identifier we use for SurveyResponse.
+//     //
+//     // If RID was configured in Build URL,
+//     // use the generated RID.
+//     //
+//     // Otherwise generate a default RID.
+//     // =================================================
+
+//     let rid =
+//       generatedValues.RID;
+
+
+//     if (!rid) {
+
+//       rid =
+//         `RID-${getDateString()}-${randomHex(10)}`;
+
+//       generatedValues.RID = rid;
+//     }
+
+
+//     // =================================================
+//     // SUPPORT EXISTING INCOMING RID
+//     // =================================================
+//     //
+//     // This keeps backward compatibility.
+//     //
+//     // If an external vendor already sends RID/PID,
+//     // we can still use it.
+//     // =================================================
+
+//     const incomingRid =
+//       req.query.rid ||
+//       req.query.RID ||
+//       req.query.pid ||
+//       req.query.PID;
+
+
+//     if (incomingRid) {
+
+//       rid =
+//         String(incomingRid);
+
+//       generatedValues.RID =
+//         rid;
+//     }
+
+
+//     // =================================================
+//     // CREATE SURVEY RESPONSE
+//     // =================================================
+
+//     try {
+
+//       await SurveyResponse.create({
+
+//         project:
+//           project._id,
+
+//         vendor:
+//           project.vendorLinks?.[0]
+//             ?.vendorName || "",
+
+//         rid,
+
+//         urlVariables:
+//     generatedValues,
+
+//         status:
+//           "STARTED",
+
+//         startedAt:
+//           new Date(),
+
+//       });
+
+//     } catch (err) {
+
+//       console.error(
+//         "CREATE RESPONSE ERROR:",
+//         err
+//       );
+
+//       return res
+//         .status(500)
+//         .send(
+//           "Unable to create survey response"
+//         );
+//     }
+
+
+//     // =================================================
+//     // REPLACE %RID%
+//     // =================================================
+//     //
+//     // Your existing survey link can still contain:
+//     //
+//     // https://supplier.com/survey?RID=%RID%
+//     //
+//     // We replace it with generated RID.
+//     // =================================================
+
+//     surveyLink =
+//       surveyLink.replace(
+//         /%RID%/gi,
+//         encodeURIComponent(rid)
+//       );
+
+
+//     // =================================================
+//     // ADD ALL GENERATED VARIABLES
+//     // =================================================
+
+//     const url =
+//       new URL(surveyLink);
+
+
+//     for (
+//       const [key, value]
+//       of Object.entries(
+//         generatedValues
+//       )
+//     ) {
+
+//       // Don't add empty values
+
+//       if (
+//         value === undefined ||
+//         value === null ||
+//         value === ""
+//       ) {
+//         continue;
+//       }
+
+
+//       url.searchParams.set(
+//         key,
+//         value
+//       );
+//     }
+
+
+//     // =================================================
+//     // REDIRECT
+//     // =================================================
+
+//     return res.redirect(
+//       url.toString()
+//     );
+
+
 //   } catch (err) {
-//     // console.log("CREATE ERROR:", err);
-//     return res.status(500).send(err.message);
+
+//     console.error(
+//       "START ROUTE ERROR:",
+//       err
+//     );
+
+//     return res
+//       .status(500)
+//       .send(
+//         "Unable to start survey"
+//       );
 //   }
-
-//   surveyLink = surveyLink.replace(
-//     /\[%RID%\]/g,
-//     rid
-//   );
-
-//   return res.redirect(surveyLink);
 // });
+
+// =====================================================
+// START SURVEY - TARGET GROUP SPECIFIC
+// =====================================================
 
 router.get("/start", async (req, res) => {
   try {
-
     // =================================================
     // GET TOKEN
     // =================================================
@@ -909,45 +1115,66 @@ router.get("/start", async (req, res) => {
       return res.status(400).send("Invalid link");
     }
 
-
     // =================================================
-    // FIND PROJECT
+    // FIND PROJECT USING TARGET GROUP START TOKEN
     // =================================================
 
     const project = await Project.findOne({
-      "redirects.start.token": tk,
+      "targetGroups.redirects.start.token": tk,
     });
 
     if (!project) {
+      console.error(
+        "START LINK NOT FOUND. TOKEN:",
+        tk
+      );
+
       return res.status(404).send("Invalid link");
     }
 
-
     // =================================================
-    // GET LIVE SURVEY
+    // FIND EXACT TARGET GROUP
     // =================================================
 
-    let surveyLink = project.surveyLinks?.live;
+    const targetGroup = project.targetGroups.find(
+      (group) =>
+        group.redirects?.start?.token === tk
+    );
 
-    if (!surveyLink) {
-      return res.send("Survey not Set");
+    if (!targetGroup) {
+      console.error(
+        "TARGET GROUP NOT FOUND FOR START TOKEN:",
+        tk
+      );
+
+      return res.status(404).send("Invalid link");
     }
 
+    // =================================================
+    // GET TARGET GROUP LIVE SURVEY URL
+    // =================================================
+
+    let surveyLink =
+      targetGroup.surveyLinks?.live || "";
+
+    if (!surveyLink) {
+      return res.status(400).send(
+        "Target group does not have a live survey URL"
+      );
+    }
 
     // =================================================
-    // GENERATE URL VARIABLES
+    // GENERATE TARGET GROUP URL VARIABLES
     // =================================================
 
     const generatedValues = {};
 
     const variables =
-      Array.isArray(project.urlVariables)
-        ? project.urlVariables
+      Array.isArray(targetGroup.urlVariables)
+        ? targetGroup.urlVariables
         : [];
 
-
     for (const variable of variables) {
-
       if (
         !variable ||
         !variable.param
@@ -963,90 +1190,77 @@ router.get("/start", async (req, res) => {
           variable.pattern || ""
         ).trim();
 
-
       if (!param) {
         continue;
       }
 
-
-      // -----------------------------------------------
-      // If pattern exists → generate from pattern
-      // -----------------------------------------------
-
       if (pattern) {
-
         generatedValues[param] =
-          generatePatternValue(
-            pattern
-          );
-
+          generatePatternValue(pattern);
       }
-
     }
 
-
     // =================================================
-    // RID
-    // =================================================
-    //
-    // RID is the identifier we use for SurveyResponse.
-    //
-    // If RID was configured in Build URL,
-    // use the generated RID.
-    //
-    // Otherwise generate a default RID.
+    // GENERATE INTERNAL RID
     // =================================================
 
     let rid =
       generatedValues.RID;
 
-
     if (!rid) {
-
       rid =
         `RID-${getDateString()}-${randomHex(10)}`;
 
-      generatedValues.RID = rid;
+      // Only add RID to generatedValues if
+      // RID is actually configured for this group.
+      const hasRIDVariable =
+        variables.some(
+          (variable) =>
+            String(variable?.param || "")
+              .trim()
+              .toUpperCase() === "RID"
+        );
+
+      if (hasRIDVariable) {
+        generatedValues.RID = rid;
+      }
     }
 
-
     // =================================================
-    // SUPPORT EXISTING INCOMING RID
-    // =================================================
-    //
-    // This keeps backward compatibility.
-    //
-    // If an external vendor already sends RID/PID,
-    // we can still use it.
+    // SUPPORT INCOMING RID
     // =================================================
 
     const incomingRid =
       req.query.rid ||
-      req.query.RID ||
-      req.query.pid ||
-      req.query.PID;
-
+      req.query.RID;
 
     if (incomingRid) {
+      rid = String(incomingRid).trim();
 
-      rid =
-        String(incomingRid);
+      const hasRIDVariable =
+        variables.some(
+          (variable) =>
+            String(variable?.param || "")
+              .trim()
+              .toUpperCase() === "RID"
+        );
 
-      generatedValues.RID =
-        rid;
+      if (hasRIDVariable) {
+        generatedValues.RID = rid;
+      }
     }
-
 
     // =================================================
     // CREATE SURVEY RESPONSE
     // =================================================
 
-    try {
-
+    const response =
       await SurveyResponse.create({
+        project: project._id,
 
-        project:
-          project._id,
+        // IMPORTANT:
+        // Save the exact target group
+        targetGroup: targetGroup._id,
 
         vendor:
           project.vendorLinks?.[0]
@@ -1055,40 +1269,25 @@ router.get("/start", async (req, res) => {
         rid,
 
         urlVariables:
-    generatedValues,
+          generatedValues,
 
-        status:
-          "STARTED",
+        status: "STARTED",
 
-        startedAt:
-          new Date(),
-
+        startedAt: new Date(),
       });
 
-    } catch (err) {
-
-      console.error(
-        "CREATE RESPONSE ERROR:",
-        err
-      );
-
-      return res
-        .status(500)
-        .send(
-          "Unable to create survey response"
-        );
-    }
-
+    console.log(
+      "STARTED TARGET GROUP RESPONSE:",
+      {
+        projectId: project._id,
+        targetGroupId: targetGroup._id,
+        rid,
+        urlVariables: generatedValues,
+      }
+    );
 
     // =================================================
-    // REPLACE %RID%
-    // =================================================
-    //
-    // Your existing survey link can still contain:
-    //
-    // https://supplier.com/survey?RID=%RID%
-    //
-    // We replace it with generated RID.
+    // REPLACE EXISTING %RID%
     // =================================================
 
     surveyLink =
@@ -1097,24 +1296,17 @@ router.get("/start", async (req, res) => {
         encodeURIComponent(rid)
       );
 
-
     // =================================================
-    // ADD ALL GENERATED VARIABLES
+    // ADD GENERATED TARGET GROUP VARIABLES
     // =================================================
 
     const url =
       new URL(surveyLink);
 
-
     for (
       const [key, value]
-      of Object.entries(
-        generatedValues
-      )
+      of Object.entries(generatedValues)
     ) {
-
-      // Don't add empty values
-
       if (
         value === undefined ||
         value === null ||
@@ -1123,79 +1315,264 @@ router.get("/start", async (req, res) => {
         continue;
       }
 
-
       url.searchParams.set(
         key,
         value
       );
     }
 
+    // =================================================
+    // REDIRECT TO TARGET GROUP'S SURVEY
+    // =================================================
 
-    // =================================================
-    // REDIRECT
-    // =================================================
+    console.log(
+      "REDIRECTING TO TARGET GROUP SURVEY:",
+      url.toString()
+    );
 
     return res.redirect(
       url.toString()
     );
 
-
   } catch (err) {
-
     console.error(
-      "START ROUTE ERROR:",
+      "TARGET GROUP START ROUTE ERROR:",
       err
     );
 
-    return res
-      .status(500)
-      .send(
-        "Unable to start survey"
-      );
+    return res.status(500).send(
+      "Unable to start survey"
+    );
   }
 });
+
+// router.get("/c", async (req, res) => {
+//   try {
+//     const { tk } = req.query;
+
+//     if (!tk) {
+//       return res.status(400).send("Missing redirect token");
+//     }
+
+//     const RID = getRid(req);
+
+//     // IMPORTANT:
+//     // Complete can NEVER happen without a real RID.
+//     if (!RID) {
+//       return res.status(400).send("Missing or invalid RID");
+//     }
+
+//     // Find project using complete redirect token
+//     const project = await Project.findOne({
+//       "redirects.complete.token": tk,
+//     });
+
+//     if (!project) {
+//       return res.status(404).send("Invalid complete link");
+//     }
+
+//     // Find response belonging to THIS project
+//     const response = await SurveyResponse.findOne({
+//       project: project._id,
+//       rid: RID,
+//     });
+
+//     if (!response) {
+//       return res.status(404).send("Response not found");
+//     }
+
+//     // Already completed
+//     if (response.status === "COMPLETED") {
+//       return res.status(409).send("Response already completed");
+//     }
+
+//     // DQ/QF are final states
+//     if (
+//       response.status === "DISQUALIFIED" ||
+//       response.status === "QUOTA_FULL"
+//     ) {
+//       return res.status(409).send(
+//         "Response has already been finalized"
+//       );
+//     }
+
+//     // Only STARTED can become COMPLETED
+//     if (response.status !== "STARTED") {
+//       return res.status(409).send(
+//         "Response is not active"
+//       );
+//     }
+
+//     // ATOMIC STATE TRANSITION
+//     const updatedResponse =
+//       await SurveyResponse.findOneAndUpdate(
+//         {
+//           _id: response._id,
+//           status: "STARTED",
+//         },
+//         {
+//           $set: {
+//             status: "COMPLETED",
+//             completedAt: new Date(),
+//           },
+//         },
+//         {
+//           new: true,
+//         }
+//       );
+
+//     // Another request may have completed it
+//     if (!updatedResponse) {
+//       return res.status(409).send(
+//         "Response has already been finalized"
+//       );
+//     }
+
+//     // Increment ONLY after successful transition
+//     await Project.updateOne(
+//       { _id: project._id },
+//       {
+//         $inc: {
+//           completes: 1,
+//         },
+//       }
+//     );
+
+//     // Postback
+//     try {
+//       await fetch(
+//         `https://api.inputify.io/api/postback` +
+//         `?rid=${encodeURIComponent(RID)}` +
+//         `&status=COMPLETED`,
+//         {
+//           headers: {
+//             "X-Inputify-Postback-Secret":
+//               process.env.INPUTIFY_POSTBACK_SECRET,
+//           },
+//         }
+//       );
+//     } catch (err) {
+//       console.error(
+//         "Complete postback failed:",
+//         err.message
+//       );
+//     }
+
+//     let redirectUrl =
+//       project.vendorLinks?.[0]?.complete;
+
+//     if (!redirectUrl) {
+//       redirectUrl =
+//         "https://inputify.io/thank-you";
+//     }
+
+//     // Pass RID to vendor if needed
+//     try {
+//       const url = new URL(redirectUrl);
+
+//       url.searchParams.set("RID", RID);
+
+//       redirectUrl = url.toString();
+//     } catch {
+//       // Keep original URL if invalid
+//     }
+
+//     return res.redirect(redirectUrl);
+
+//   } catch (err) {
+//     console.error(
+//       "COMPLETE REDIRECT ERROR:",
+//       err
+//     );
+
+//     return res.status(500).send(
+//       "Unable to complete response"
+//     );
+//   }
+// });
+
+// =====================================================
+// COMPLETE - TARGET GROUP SPECIFIC
+// =====================================================
 
 router.get("/c", async (req, res) => {
   try {
     const { tk } = req.query;
 
     if (!tk) {
-      return res.status(400).send("Missing redirect token");
+      return res.status(400).send(
+        "Missing redirect token"
+      );
     }
+
+    // =================================================
+    // GET RID
+    // =================================================
 
     const RID = getRid(req);
 
-    // IMPORTANT:
-    // Complete can NEVER happen without a real RID.
     if (!RID) {
-      return res.status(400).send("Missing or invalid RID");
+      return res.status(400).send(
+        "Missing or invalid RID"
+      );
     }
 
-    // Find project using complete redirect token
+    // =================================================
+    // FIND PROJECT USING TARGET GROUP COMPLETE TOKEN
+    // =================================================
+
     const project = await Project.findOne({
-      "redirects.complete.token": tk,
+      "targetGroups.redirects.complete.token": tk,
     });
 
     if (!project) {
-      return res.status(404).send("Invalid complete link");
+      return res.status(404).send(
+        "Invalid complete link"
+      );
     }
 
-    // Find response belonging to THIS project
-    const response = await SurveyResponse.findOne({
-      project: project._id,
-      rid: RID,
-    });
+    // =================================================
+    // FIND EXACT TARGET GROUP
+    // =================================================
+
+    const targetGroup = project.targetGroups.find(
+      (group) =>
+        group.redirects?.complete?.token === tk
+    );
+
+    if (!targetGroup) {
+      return res.status(404).send(
+        "Target group not found"
+      );
+    }
+
+    // =================================================
+    // FIND RESPONSE
+    // =================================================
+
+    const response =
+      await SurveyResponse.findOne({
+        project: project._id,
+        targetGroup: targetGroup._id,
+        rid: RID,
+      });
 
     if (!response) {
-      return res.status(404).send("Response not found");
+      return res.status(404).send(
+        "Response not found"
+      );
     }
 
-    // Already completed
+    // =================================================
+    // CHECK CURRENT STATUS
+    // =================================================
+
     if (response.status === "COMPLETED") {
-      return res.status(409).send("Response already completed");
+      return res.status(409).send(
+        "Response already completed"
+      );
     }
 
-    // DQ/QF are final states
     if (
       response.status === "DISQUALIFIED" ||
       response.status === "QUOTA_FULL"
@@ -1205,14 +1582,16 @@ router.get("/c", async (req, res) => {
       );
     }
 
-    // Only STARTED can become COMPLETED
     if (response.status !== "STARTED") {
       return res.status(409).send(
         "Response is not active"
       );
     }
 
-    // ATOMIC STATE TRANSITION
+    // =================================================
+    // ATOMIC RESPONSE TRANSITION
+    // =================================================
+
     const updatedResponse =
       await SurveyResponse.findOneAndUpdate(
         {
@@ -1230,24 +1609,49 @@ router.get("/c", async (req, res) => {
         }
       );
 
-    // Another request may have completed it
     if (!updatedResponse) {
       return res.status(409).send(
         "Response has already been finalized"
       );
     }
 
-    // Increment ONLY after successful transition
+    // =================================================
+    // INCREMENT TARGET GROUP COUNTERS
+    // =================================================
+
     await Project.updateOne(
-      { _id: project._id },
+      {
+        _id: project._id,
+        "targetGroups._id": targetGroup._id,
+      },
       {
         $inc: {
-          completes: 1,
+          "targetGroups.$.completes": 1,
+          "targetGroups.$.totalResponses": 1,
         },
       }
     );
 
-    // Postback
+    // =================================================
+    // ALSO UPDATE PROJECT TOTAL
+    // =================================================
+
+    await Project.updateOne(
+      {
+        _id: project._id,
+      },
+      {
+        $inc: {
+          completes: 1,
+          totalResponses: 1,
+        },
+      }
+    );
+
+    // =================================================
+    // POSTBACK
+    // =================================================
+
     try {
       await fetch(
         `https://api.inputify.io/api/postback` +
@@ -1267,30 +1671,41 @@ router.get("/c", async (req, res) => {
       );
     }
 
+    // =================================================
+    // TARGET GROUP COMPLETE REDIRECT
+    // =================================================
+
     let redirectUrl =
-      project.vendorLinks?.[0]?.complete;
+      targetGroup.redirects?.complete?.url ||
+      project.vendorLinks?.[0]?.complete ||
+      "https://inputify.io/thank-you";
 
-    if (!redirectUrl) {
-      redirectUrl =
-        "https://inputify.io/thank-you";
-    }
+    // =================================================
+    // PASS RID
+    // =================================================
 
-    // Pass RID to vendor if needed
     try {
       const url = new URL(redirectUrl);
 
-      url.searchParams.set("RID", RID);
+      url.searchParams.set(
+        "RID",
+        RID
+      );
 
-      redirectUrl = url.toString();
+      redirectUrl =
+        url.toString();
+
     } catch {
-      // Keep original URL if invalid
+      // Keep original URL
     }
 
-    return res.redirect(redirectUrl);
+    return res.redirect(
+      redirectUrl
+    );
 
   } catch (err) {
     console.error(
-      "COMPLETE REDIRECT ERROR:",
+      "TARGET GROUP COMPLETE REDIRECT ERROR:",
       err
     );
 
@@ -1299,6 +1714,162 @@ router.get("/c", async (req, res) => {
     );
   }
 });
+
+// router.get("/dq", async (req, res) => {
+//   try {
+//     const { tk } = req.query;
+
+//     if (!tk) {
+//       return res.status(400).send(
+//         "Missing redirect token"
+//       );
+//     }
+
+//     const RID = getRid(req);
+
+//     if (!RID) {
+//       return res.status(400).send(
+//         "Missing or invalid RID"
+//       );
+//     }
+
+//     const project = await Project.findOne({
+//       "redirects.disqualified.token": tk,
+//     });
+
+//     if (!project) {
+//       return res.status(404).send(
+//         "Invalid disqualified link"
+//       );
+//     }
+
+//     const response =
+//       await SurveyResponse.findOne({
+//         project: project._id,
+//         rid: RID,
+//       });
+
+//     if (!response) {
+//       return res.status(404).send(
+//         "Response not found"
+//       );
+//     }
+
+//     if (
+//       response.status === "DISQUALIFIED"
+//     ) {
+//       return res.status(409).send(
+//         "Response already disqualified"
+//       );
+//     }
+
+//     if (
+//       response.status === "COMPLETED" ||
+//       response.status === "QUOTA_FULL"
+//     ) {
+//       return res.status(409).send(
+//         "Response has already been finalized"
+//       );
+//     }
+
+//     if (response.status !== "STARTED") {
+//       return res.status(409).send(
+//         "Response is not active"
+//       );
+//     }
+
+//     // ATOMIC transition
+//     const updatedResponse =
+//       await SurveyResponse.findOneAndUpdate(
+//         {
+//           _id: response._id,
+//           status: "STARTED",
+//         },
+//         {
+//           $set: {
+//             status: "DISQUALIFIED",
+//           },
+//         },
+//         {
+//           new: true,
+//         }
+//       );
+
+//     if (!updatedResponse) {
+//       return res.status(409).send(
+//         "Response has already been finalized"
+//       );
+//     }
+
+//     // Increment ONLY once
+//     await Project.updateOne(
+//       { _id: project._id },
+//       {
+//         $inc: {
+//           disqualified: 1,
+//         },
+//       }
+//     );
+
+//     // Postback
+//     try {
+//       await fetch(
+//         `https://api.inputify.io/api/postback` +
+//         `?rid=${encodeURIComponent(RID)}` +
+//         `&status=SCREENOUT`,
+//         {
+//           headers: {
+//             "X-Inputify-Postback-Secret":
+//               process.env.INPUTIFY_POSTBACK_SECRET,
+//           },
+//         }
+//       );
+//     } catch (err) {
+//       console.error(
+//         "DQ postback failed:",
+//         err.message
+//       );
+//     }
+
+//     let redirectUrl =
+//       project.vendorLinks?.[0]?.disqualified;
+
+//     if (!redirectUrl) {
+//       redirectUrl =
+//         "https://inputify.io/disqualified";
+//     }
+
+//     try {
+//       const url = new URL(redirectUrl);
+
+//       url.searchParams.set(
+//         "RID",
+//         RID
+//       );
+
+//       redirectUrl = url.toString();
+
+//     } catch {}
+
+//     return res.redirect(
+//       redirectUrl
+//     );
+
+//   } catch (err) {
+//     console.error(
+//       "DQ REDIRECT ERROR:",
+//       err
+//     );
+
+//     return res.status(500).send(
+//       "Unable to disqualify response"
+//     );
+//   }
+// });
+
+// =====================================================
+// DISQUALIFIED - TARGET GROUP SPECIFIC
+// =====================================================
 
 router.get("/dq", async (req, res) => {
   try {
@@ -1310,6 +1881,10 @@ router.get("/dq", async (req, res) => {
       );
     }
 
+    // =================================================
+    // GET RID
+    // =================================================
+
     const RID = getRid(req);
 
     if (!RID) {
@@ -1318,8 +1893,12 @@ router.get("/dq", async (req, res) => {
       );
     }
 
+    // =================================================
+    // FIND PROJECT USING TARGET GROUP DQ TOKEN
+    // =================================================
+
     const project = await Project.findOne({
-      "redirects.disqualified.token": tk,
+      "targetGroups.redirects.disqualified.token": tk,
     });
 
     if (!project) {
@@ -1328,9 +1907,29 @@ router.get("/dq", async (req, res) => {
       );
     }
 
+    // =================================================
+    // FIND EXACT TARGET GROUP
+    // =================================================
+
+    const targetGroup = project.targetGroups.find(
+      (group) =>
+        group.redirects?.disqualified?.token === tk
+    );
+
+    if (!targetGroup) {
+      return res.status(404).send(
+        "Target group not found"
+      );
+    }
+
+    // =================================================
+    // FIND RESPONSE
+    // =================================================
+
     const response =
       await SurveyResponse.findOne({
         project: project._id,
+        targetGroup: targetGroup._id,
         rid: RID,
       });
 
@@ -1340,9 +1939,11 @@ router.get("/dq", async (req, res) => {
       );
     }
 
-    if (
-      response.status === "DISQUALIFIED"
-    ) {
+    // =================================================
+    // CHECK CURRENT STATUS
+    // =================================================
+
+    if (response.status === "DISQUALIFIED") {
       return res.status(409).send(
         "Response already disqualified"
       );
@@ -1363,7 +1964,10 @@ router.get("/dq", async (req, res) => {
       );
     }
 
-    // ATOMIC transition
+    // =================================================
+    // ATOMIC RESPONSE TRANSITION
+    // =================================================
+
     const updatedResponse =
       await SurveyResponse.findOneAndUpdate(
         {
@@ -1386,17 +1990,43 @@ router.get("/dq", async (req, res) => {
       );
     }
 
-    // Increment ONLY once
+    // =================================================
+    // INCREMENT TARGET GROUP COUNTERS
+    // =================================================
+
     await Project.updateOne(
-      { _id: project._id },
+      {
+        _id: project._id,
+        "targetGroups._id": targetGroup._id,
+      },
       {
         $inc: {
-          disqualified: 1,
+          "targetGroups.$.disqualified": 1,
+          "targetGroups.$.totalResponses": 1,
         },
       }
     );
 
-    // Postback
+    // =================================================
+    // UPDATE PROJECT TOTALS
+    // =================================================
+
+    await Project.updateOne(
+      {
+        _id: project._id,
+      },
+      {
+        $inc: {
+          disqualified: 1,
+          totalResponses: 1,
+        },
+      }
+    );
+
+    // =================================================
+    // POSTBACK
+    // =================================================
+
     try {
       await fetch(
         `https://api.inputify.io/api/postback` +
@@ -1416,13 +2046,18 @@ router.get("/dq", async (req, res) => {
       );
     }
 
-    let redirectUrl =
-      project.vendorLinks?.[0]?.disqualified;
+    // =================================================
+    // TARGET GROUP DQ REDIRECT
+    // =================================================
 
-    if (!redirectUrl) {
-      redirectUrl =
-        "https://inputify.io/disqualified";
-    }
+    let redirectUrl =
+      targetGroup.redirects?.disqualified?.url ||
+      project.vendorLinks?.[0]?.disqualified ||
+      "https://inputify.io/disqualified";
+
+    // =================================================
+    // PASS RID
+    // =================================================
 
     try {
       const url = new URL(redirectUrl);
@@ -1432,9 +2067,12 @@ router.get("/dq", async (req, res) => {
         RID
       );
 
-      redirectUrl = url.toString();
+      redirectUrl =
+        url.toString();
 
-    } catch {}
+    } catch {
+      // Keep original URL
+    }
 
     return res.redirect(
       redirectUrl
@@ -1442,7 +2080,7 @@ router.get("/dq", async (req, res) => {
 
   } catch (err) {
     console.error(
-      "DQ REDIRECT ERROR:",
+      "TARGET GROUP DQ REDIRECT ERROR:",
       err
     );
 
@@ -1451,6 +2089,161 @@ router.get("/dq", async (req, res) => {
     );
   }
 });
+
+// router.get("/qf", async (req, res) => {
+//   try {
+//     const { tk } = req.query;
+
+//     if (!tk) {
+//       return res.status(400).send(
+//         "Missing redirect token"
+//       );
+//     }
+
+//     const RID = getRid(req);
+
+//     if (!RID) {
+//       return res.status(400).send(
+//         "Missing or invalid RID"
+//       );
+//     }
+
+//     const project = await Project.findOne({
+//       "redirects.quotaFull.token": tk,
+//     });
+
+//     if (!project) {
+//       return res.status(404).send(
+//         "Invalid quota link"
+//       );
+//     }
+
+//     const response =
+//       await SurveyResponse.findOne({
+//         project: project._id,
+//         rid: RID,
+//       });
+
+//     if (!response) {
+//       return res.status(404).send(
+//         "Response not found"
+//       );
+//     }
+
+//     if (
+//       response.status === "QUOTA_FULL"
+//     ) {
+//       return res.status(409).send(
+//         "Response already quota full"
+//       );
+//     }
+
+//     if (
+//       response.status === "COMPLETED" ||
+//       response.status === "DISQUALIFIED"
+//     ) {
+//       return res.status(409).send(
+//         "Response has already been finalized"
+//       );
+//     }
+
+//     if (response.status !== "STARTED") {
+//       return res.status(409).send(
+//         "Response is not active"
+//       );
+//     }
+
+//     // ATOMIC transition
+//     const updatedResponse =
+//       await SurveyResponse.findOneAndUpdate(
+//         {
+//           _id: response._id,
+//           status: "STARTED",
+//         },
+//         {
+//           $set: {
+//             status: "QUOTA_FULL",
+//           },
+//         },
+//         {
+//           new: true,
+//         }
+//       );
+
+//     if (!updatedResponse) {
+//       return res.status(409).send(
+//         "Response has already been finalized"
+//       );
+//     }
+
+//     // Increment ONLY once
+//     await Project.updateOne(
+//       { _id: project._id },
+//       {
+//         $inc: {
+//           quotaFull: 1,
+//         },
+//       }
+//     );
+
+//     // Postback
+//     try {
+//       await fetch(
+//         `https://api.inputify.io/api/postback` +
+//         `?rid=${encodeURIComponent(RID)}` +
+//         `&status=QUOTA_FULL`,
+//         {
+//           headers: {
+//             "X-Inputify-Postback-Secret":
+//               process.env.INPUTIFY_POSTBACK_SECRET,
+//           },
+//         }
+//       );
+//     } catch (err) {
+//       console.error(
+//         "QF postback failed:",
+//         err.message
+//       );
+//     }
+
+//     let redirectUrl =
+//       project.vendorLinks?.[0]?.quotaFull;
+
+//     if (!redirectUrl) {
+//       redirectUrl =
+//         "https://inputify.io/quota-full";
+//     }
+
+//     try {
+//       const url = new URL(redirectUrl);
+
+//       url.searchParams.set(
+//         "RID",
+//         RID
+//       );
+
+//       redirectUrl = url.toString();
+
+//     } catch {}
+
+//     return res.redirect(
+//       redirectUrl
+//     );
+
+//   } catch (err) {
+//     console.error(
+//       "QF REDIRECT ERROR:",
+//       err
+//     );
+
+//     return res.status(500).send(
+//       "Unable to mark quota full"
+//     );
+//   }
+// });
+// =====================================================
+// QUOTA FULL - TARGET GROUP SPECIFIC
+// =====================================================
 
 router.get("/qf", async (req, res) => {
   try {
@@ -1462,6 +2255,10 @@ router.get("/qf", async (req, res) => {
       );
     }
 
+    // =================================================
+    // GET RID
+    // =================================================
+
     const RID = getRid(req);
 
     if (!RID) {
@@ -1470,8 +2267,12 @@ router.get("/qf", async (req, res) => {
       );
     }
 
+    // =================================================
+    // FIND PROJECT USING TARGET GROUP QF TOKEN
+    // =================================================
+
     const project = await Project.findOne({
-      "redirects.quotaFull.token": tk,
+      "targetGroups.redirects.quotaFull.token": tk,
     });
 
     if (!project) {
@@ -1480,9 +2281,29 @@ router.get("/qf", async (req, res) => {
       );
     }
 
+    // =================================================
+    // FIND EXACT TARGET GROUP
+    // =================================================
+
+    const targetGroup = project.targetGroups.find(
+      (group) =>
+        group.redirects?.quotaFull?.token === tk
+    );
+
+    if (!targetGroup) {
+      return res.status(404).send(
+        "Target group not found"
+      );
+    }
+
+    // =================================================
+    // FIND RESPONSE
+    // =================================================
+
     const response =
       await SurveyResponse.findOne({
         project: project._id,
+        targetGroup: targetGroup._id,
         rid: RID,
       });
 
@@ -1492,9 +2313,11 @@ router.get("/qf", async (req, res) => {
       );
     }
 
-    if (
-      response.status === "QUOTA_FULL"
-    ) {
+    // =================================================
+    // CHECK CURRENT STATUS
+    // =================================================
+
+    if (response.status === "QUOTA_FULL") {
       return res.status(409).send(
         "Response already quota full"
       );
@@ -1515,7 +2338,10 @@ router.get("/qf", async (req, res) => {
       );
     }
 
-    // ATOMIC transition
+    // =================================================
+    // ATOMIC RESPONSE TRANSITION
+    // =================================================
+
     const updatedResponse =
       await SurveyResponse.findOneAndUpdate(
         {
@@ -1538,17 +2364,43 @@ router.get("/qf", async (req, res) => {
       );
     }
 
-    // Increment ONLY once
+    // =================================================
+    // INCREMENT TARGET GROUP COUNTERS
+    // =================================================
+
     await Project.updateOne(
-      { _id: project._id },
+      {
+        _id: project._id,
+        "targetGroups._id": targetGroup._id,
+      },
       {
         $inc: {
-          quotaFull: 1,
+          "targetGroups.$.quotaFull": 1,
+          "targetGroups.$.totalResponses": 1,
         },
       }
     );
 
-    // Postback
+    // =================================================
+    // UPDATE PROJECT TOTALS
+    // =================================================
+
+    await Project.updateOne(
+      {
+        _id: project._id,
+      },
+      {
+        $inc: {
+          quotaFull: 1,
+          totalResponses: 1,
+        },
+      }
+    );
+
+    // =================================================
+    // POSTBACK
+    // =================================================
+
     try {
       await fetch(
         `https://api.inputify.io/api/postback` +
@@ -1568,13 +2420,18 @@ router.get("/qf", async (req, res) => {
       );
     }
 
-    let redirectUrl =
-      project.vendorLinks?.[0]?.quotaFull;
+    // =================================================
+    // TARGET GROUP QF REDIRECT
+    // =================================================
 
-    if (!redirectUrl) {
-      redirectUrl =
-        "https://inputify.io/quota-full";
-    }
+    let redirectUrl =
+      targetGroup.redirects?.quotaFull?.url ||
+      project.vendorLinks?.[0]?.quotaFull ||
+      "https://inputify.io/quota-full";
+
+    // =================================================
+    // PASS RID
+    // =================================================
 
     try {
       const url = new URL(redirectUrl);
@@ -1584,9 +2441,12 @@ router.get("/qf", async (req, res) => {
         RID
       );
 
-      redirectUrl = url.toString();
+      redirectUrl =
+        url.toString();
 
-    } catch {}
+    } catch {
+      // Keep original URL
+    }
 
     return res.redirect(
       redirectUrl
@@ -1594,7 +2454,7 @@ router.get("/qf", async (req, res) => {
 
   } catch (err) {
     console.error(
-      "QF REDIRECT ERROR:",
+      "TARGET GROUP QF REDIRECT ERROR:",
       err
     );
 
@@ -1603,7 +2463,6 @@ router.get("/qf", async (req, res) => {
     );
   }
 });
-
 
 setInterval(() => {
   const now = Date.now();
