@@ -1623,9 +1623,9 @@ router.get("/c", async (req, res) => {
       );
     }
 
-    if (response.status !== "STARTED") {
+    if (response.status !== "COMPLETION_CONFIRMED") {
       return res.status(409).send(
-        "Response is not active"
+        "Response is not eligible for completion"
       );
     }
 
@@ -1640,7 +1640,7 @@ router.get("/c", async (req, res) => {
           project: project._id,
       targetGroup: targetGroup._id,
       rid: RID,
-          status: "STARTED",
+          status: "COMPLETION_CONFIRMED",
         },
         {
           $set: {

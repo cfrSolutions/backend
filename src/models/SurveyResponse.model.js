@@ -34,12 +34,15 @@ const surveyResponseSchema = new mongoose.Schema(
       trim: true,
     },
 
-    responseTokenHash: {
+   completionTokenHash: {
   type: String,
+  default: null,
   select: false,
-  index: true,
-  unique: true,
-  sparse: true,
+},
+
+completionConfirmedAt: {
+  type: Date,
+  default: null,
 },
 
     postbackToken: {
@@ -94,7 +97,7 @@ expectedQuotaTk: {
     status: {
       type: String,
       uppercase: true,
-      enum: ["STARTED", "COMPLETED", "INVALID", "FLAGGED", "SCREENOUT", "QUOTA_FULL", "DISQUALIFIED", "CANCELLED", "CLEANED",],
+      enum: ["STARTED", "COMPLETION_CONFIRMED", "COMPLETED", "INVALID", "FLAGGED", "SCREENOUT", "QUOTA_FULL", "DISQUALIFIED", "CANCELLED", "CLEANED",],
       default: "STARTED",
     },
 
