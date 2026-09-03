@@ -34,6 +34,14 @@ const surveyResponseSchema = new mongoose.Schema(
       trim: true,
     },
 
+    responseTokenHash: {
+  type: String,
+  select: false,
+  index: true,
+  unique: true,
+  sparse: true,
+},
+
     postbackToken: {
   type: String,
   unique: true,

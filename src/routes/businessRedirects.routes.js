@@ -839,6 +839,37 @@ function generatePatternValue(pattern) {
     );
 }
 
+function generateResponseToken() {
+  return crypto.randomBytes(32).toString("hex");
+}
+
+function hashResponseToken(token) {
+  return crypto
+    .createHash("sha256")
+    .update(String(token))
+    .digest("hex");
+}
+
+function getResponseToken(req) {
+  const token =
+    req.query.rt ||
+    req.query.RT ||
+    req.query.responseToken ||
+    req.query.ResponseToken;
+
+  if (!token) {
+    return null;
+  }
+
+  const value = String(token).trim();
+
+  // 64 hexadecimal characters = 32 random bytes
+  if (!/^[a-fA-F0-9]{64}$/.test(value)) {
+    return null;
+  }
+
+  return value;
+}
 
 // router.get("/start", async (req, res) => {
 //   try {
@@ -1108,6 +1139,14 @@ router.get("/start", async (req, res) => {
     // =================================================
     // GET TOKEN
     // =================================================
+    const responseToken =
+  crypto.randomBytes(32).toString("hex");
+
+const responseTokenHash =
+  crypto
+    .createHash("sha256")
+    .update(responseToken)
+    .digest("hex");
 
     const { tk } = req.query;
 
@@ -1124,10 +1163,10 @@ router.get("/start", async (req, res) => {
     });
 
     if (!project) {
-      console.error(
-        "START LINK NOT FOUND. TOKEN:",
-        tk
-      );
+      // console.error(
+      //   "START LINK NOT FOUND. TOKEN:",
+      //   tk
+      // );
 
       return res.status(404).send("Invalid link");
     }
@@ -1268,6 +1307,8 @@ router.get("/start", async (req, res) => {
 
         rid,
 
+        responseTokenHash,
+
         urlVariables:
           generatedValues,
 
@@ -1276,15 +1317,15 @@ router.get("/start", async (req, res) => {
         startedAt: new Date(),
       });
 
-    console.log(
-      "STARTED TARGET GROUP RESPONSE:",
-      {
-        projectId: project._id,
-        targetGroupId: targetGroup._id,
-        rid,
-        urlVariables: generatedValues,
-      }
-    );
+    // console.log(
+    //   "STARTED TARGET GROUP RESPONSE:",
+    //   {
+    //     projectId: project._id,
+    //     targetGroupId: targetGroup._id,
+    //     rid,
+    //     urlVariables: generatedValues,
+    //   }
+    // );
 
     // =================================================
     // REPLACE EXISTING %RID%
@@ -1596,6 +1637,9 @@ router.get("/c", async (req, res) => {
       await SurveyResponse.findOneAndUpdate(
         {
           _id: response._id,
+          project: project._id,
+      targetGroup: targetGroup._id,
+      rid: RID,
           status: "STARTED",
         },
         {
@@ -1972,6 +2016,9 @@ router.get("/dq", async (req, res) => {
       await SurveyResponse.findOneAndUpdate(
         {
           _id: response._id,
+          project: project._id,
+      targetGroup: targetGroup._id,
+      rid: RID,
           status: "STARTED",
         },
         {
@@ -2346,6 +2393,9 @@ router.get("/qf", async (req, res) => {
       await SurveyResponse.findOneAndUpdate(
         {
           _id: response._id,
+          project: project._id,
+      targetGroup: targetGroup._id,
+      rid: RID,
           status: "STARTED",
         },
         {
