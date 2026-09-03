@@ -72,6 +72,12 @@ expectedQuotaTk: {
 
     rsid: String,
 
+    targetGroup: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Project",
+  required: true,
+},
+
     urlVariables: {
   type: Map,
   of: String,
