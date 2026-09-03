@@ -10,6 +10,13 @@ import crypto from "crypto";
 import CPI from "../models/CPI.model.js";
 
 const router = express.Router();
+// =====================================================
+// SECURE REDIRECT TOKEN GENERATOR
+// =====================================================
+
+function generateToken() {
+  return crypto.randomBytes(24).toString("hex");
+}
 
 // =====================================================
 // URL VARIABLE GENERATORS
@@ -252,8 +259,8 @@ router.post(
         });
       }
 
-      const generateToken = () =>
-        crypto.randomBytes(24).toString("hex");
+      // const generateToken = () =>
+      //   crypto.randomBytes(24).toString("hex");
 
       const {
         name,
@@ -2773,6 +2780,74 @@ if (
       group.totalCost =
         calculatedTotalCost;
 
+        if (group.completes === undefined) {
+  group.completes = 0;
+}
+
+if (group.disqualified === undefined) {
+  group.disqualified = 0;
+}
+
+if (group.quotaFull === undefined) {
+  group.quotaFull = 0;
+}
+
+if (group.totalResponses === undefined) {
+  group.totalResponses = 0;
+}
+
+if (!group.redirects) {
+  group.redirects = {};
+}
+
+if (!group.redirects.start?.token) {
+  group.redirects.start = {
+    token: generateToken(),
+    url: "",
+  };
+}
+
+if (!group.redirects.complete?.token) {
+  group.redirects.complete = {
+    token: generateToken(),
+    url: "",
+  };
+}
+
+if (!group.redirects.disqualified?.token) {
+  group.redirects.disqualified = {
+    token: generateToken(),
+    url: "",
+  };
+}
+
+if (!group.redirects.quotaFull?.token) {
+  group.redirects.quotaFull = {
+    token: generateToken(),
+    url: "",
+  };
+}
+
+// =====================================================
+// ENSURE TARGET GROUP SURVEY DATA EXISTS
+// =====================================================
+
+if (!group.surveyLinks) {
+  group.surveyLinks = {
+    live: "",
+    test: "",
+  };
+}
+
+if (!Array.isArray(group.urlVariables)) {
+  group.urlVariables = [];
+}
+
+if (group.responseIdentifier === undefined) {
+  group.responseIdentifier = "";
+}
+
+
       // -----------------------------------------
       // SAVE
       // -----------------------------------------
@@ -2835,6 +2910,10 @@ if (
 
           status:
             group.status,
+            redirects: group.redirects,
+surveyLinks: group.surveyLinks,
+urlVariables: group.urlVariables,
+responseIdentifier: group.responseIdentifier,
         },
       });
 

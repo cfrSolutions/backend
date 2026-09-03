@@ -167,31 +167,8 @@ const TargetGroupSchema = new mongoose.Schema({
 
   profiles: [Object],
 
-  surveyLinks: {
-  test: {
-    type: String,
-    default: "",
-    maxlength: 2000,
-  },
-  live: {
-    type: String,
-    default: "",
-    maxlength: 2000,
-  },
-},
+ 
 
-urlVariables: [
-  {
-    param: {
-      type: String,
-      maxlength: 100,
-    },
-    pattern: {
-      type: String,
-      maxlength: 500,
-    },
-  },
-],
 
 responseIdentifier: {
   type: String,
