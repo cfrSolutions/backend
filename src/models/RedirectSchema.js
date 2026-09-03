@@ -4,8 +4,8 @@ const RedirectSchema = new mongoose.Schema({
   token: {
     type: String,
     required: true,
-    unique: true,
-    index: true, // 🔥 important for fast lookup
+    // unique: true,
+    // index: true, // 🔥 important for fast lookup
     minlength: 32,
     maxlength: 128,
   },
