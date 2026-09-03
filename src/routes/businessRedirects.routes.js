@@ -948,20 +948,14 @@ function setResponseSessionCookie(
   res,
   sessionId
 ) {
-  const isProduction =
-    process.env.NODE_ENV === "production";
-
   const parts = [
     `${RESPONSE_SESSION_COOKIE}=${encodeURIComponent(sessionId)}`,
     "Path=/",
     "HttpOnly",
     "SameSite=Lax",
     "Max-Age=3600",
+    "Secure",
   ];
-
-  if (isProduction) {
-    parts.push("Secure");
-  }
 
   res.setHeader(
     "Set-Cookie",
