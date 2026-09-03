@@ -2910,7 +2910,7 @@ if (group.responseIdentifier === undefined) {
 
           status:
             group.status,
-            redirects: group.redirects,
+          redirects: group.redirects,
 surveyLinks: group.surveyLinks,
 urlVariables: group.urlVariables,
 responseIdentifier: group.responseIdentifier,
