@@ -871,6 +871,181 @@ function getResponseToken(req) {
   return value;
 }
 
+// =====================================================
+// SECURE RESPONSE SESSION
+// =====================================================
+
+const RESPONSE_SESSION_COOKIE =
+  "__Host-inputify_sid";
+
+const RESPONSE_SESSION_TTL =
+  1000 * 60 * 60; // 1 hour
+
+
+function generateSessionId() {
+  return crypto
+    .randomBytes(32)
+    .toString("hex");
+}
+
+
+function createResponseSession({
+  responseId,
+  projectId,
+  targetGroupId,
+  rid,
+}) {
+  const sessionId =
+    generateSessionId();
+
+  global.sessions[sessionId] = {
+    responseId: String(responseId),
+    projectId: String(projectId),
+    targetGroupId: String(targetGroupId),
+    rid: String(rid),
+    createdAt: Date.now(),
+  };
+
+  return sessionId;
+}
+
+
+function getSessionId(req) {
+  const cookieHeader =
+    req.headers.cookie || "";
+
+  const cookies =
+    cookieHeader
+      .split(";")
+      .map((item) => item.trim());
+
+  for (const cookie of cookies) {
+    const separator =
+      cookie.indexOf("=");
+
+    if (separator === -1) {
+      continue;
+    }
+
+    const name =
+      cookie.slice(0, separator);
+
+    const value =
+      cookie.slice(separator + 1);
+
+    if (
+      name === RESPONSE_SESSION_COOKIE
+    ) {
+      return decodeURIComponent(value);
+    }
+  }
+
+  return null;
+}
+
+
+function setResponseSessionCookie(
+  res,
+  sessionId
+) {
+  const isProduction =
+    process.env.NODE_ENV === "production";
+
+  const parts = [
+    `${RESPONSE_SESSION_COOKIE}=${encodeURIComponent(sessionId)}`,
+    "Path=/",
+    "HttpOnly",
+    "SameSite=Lax",
+    "Max-Age=3600",
+  ];
+
+  if (isProduction) {
+    parts.push("Secure");
+  }
+
+  res.setHeader(
+    "Set-Cookie",
+    parts.join("; ")
+  );
+}
+
+
+function validateResponseSession(
+  req,
+  response,
+  project,
+  targetGroup
+) {
+  const sessionId =
+    getSessionId(req);
+
+  if (!sessionId) {
+    return false;
+  }
+
+  const session =
+    global.sessions[sessionId];
+
+  if (!session) {
+    return false;
+  }
+
+  // Session expired
+  if (
+    Date.now() - session.createdAt >
+    RESPONSE_SESSION_TTL
+  ) {
+    delete global.sessions[sessionId];
+    return false;
+  }
+
+  // Session must belong to the exact response
+  if (
+    session.responseId !==
+    String(response._id)
+  ) {
+    return false;
+  }
+
+  // Session must belong to exact project
+  if (
+    session.projectId !==
+    String(project._id)
+  ) {
+    return false;
+  }
+
+  // Session must belong to exact target group
+  if (
+    session.targetGroupId !==
+    String(targetGroup._id)
+  ) {
+    return false;
+  }
+
+  // Session RID must match request RID
+  if (
+    session.rid !==
+    String(response.rid)
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+
+function destroyResponseSession(req) {
+  const sessionId =
+    getSessionId(req);
+
+  if (!sessionId) {
+    return;
+  }
+
+  delete global.sessions[sessionId];
+}
+
 // router.get("/start", async (req, res) => {
 //   try {
 
@@ -1248,7 +1423,7 @@ const responseTokenHash =
 
     if (!rid) {
       rid =
-        `RID-${getDateString()}-${randomHex(10)}`;
+        `RID-${getDateString()}-${randomHex(32)}`;
 
       // Only add RID to generatedValues if
       // RID is actually configured for this group.
@@ -1317,6 +1492,23 @@ const responseTokenHash =
         startedAt: new Date(),
       });
 
+      // =================================================
+// CREATE SERVER-SIDE RESPONSE SESSION
+// =================================================
+
+const sessionId =
+  createResponseSession({
+    responseId: response._id,
+    projectId: project._id,
+    targetGroupId: targetGroup._id,
+    rid,
+  });
+
+setResponseSessionCookie(
+  res,
+  sessionId
+);
+
     // console.log(
     //   "STARTED TARGET GROUP RESPONSE:",
     //   {
@@ -1368,7 +1560,11 @@ const responseTokenHash =
 
     console.log(
       "REDIRECTING TO TARGET GROUP SURVEY:",
-      url.toString()
+      {
+    projectId: project._id,
+    targetGroupId: targetGroup._id,
+    rid,
+  }
     );
 
     return res.redirect(
@@ -1605,6 +1801,23 @@ router.get("/c", async (req, res) => {
     }
 
     // =================================================
+// VERIFY RESPONSE SESSION
+// =================================================
+
+const validSession =
+  validateResponseSession(
+    req,
+    response,
+    project,
+    targetGroup
+  );
+
+if (!validSession) {
+  return res.status(403).send(
+    "Invalid or expired survey session"
+  );
+}
+    // =================================================
     // CHECK CURRENT STATUS
     // =================================================
 
@@ -1658,6 +1871,8 @@ router.get("/c", async (req, res) => {
         "Response has already been finalized"
       );
     }
+
+    destroyResponseSession(req);
 
     // =================================================
     // INCREMENT TARGET GROUP COUNTERS
@@ -1984,6 +2199,24 @@ router.get("/dq", async (req, res) => {
     }
 
     // =================================================
+// VERIFY RESPONSE SESSION
+// =================================================
+
+const validSession =
+  validateResponseSession(
+    req,
+    response,
+    project,
+    targetGroup
+  );
+
+if (!validSession) {
+  return res.status(403).send(
+    "Invalid or expired survey session"
+  );
+}
+
+    // =================================================
     // CHECK CURRENT STATUS
     // =================================================
 
@@ -2036,6 +2269,8 @@ router.get("/dq", async (req, res) => {
         "Response has already been finalized"
       );
     }
+
+    destroyResponseSession(req);
 
     // =================================================
     // INCREMENT TARGET GROUP COUNTERS
@@ -2361,6 +2596,24 @@ router.get("/qf", async (req, res) => {
     }
 
     // =================================================
+// VERIFY RESPONSE SESSION
+// =================================================
+
+const validSession =
+  validateResponseSession(
+    req,
+    response,
+    project,
+    targetGroup
+  );
+
+if (!validSession) {
+  return res.status(403).send(
+    "Invalid or expired survey session"
+  );
+}
+
+    // =================================================
     // CHECK CURRENT STATUS
     // =================================================
 
@@ -2413,6 +2666,8 @@ router.get("/qf", async (req, res) => {
         "Response has already been finalized"
       );
     }
+
+    destroyResponseSession(req);
 
     // =================================================
     // INCREMENT TARGET GROUP COUNTERS
