@@ -857,6 +857,197 @@ router.put(
   }
 );
 
+// ============================================================
+// UPDATE TARGET GROUP URL VARIABLES
+// ============================================================
+
+router.put(
+  "/:projectId/target-group/:targetGroupId/url-variables",
+  authMiddleware,
+  businessOnly,
+  async (req, res) => {
+    try {
+      const { projectId, targetGroupId } =
+        req.params;
+
+      const { variables } = req.body;
+
+      const userId = req.user.userId;
+
+      // --------------------------------------------------------
+      // FIND PROJECT BELONGING TO CURRENT BUSINESS
+      // --------------------------------------------------------
+
+      const project =
+        await Project.findOne({
+          _id: projectId,
+          business: userId,
+        });
+
+      if (!project) {
+        return res.status(404).json({
+          message: "Project not found",
+        });
+      }
+
+      // --------------------------------------------------------
+      // FIND TARGET GROUP
+      // --------------------------------------------------------
+
+      const targetGroup =
+        project.targetGroups.id(
+          targetGroupId
+        );
+
+      if (!targetGroup) {
+        return res.status(404).json({
+          message: "Target group not found",
+        });
+      }
+
+      // --------------------------------------------------------
+      // VALIDATE VARIABLES
+      // --------------------------------------------------------
+
+      if (!Array.isArray(variables)) {
+        return res.status(400).json({
+          message:
+            "variables must be an array",
+        });
+      }
+
+      // --------------------------------------------------------
+      // CLEAN VARIABLES
+      // --------------------------------------------------------
+
+      const cleanedVariables =
+        variables
+          .map((item) => ({
+            param: String(
+              item?.param || ""
+            ).trim(),
+
+            pattern: String(
+              item?.pattern || ""
+            ).trim(),
+          }))
+          .filter(
+            (item) =>
+              item.param &&
+              item.pattern
+          );
+
+      // --------------------------------------------------------
+      // SAVE TO TARGET GROUP
+      // --------------------------------------------------------
+
+      targetGroup.urlVariables =
+        cleanedVariables;
+
+      await project.save();
+
+      return res.json({
+        message:
+          "Target group URL variables updated",
+        targetGroup,
+      });
+
+    } catch (error) {
+      console.error(
+        "UPDATE TARGET GROUP URL VARIABLES ERROR:",
+        error
+      );
+
+      return res.status(500).json({
+        message:
+          "Failed to update target group URL variables",
+      });
+    }
+  }
+);
+
+// ============================================================
+// UPDATE TARGET GROUP SURVEY LINKS
+// ============================================================
+
+router.put(
+  "/:projectId/target-group/:targetGroupId/survey-links",
+  authMiddleware,
+  businessOnly,
+  async (req, res) => {
+    try {
+      const { projectId, targetGroupId } =
+        req.params;
+
+      const {
+        live,
+        test,
+      } = req.body;
+
+      const userId = req.user.userId;
+
+      // --------------------------------------------------------
+      // FIND PROJECT
+      // --------------------------------------------------------
+
+      const project =
+        await Project.findOne({
+          _id: projectId,
+          business: userId,
+        });
+
+      if (!project) {
+        return res.status(404).json({
+          message: "Project not found",
+        });
+      }
+
+      // --------------------------------------------------------
+      // FIND TARGET GROUP
+      // --------------------------------------------------------
+
+      const targetGroup =
+        project.targetGroups.id(
+          targetGroupId
+        );
+
+      if (!targetGroup) {
+        return res.status(404).json({
+          message: "Target group not found",
+        });
+      }
+
+      // --------------------------------------------------------
+      // SAVE SURVEY LINKS TO TARGET GROUP
+      // --------------------------------------------------------
+
+      targetGroup.surveyLinks = {
+        live: String(live || "").trim(),
+        test: String(test || "").trim(),
+      };
+
+      await project.save();
+
+      return res.json({
+        message:
+          "Target group survey links updated",
+        targetGroup,
+      });
+
+    } catch (error) {
+      console.error(
+        "UPDATE TARGET GROUP SURVEY LINKS ERROR:",
+        error
+      );
+
+      return res.status(500).json({
+        message:
+          "Failed to update target group survey links",
+      });
+    }
+  }
+);
+
 // ADMIN → GO LIVE
 router.put("/admin/project/:id/go-live", authMiddleware, adminOnly, async (req, res) => {
   try {
@@ -1586,6 +1777,14 @@ if (
       token: generateToken(),
     },
   },
+   surveyLinks: {
+    live: "",
+    test: "",
+  },
+
+  urlVariables: [],
+
+  responseIdentifier: "",
       });
 
       await project.save();
