@@ -1830,11 +1830,16 @@ if (!validSession) {
       );
     }
 
-    if (response.status !== "STARTED") {
-      return res.status(409).send(
-        "Response is not active"
-      );
-    }
+    // if (response.status !== "STARTED") {
+    //   return res.status(409).send(
+    //     "Response is not active"
+    //   );
+    // }
+    if (response.status !== "COMPLETION_CONFIRMED") {
+  return res.status(409).send(
+    "Response is not eligible for completion"
+  );
+}
 
     // =================================================
     // ATOMIC RESPONSE TRANSITION
@@ -1847,7 +1852,7 @@ if (!validSession) {
           project: project._id,
       targetGroup: targetGroup._id,
       rid: RID,
-          status: "STARTED",
+          status: "COMPLETION_CONFIRMED",
         },
         {
           $set: {
