@@ -258,6 +258,52 @@ responseIdentifier: {
     disqualified: RedirectSchema,
     quotaFull: RedirectSchema,
   },
+  surveyLinks: {
+    live: {
+      type: String,
+      default: "",
+      maxlength: 2000,
+    },
+
+    test: {
+      type: String,
+      default: "",
+      maxlength: 2000,
+    },
+  },
+
+  // ==========================================
+  // TARGET GROUP URL VARIABLES
+  // ==========================================
+
+  urlVariables: {
+    type: [
+      {
+        param: {
+          type: String,
+          maxlength: 100,
+        },
+
+        pattern: {
+          type: String,
+          maxlength: 500,
+        },
+      },
+    ],
+
+    default: [],
+  },
+
+  // ==========================================
+  // RESPONSE IDENTIFIER
+  // ==========================================
+
+  responseIdentifier: {
+    type: String,
+    default: "",
+    maxlength: 100,
+    trim: true,
+  },
 });
 
 export default TargetGroupSchema;
