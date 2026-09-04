@@ -4,6 +4,7 @@ import Project from "../models/Project.model.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { businessOnly } from "../middleware/business.middleware.js";
 import adminOnly from "../middleware/admin.middleware.js";
+import Survey from "../models/SurveyBuilder.model.js";
 import multer from "multer";
 import cloudinary from "../config/cloudinary.js";
 import crypto from "crypto";
@@ -268,6 +269,7 @@ router.post(
         sector,
         market,
         targetCompletes,
+        overQuotaAction,
         ageFrom,
         ageTo,
         gender,
@@ -306,6 +308,7 @@ if (
         sector,
         market,
         targetCompletes,
+        overQuotaAction,
         ageFrom,
         ageTo,
         gender,
@@ -355,6 +358,7 @@ if (
     sector: project.sector,
     market: project.market,
     targetCompletes: project.targetCompletes,
+    overQuotaAction: project.overQuotaAction,
     ageFrom: project.ageFrom,
     ageTo: project.ageTo,
     gender: project.gender,
@@ -977,31 +981,119 @@ router.put(
 // UPDATE TARGET GROUP SURVEY LINKS
 // ============================================================
 
+// router.put(
+//   "/:projectId/target-group/:targetGroupId/survey-links",
+//   authMiddleware,
+//   businessOnly,
+//   async (req, res) => {
+//     try {
+//       const { projectId, targetGroupId } =
+//         req.params;
+
+//       const {
+//         live,
+//         test,
+//       } = req.body;
+
+//       const userId = req.user.userId;
+
+//       // --------------------------------------------------------
+//       // FIND PROJECT
+//       // --------------------------------------------------------
+
+//       const project =
+//         await Project.findOne({
+//           _id: projectId,
+//           business: userId,
+//         });
+
+//       if (!project) {
+//         return res.status(404).json({
+//           message: "Project not found",
+//         });
+//       }
+
+//       // --------------------------------------------------------
+//       // FIND TARGET GROUP
+//       // --------------------------------------------------------
+
+//       const targetGroup =
+//         project.targetGroups.id(
+//           targetGroupId
+//         );
+
+//       if (!targetGroup) {
+//         return res.status(404).json({
+//           message: "Target group not found",
+//         });
+//       }
+
+//       // --------------------------------------------------------
+//       // SAVE SURVEY LINKS TO TARGET GROUP
+//       // --------------------------------------------------------
+
+//       targetGroup.surveyLinks = {
+//         live: String(live || "").trim(),
+//         test: String(test || "").trim(),
+//       };
+
+//       await project.save();
+
+//       return res.json({
+//         message:
+//           "Target group survey links updated",
+//         targetGroup,
+//       });
+
+//     } catch (error) {
+//       console.error(
+//         "UPDATE TARGET GROUP SURVEY LINKS ERROR:",
+//         error
+//       );
+
+//       return res.status(500).json({
+//         message:
+//           "Failed to update target group survey links",
+//       });
+//     }
+//   }
+// );
+
 router.put(
   "/:projectId/target-group/:targetGroupId/survey-links",
   authMiddleware,
   businessOnly,
   async (req, res) => {
     try {
-      const { projectId, targetGroupId } =
-        req.params;
+      const {
+        projectId,
+        targetGroupId,
+      } = req.params;
 
       const {
         live,
         test,
       } = req.body;
 
-      const userId = req.user.userId;
+      const userId =
+        req.user._id ||
+        req.user.id ||
+        req.user.userId;
 
-      // --------------------------------------------------------
-      // FIND PROJECT
-      // --------------------------------------------------------
-
-      const project =
-        await Project.findOne({
-          _id: projectId,
-          business: userId,
+      if (!userId) {
+        return res.status(401).json({
+          message: "User not found in authentication token",
         });
+      }
+
+      // -----------------------------------------
+      // FIND PROJECT
+      // -----------------------------------------
+
+      const project = await Project.findOne({
+        _id: projectId,
+        business: userId,
+      });
 
       if (!project) {
         return res.status(404).json({
@@ -1009,14 +1101,12 @@ router.put(
         });
       }
 
-      // --------------------------------------------------------
+      // -----------------------------------------
       // FIND TARGET GROUP
-      // --------------------------------------------------------
+      // -----------------------------------------
 
       const targetGroup =
-        project.targetGroups.id(
-          targetGroupId
-        );
+        project.targetGroups.id(targetGroupId);
 
       if (!targetGroup) {
         return res.status(404).json({
@@ -1024,32 +1114,113 @@ router.put(
         });
       }
 
-      // --------------------------------------------------------
-      // SAVE SURVEY LINKS TO TARGET GROUP
-      // --------------------------------------------------------
+      // -----------------------------------------
+      // VALIDATE URL
+      // -----------------------------------------
+
+      const liveUrl =
+        String(live || "").trim();
+
+      const testUrl =
+        String(test || "").trim();
+
+      if (!liveUrl || !testUrl) {
+        return res.status(400).json({
+          message:
+            "Test and live survey links are required",
+        });
+      }
+
+      // -----------------------------------------
+      // SAVE LINKS TO TARGET GROUP
+      // -----------------------------------------
 
       targetGroup.surveyLinks = {
-        live: String(live || "").trim(),
-        test: String(test || "").trim(),
+        live: liveUrl,
+        test: testUrl,
       };
+
+      // -----------------------------------------
+      // EXTRACT SURVEY TOKEN
+      // -----------------------------------------
+
+      const extractSurveyToken = (url) => {
+        try {
+          const parsed = new URL(url);
+
+          const parts =
+            parsed.pathname.split("/").filter(Boolean);
+
+          const publicIndex =
+            parts.indexOf("public");
+
+          if (
+            publicIndex !== -1 &&
+            parts[publicIndex + 1]
+          ) {
+            return parts[publicIndex + 1];
+          }
+
+          return null;
+        } catch {
+          return null;
+        }
+      };
+
+      const surveyToken =
+        extractSurveyToken(liveUrl) ||
+        extractSurveyToken(testUrl);
+
+      // -----------------------------------------
+      // CONNECT SURVEY → PROJECT → TARGET GROUP
+      // -----------------------------------------
+
+      if (surveyToken) {
+        const survey =
+          await Survey.findOne({
+            publicToken: surveyToken,
+          });
+
+        if (survey) {
+          survey.project = project._id;
+          survey.targetGroupId =
+            targetGroup._id;
+
+          await survey.save();
+        }
+      }
+
+      // -----------------------------------------
+      // PROJECT STATUS
+      // -----------------------------------------
+
+      project.status = "TESTING";
 
       await project.save();
 
       return res.json({
         message:
-          "Target group survey links updated",
-        targetGroup,
+          "Survey links saved successfully",
+
+        linked:
+          Boolean(surveyToken),
+
+        projectId:
+          project._id,
+
+        targetGroupId:
+          targetGroup._id,
       });
 
-    } catch (error) {
+    } catch (err) {
       console.error(
-        "UPDATE TARGET GROUP SURVEY LINKS ERROR:",
-        error
+        "SAVE SURVEY LINKS ERROR:",
+        err
       );
 
       return res.status(500).json({
         message:
-          "Failed to update target group survey links",
+          "Failed to save survey links",
       });
     }
   }
@@ -1449,6 +1620,7 @@ router.post(
         market,
         language,
         targetCompletes,
+        overQuotaAction,
         loi,
         incidence,
         ageFrom,
@@ -1702,6 +1874,11 @@ if (
 
         targetCompletes:
           numericTargetCompletes,
+
+        overQuotaAction:
+    overQuotaAction === "DISQUALIFIED"
+      ? "DISQUALIFIED"
+      : "QUOTA",
 
         loi:
           numericLoi,
@@ -2436,6 +2613,7 @@ router.put(
         market,
         language,
         targetCompletes,
+        overQuotaAction,
         loi,
         incidence,
         ageFrom,

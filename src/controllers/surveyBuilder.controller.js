@@ -251,60 +251,60 @@ export const deleteSurvey = async (req, res) => {
 };
 
 
-// export const submitSurvey = async (req, res) => {
+export const submitSurvey = async (req, res) => {
 
-//   try {
+  try {
 
-//     const { token } = req.params;
+    const { token } = req.params;
 
-//     const { answers, status } = req.body;
+    const { answers, status } = req.body;
 
-//     const survey = await Survey.findOne({
-//   publicToken: token,
-// });
+    const survey = await Survey.findOne({
+  publicToken: token,
+});
 
-//     if (!survey) {
-//       return res.status(404).json({
-//         message: "Survey not found",
-//       });
-//     }
+    if (!survey) {
+      return res.status(404).json({
+        message: "Survey not found",
+      });
+    }
 
-//     await SurveyResponse.create({
+    await SurveyResponse.create({
 
-//       survey: survey._id,
+      survey: survey._id,
 
-//       business: survey.business,
+      business: survey.business,
 
-//       publicToken: survey.publicToken,
+      publicToken: survey.publicToken,
 
-//       answers,
+      answers,
 
-//       status,
+      status,
 
-//       ip: req.ip,
+      ip: req.ip,
 
-//       userAgent: req.headers["user-agent"],
+      userAgent: req.headers["user-agent"],
 
-//       completedAt: new Date(),
+      completedAt: new Date(),
 
-//     });
+    });
 
-//     res.json({
-//       success: true,
-//     });
+    res.json({
+      success: true,
+    });
 
-//   } catch (err) {
+  } catch (err) {
 
-//     // console.log(err);
+    // console.log(err);
 
-//     res.status(500).json({
-//       success: false,
-//       message: "Server Error",
-//     });
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
 
-//   }
+  }
 
-// };
+};
 
 // export const getSurveyResponses = async (req, res) => {
 //   try {
@@ -321,94 +321,6 @@ export const deleteSurvey = async (req, res) => {
 //     });
 //   }
 // };
-
-export const submitSurvey = async (req, res) => {
-  try {
-    const { token } = req.params;
-    const { answers, status, RID } = req.body;
-
-    const survey = await Survey.findOne({
-      publicToken: token,
-    });
-
-    if (!survey) {
-      return res.status(404).json({
-        message: "Survey not found",
-      });
-    }
-
-    let finalStatus = status;
-
-    // =====================================================
-    // DISQUALIFIED
-    // =====================================================
-
-    if (status === "DISQUALIFIED") {
-      finalStatus = "DISQUALIFIED";
-    }
-
-    // =====================================================
-    // ALREADY QUOTA
-    // =====================================================
-
-    else if (status === "QUOTA") {
-      finalStatus = "QUOTA";
-    }
-
-    // =====================================================
-    // COMPLETE
-    // Check whether target completes has already been reached
-    // =====================================================
-
-    else if (status === "COMPLETE") {
-
-      const completedCount = await SurveyResponse.countDocuments({
-        survey: survey._id,
-        status: "COMPLETE",
-      });
-
-      const targetCompletes = Number(
-        survey.targetCompletes
-      ) || 100;
-
-      if (completedCount >= targetCompletes) {
-        finalStatus = "QUOTA";
-      } else {
-        finalStatus = "COMPLETE";
-      }
-    }
-
-    // =====================================================
-    // SAVE RESPONSE
-    // =====================================================
-
-    await SurveyResponse.create({
-      survey: survey._id,
-      business: survey.business,
-      publicToken: survey.publicToken,
-      answers,
-      RID,
-      status: finalStatus,
-      ip: req.ip,
-      userAgent: req.headers["user-agent"],
-      completedAt: new Date(),
-    });
-
-    res.json({
-      success: true,
-      status: finalStatus,
-    });
-
-  } catch (err) {
-
-    console.log(err);
-
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-    });
-  }
-};
 
 export const getSurveyResponses = async (req, res) => {
   try {

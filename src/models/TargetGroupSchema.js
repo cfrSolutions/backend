@@ -168,7 +168,11 @@ const TargetGroupSchema = new mongoose.Schema({
   profiles: [Object],
 
  
-
+overQuotaAction: {
+  type: String,
+  enum: ["QUOTA", "DISQUALIFIED"],
+  default: "QUOTA",
+},
 
 responseIdentifier: {
   type: String,

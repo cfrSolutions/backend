@@ -136,6 +136,19 @@ const SurveySchema = new mongoose.Schema(
         crypto.randomBytes(12).toString("hex"),
 },
 
+project: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Project",
+  default: null,
+  index: true,
+},
+
+targetGroupId: {
+  type: mongoose.Schema.Types.ObjectId,
+  default: null,
+  index: true,
+},
+
     name: {
       type: String,
       required: true,
@@ -147,6 +160,8 @@ const SurveySchema = new mongoose.Schema(
   default: 100,
   min: 1,
 },
+
+
 
     description: {
       type: String,
