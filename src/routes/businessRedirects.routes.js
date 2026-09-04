@@ -1476,7 +1476,7 @@ if (
   const overQuotaAction =
     targetGroup.overQuotaAction === "DISQUALIFIED"
       ? "DISQUALIFIED"
-      : "QUOTA_FULL";
+      : "QUOTA";
 
   // -----------------------------------------------
   // CREATE RESPONSE AS FINAL STATUS
@@ -1496,7 +1496,7 @@ if (
 
     urlVariables: generatedValues,
 
-    status: overQuotaAction === "QUOTA_FULL"
+    status: overQuotaAction === "QUOTA"
       ? "QUOTA_FULL"
       : "DISQUALIFIED",
 
@@ -1509,7 +1509,7 @@ if (
   // -----------------------------------------------
 
   const counter =
-    overQuotaAction === "QUOTA_FULL"
+    overQuotaAction === "QUOTA"
       ? "quotaFull"
       : "disqualified";
 
@@ -1534,12 +1534,12 @@ if (
     process.env.BACKEND_URL;
 
   const redirectToken =
-    overQuotaAction === "QUOTA_FULL"
+    overQuotaAction === "QUOTA"
       ? targetGroup.redirects?.quotaFull?.token
       : targetGroup.redirects?.disqualified?.token;
 
   const redirectPath =
-    overQuotaAction === "QUOTA_FULL"
+    overQuotaAction === "QUOTA"
       ? "/api/redirect/qf"
       : "/api/redirect/dq";
 
