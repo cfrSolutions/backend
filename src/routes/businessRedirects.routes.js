@@ -1920,6 +1920,9 @@ if (!validSession) {
     // CHECK CURRENT STATUS
     // =================================================
 
+    console.log("RID:", RID);
+console.log("Response status:", response.status);
+
     if (response.status === "COMPLETED") {
       return res.status(409).send(
         "Response already completed"
