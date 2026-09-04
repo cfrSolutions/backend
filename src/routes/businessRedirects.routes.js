@@ -2700,6 +2700,36 @@ router.get("/qf", async (req, res) => {
       );
     }
 
+    
+
+if (response.status === "QUOTA_FULL") {
+
+  let redirectUrl =
+    project.vendorLinks?.[0]?.quotaFull ||
+    "https://inputify.io/quota-full";
+
+  try {
+    const url = new URL(redirectUrl);
+
+    url.searchParams.set(
+      "RID",
+      RID
+    );
+
+    redirectUrl = url.toString();
+
+  } catch {
+    // Keep original URL
+  }
+
+  console.log(
+    "FINAL QUOTA FULL URL:",
+    redirectUrl
+  );
+
+  return res.redirect(redirectUrl);
+}
+
     // =================================================
 // VERIFY RESPONSE SESSION
 // =================================================
@@ -2834,24 +2864,11 @@ if (!validSession) {
     // TARGET GROUP QF REDIRECT
     // =================================================
 
-    // let redirectUrl =
-    //   targetGroup.redirects?.quotaFull?.url ||
-    //   project.vendorLinks?.[0]?.quotaFull ||
-    //   "https://inputify.io/quota-full";
-    // =================================================
-// INTERNAL QF URL
-// =================================================
+    let redirectUrl =
+      targetGroup.redirects?.quotaFull?.url ||
+      project.vendorLinks?.[0]?.quotaFull ||
+      "https://inputify.io/quota-full";
 
-const internalQuotaUrl =
-  targetGroup.redirects?.quotaFull?.url;
-
-// =================================================
-// FINAL EXTERNAL QUOTA FULL URL
-// =================================================
-
-let redirectUrl =
-  project.vendorLinks?.[0]?.quotaFull ||
-  "https://inputify.io/quota-full";
     // =================================================
     // PASS RID
     // =================================================
