@@ -2303,6 +2303,38 @@ router.get("/dq", async (req, res) => {
       );
     }
 
+    if (response.status === "DISQUALIFIED") {
+
+  let redirectUrl =
+    project.vendorLinks?.[0]?.disqualified ||
+    "https://inputify.io/disqualified";
+
+  try {
+    const url = new URL(redirectUrl);
+
+    url.searchParams.set(
+      "RID",
+      RID
+    );
+
+    redirectUrl =
+      url.toString();
+
+  } catch {
+    // Keep original URL
+  }
+
+  console.log(
+    "FINAL DISQUALIFIED URL:",
+    redirectUrl
+  );
+
+  return res.redirect(
+    redirectUrl
+  );
+}
+
+
     // =================================================
 // VERIFY RESPONSE SESSION
 // =================================================
