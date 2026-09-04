@@ -1726,197 +1726,6 @@ setResponseSessionCookie(
 // COMPLETE - TARGET GROUP SPECIFIC
 // =====================================================
 
-
-
-router.post(
-  "/confirm-completion",
-  async (req, res) => {
-    try {
-      const {
-        RID,
-        projectId,
-        targetGroupId,
-      } = req.body;
-
-      // =================================================
-      // VALIDATE INPUT
-      // =================================================
-
-      if (!RID) {
-        return res.status(400).json({
-          success: false,
-          message: "Missing RID",
-        });
-      }
-
-      const rid = String(RID).trim();
-
-      if (!RID_REGEX.test(rid)) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid RID",
-        });
-      }
-
-      if (!projectId) {
-        return res.status(400).json({
-          success: false,
-          message: "Missing projectId",
-        });
-      }
-
-      if (!targetGroupId) {
-        return res.status(400).json({
-          success: false,
-          message: "Missing targetGroupId",
-        });
-      }
-
-      // =================================================
-      // VERIFY SERVER-TO-SERVER SECRET
-      // =================================================
-
-      const providedSecret =
-        req.headers["x-inputify-completion-secret"];
-
-      const expectedSecret =
-        process.env.INPUTIFY_COMPLETION_SECRET;
-
-      if (
-        !providedSecret ||
-        !expectedSecret
-      ) {
-        console.error(
-          "Completion secret is not configured"
-        );
-
-        return res.status(500).json({
-          success: false,
-          message:
-            "Completion confirmation is not configured",
-        });
-      }
-
-      const providedBuffer =
-        Buffer.from(
-          String(providedSecret),
-          "utf8"
-        );
-
-      const expectedBuffer =
-        Buffer.from(
-          String(expectedSecret),
-          "utf8"
-        );
-
-      if (
-        providedBuffer.length !==
-          expectedBuffer.length ||
-        !crypto.timingSafeEqual(
-          providedBuffer,
-          expectedBuffer
-        )
-      ) {
-        return res.status(403).json({
-          success: false,
-          message: "Unauthorized",
-        });
-      }
-
-      // =================================================
-      // FIND EXACT PROJECT
-      // =================================================
-
-      const project =
-        await Project.findById(projectId);
-
-      if (!project) {
-        return res.status(404).json({
-          success: false,
-          message: "Project not found",
-        });
-      }
-
-      // =================================================
-      // FIND EXACT TARGET GROUP
-      // =================================================
-
-      const targetGroup =
-        project.targetGroups.id(
-          targetGroupId
-        );
-
-      if (!targetGroup) {
-        return res.status(404).json({
-          success: false,
-          message: "Target group not found",
-        });
-      }
-
-      // =================================================
-      // ATOMIC:
-      // STARTED → COMPLETION_CONFIRMED
-      // =================================================
-
-      const response =
-        await SurveyResponse.findOneAndUpdate(
-          {
-            project: project._id,
-            targetGroup: targetGroup._id,
-            rid,
-            status: "STARTED",
-          },
-          {
-            $set: {
-              status: "COMPLETION_CONFIRMED",
-              completionConfirmedAt:
-                new Date(),
-            },
-          },
-          {
-            new: true,
-          }
-        );
-
-      // =================================================
-      // RESPONSE NOT FOUND / ALREADY FINALIZED
-      // =================================================
-
-      if (!response) {
-        return res.status(409).json({
-          success: false,
-          message:
-            "Response is not in STARTED state",
-        });
-      }
-
-      // =================================================
-      // SUCCESS
-      // =================================================
-
-      return res.status(200).json({
-        success: true,
-        message:
-          "Survey completion confirmed",
-        RID: response.rid,
-        status: response.status,
-      });
-
-    } catch (err) {
-      console.error(
-        "CONFIRM COMPLETION ERROR:",
-        err
-      );
-
-      return res.status(500).json({
-        success: false,
-        message:
-          "Unable to confirm completion",
-      });
-    }
-  }
-);
-
 router.get("/c", async (req, res) => {
   try {
     const { tk } = req.query;
@@ -2021,20 +1830,11 @@ if (!validSession) {
       );
     }
 
-    // if (response.status !== "STARTED") {
-    //   return res.status(409).send(
-    //     "Response is not active"
-    //   );
-    // }
-
-    if (
-  response.status !==
-  "COMPLETION_CONFIRMED"
-) {
-  return res.status(409).send(
-    "Response is not eligible for completion"
-  );
-}
+    if (response.status !== "STARTED") {
+      return res.status(409).send(
+        "Response is not active"
+      );
+    }
 
     // =================================================
     // ATOMIC RESPONSE TRANSITION
@@ -2047,7 +1847,7 @@ if (!validSession) {
           project: project._id,
       targetGroup: targetGroup._id,
       rid: RID,
-          status: "COMPLETION_CONFIRMED",
+          status: "STARTED",
         },
         {
           $set: {
