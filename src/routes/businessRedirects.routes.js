@@ -1459,6 +1459,117 @@ const responseTokenHash =
     }
 
     // =================================================
+// CHECK TARGET COMPLETES / QUOTA
+// =================================================
+
+const targetCompletes =
+  Number(targetGroup.targetCompletes) || 0;
+
+const currentCompletes =
+  Number(targetGroup.completes) || 0;
+
+if (
+  targetCompletes > 0 &&
+  currentCompletes >= targetCompletes
+) {
+
+  const overQuotaAction =
+    targetGroup.overQuotaAction === "DISQUALIFIED"
+      ? "DISQUALIFIED"
+      : "QUOTA_FULL";
+
+  // -----------------------------------------------
+  // CREATE RESPONSE AS FINAL STATUS
+  // -----------------------------------------------
+
+  await SurveyResponse.create({
+    project: project._id,
+    targetGroup: targetGroup._id,
+
+    vendor:
+      project.vendorLinks?.[0]
+        ?.vendorName || "",
+
+    rid,
+
+    responseTokenHash,
+
+    urlVariables: generatedValues,
+
+    status: overQuotaAction === "QUOTA_FULL"
+      ? "QUOTA_FULL"
+      : "DISQUALIFIED",
+
+    startedAt: new Date(),
+    completedAt: new Date(),
+  });
+
+  // -----------------------------------------------
+  // UPDATE TARGET GROUP COUNTER
+  // -----------------------------------------------
+
+  const counter =
+    overQuotaAction === "QUOTA_FULL"
+      ? "quotaFull"
+      : "disqualified";
+
+  await Project.updateOne(
+    {
+      _id: project._id,
+      "targetGroups._id": targetGroup._id,
+    },
+    {
+      $inc: {
+        [`targetGroups.$.${counter}`]: 1,
+        "targetGroups.$.totalResponses": 1,
+      },
+    }
+  );
+
+  // -----------------------------------------------
+  // REDIRECT
+  // -----------------------------------------------
+
+  const base =
+    process.env.BACKEND_URL;
+
+  const redirectToken =
+    overQuotaAction === "QUOTA_FULL"
+      ? targetGroup.redirects?.quotaFull?.token
+      : targetGroup.redirects?.disqualified?.token;
+
+  const redirectPath =
+    overQuotaAction === "QUOTA_FULL"
+      ? "/api/redirect/qf"
+      : "/api/redirect/dq";
+
+  if (!redirectToken) {
+    return res.status(500).send(
+      "Redirect URL is not configured"
+    );
+  }
+
+  const redirectUrl =
+    `${base}${redirectPath}` +
+    `?tk=${redirectToken}` +
+    `&RID=${encodeURIComponent(rid)}`;
+
+  console.log(
+    "TARGET GROUP FULL:",
+    {
+      targetGroupId: targetGroup._id,
+      targetCompletes,
+      currentCompletes,
+      overQuotaAction,
+      rid,
+      redirectUrl,
+    }
+  );
+
+  return res.redirect(redirectUrl);
+}
+
+    // =================================================
     // CREATE SURVEY RESPONSE
     // =================================================
 
