@@ -1,5 +1,7 @@
 import Survey from "../models/SurveyBuilder.model.js";
 import SurveyResponse from "../models/SurveyBuildResponse.model.js";
+import SurveyBuildResponse from "../models/SurveyBuildResponse.model.js";
+import InputifyResponse from "../models/SurveyResponse.model.js";
 export const createSurvey = async (req, res) => {
   try {
     const userId =
@@ -249,60 +251,60 @@ export const deleteSurvey = async (req, res) => {
 };
 
 
-export const submitSurvey = async (req, res) => {
+// export const submitSurvey = async (req, res) => {
 
-  try {
+//   try {
 
-    const { token } = req.params;
+//     const { token } = req.params;
 
-    const { answers, status } = req.body;
+//     const { answers, status } = req.body;
 
-    const survey = await Survey.findOne({
-  publicToken: token,
-});
+//     const survey = await Survey.findOne({
+//   publicToken: token,
+// });
 
-    if (!survey) {
-      return res.status(404).json({
-        message: "Survey not found",
-      });
-    }
+//     if (!survey) {
+//       return res.status(404).json({
+//         message: "Survey not found",
+//       });
+//     }
 
-    await SurveyResponse.create({
+//     await SurveyResponse.create({
 
-      survey: survey._id,
+//       survey: survey._id,
 
-      business: survey.business,
+//       business: survey.business,
 
-      publicToken: survey.publicToken,
+//       publicToken: survey.publicToken,
 
-      answers,
+//       answers,
 
-      status,
+//       status,
 
-      ip: req.ip,
+//       ip: req.ip,
 
-      userAgent: req.headers["user-agent"],
+//       userAgent: req.headers["user-agent"],
 
-      completedAt: new Date(),
+//       completedAt: new Date(),
 
-    });
+//     });
 
-    res.json({
-      success: true,
-    });
+//     res.json({
+//       success: true,
+//     });
 
-  } catch (err) {
+//   } catch (err) {
 
-    // console.log(err);
+//     // console.log(err);
 
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-    });
+//     res.status(500).json({
+//       success: false,
+//       message: "Server Error",
+//     });
 
-  }
+//   }
 
-};
+// };
 
 // export const getSurveyResponses = async (req, res) => {
 //   try {
@@ -319,6 +321,131 @@ export const submitSurvey = async (req, res) => {
 //     });
 //   }
 // };
+
+export const submitSurvey = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { answers, RID } = req.body;
+
+    // --------------------------------------------------
+    // 1. Find the Survey Builder survey
+    // --------------------------------------------------
+    const survey = await Survey.findOne({
+      publicToken: token,
+    });
+
+    if (!survey) {
+      return res.status(404).json({
+        success: false,
+        message: "Survey not found",
+      });
+    }
+
+    // --------------------------------------------------
+    // 2. RID is required to connect this submission
+    //    to the Inputify response
+    // --------------------------------------------------
+    if (!RID) {
+      return res.status(400).json({
+        success: false,
+        message: "RID is required",
+      });
+    }
+
+    const rid = String(RID).trim().toUpperCase();
+
+    // --------------------------------------------------
+    // 3. Save the actual Survey Builder submission
+    // --------------------------------------------------
+    await SurveyBuildResponse.create({
+      survey: survey._id,
+      business: survey.business,
+      publicToken: survey.publicToken,
+      answers,
+      status: "COMPLETED",
+      ip: req.ip,
+      userAgent: req.headers["user-agent"],
+      completedAt: new Date(),
+    });
+
+    // --------------------------------------------------
+    // 4. Find the MAIN Inputify response
+    // --------------------------------------------------
+    const inputifyResponse = await InputifyResponse.findOne({
+      rid,
+      status: "STARTED",
+    });
+
+    if (!inputifyResponse) {
+      return res.status(404).json({
+        success: false,
+        message: "Inputify response not found or already processed",
+      });
+    }
+
+    // --------------------------------------------------
+    // 5. Verify this response belongs to this
+    //    Survey Builder business
+    // --------------------------------------------------
+    if (
+      String(inputifyResponse.user || "") !==
+      String(survey.business || "")
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Response does not belong to this business",
+      });
+    }
+
+    // --------------------------------------------------
+    // 6. IMPORTANT:
+    //    STARTED -> COMPLETION_CONFIRMED
+    //
+    //    Do NOT directly mark it COMPLETED here.
+    // --------------------------------------------------
+    const confirmedResponse =
+      await InputifyResponse.findOneAndUpdate(
+        {
+          _id: inputifyResponse._id,
+          rid,
+          status: "STARTED",
+        },
+        {
+          $set: {
+            status: "COMPLETION_CONFIRMED",
+            completionConfirmedAt: new Date(),
+          },
+        },
+        {
+          new: true,
+        }
+      );
+
+    if (!confirmedResponse) {
+      return res.status(409).json({
+        success: false,
+        message: "Response is no longer eligible for completion",
+      });
+    }
+
+    // --------------------------------------------------
+    // 7. Return success
+    // --------------------------------------------------
+    return res.json({
+      success: true,
+      message: "Survey submitted and completion confirmed",
+      RID: rid,
+      status: "COMPLETION_CONFIRMED",
+    });
+  } catch (err) {
+    console.error("submitSurvey error:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+};
 
 export const getSurveyResponses = async (req, res) => {
   try {
