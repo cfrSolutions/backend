@@ -142,6 +142,12 @@ const SurveySchema = new mongoose.Schema(
       trim: true,
     },
 
+    targetCompletes: {
+  type: Number,
+  default: 100,
+  min: 1,
+},
+
     description: {
       type: String,
       default: "",

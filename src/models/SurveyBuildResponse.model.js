@@ -18,6 +18,11 @@ const SurveyBuildResponseSchema = new mongoose.Schema(
 
     publicToken: String,
 
+    RID: {
+  type: String,
+  index: true,
+},
+
     answers: {
         type: Object,
        default: {},
