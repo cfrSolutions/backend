@@ -325,10 +325,10 @@ export const deleteSurvey = async (req, res) => {
 export const submitSurvey = async (req, res) => {
   try {
     const { token } = req.params;
-    const { answers, RID } = req.body;
+    const { answers, RID, status } = req.body;
 
     // --------------------------------------------------
-    // 1. Find the Survey Builder survey
+    // 1. Find Survey Builder survey
     // --------------------------------------------------
     const survey = await Survey.findOne({
       publicToken: token,
@@ -342,8 +342,7 @@ export const submitSurvey = async (req, res) => {
     }
 
     // --------------------------------------------------
-    // 2. RID is required to connect this submission
-    //    to the Inputify response
+    // 2. RID is required
     // --------------------------------------------------
     if (!RID) {
       return res.status(400).json({
@@ -355,87 +354,107 @@ export const submitSurvey = async (req, res) => {
     const rid = String(RID).trim().toUpperCase();
 
     // --------------------------------------------------
-    // 3. Save the actual Survey Builder submission
+    // 3. Normalize status
+    // --------------------------------------------------
+    const responseStatus =
+      status === "DISQUALIFIED"
+        ? "DISQUALIFIED"
+        : status === "QUOTA"
+        ? "QUOTA"
+        : "COMPLETE";
+
+    // --------------------------------------------------
+    // 4. Save Survey Builder response
     // --------------------------------------------------
     await SurveyBuildResponse.create({
       survey: survey._id,
       business: survey.business,
       publicToken: survey.publicToken,
       answers,
-      status: "COMPLETED",
+      status: responseStatus,
       ip: req.ip,
       userAgent: req.headers["user-agent"],
       completedAt: new Date(),
     });
 
     // --------------------------------------------------
-    // 4. Find the MAIN Inputify response
+    // 5. Only COMPLETE can confirm completion
     // --------------------------------------------------
-    const inputifyResponse = await InputifyResponse.findOne({
-      rid,
-      status: "STARTED",
-    });
-
-    if (!inputifyResponse) {
-      return res.status(404).json({
-        success: false,
-        message: "Inputify response not found or already processed",
-      });
-    }
-
-    // --------------------------------------------------
-    // 5. Verify this response belongs to this
-    //    Survey Builder business
-    // --------------------------------------------------
-    if (
-      String(inputifyResponse.user || "") !==
-      String(survey.business || "")
-    ) {
-      return res.status(403).json({
-        success: false,
-        message: "Response does not belong to this business",
-      });
-    }
-
-    // --------------------------------------------------
-    // 6. IMPORTANT:
-    //    STARTED -> COMPLETION_CONFIRMED
-    //
-    //    Do NOT directly mark it COMPLETED here.
-    // --------------------------------------------------
-    const confirmedResponse =
-      await InputifyResponse.findOneAndUpdate(
-        {
-          _id: inputifyResponse._id,
+    if (responseStatus === "COMPLETE") {
+      const inputifyResponse =
+        await InputifyResponse.findOne({
           rid,
           status: "STARTED",
-        },
-        {
-          $set: {
-            status: "COMPLETION_CONFIRMED",
-            completionConfirmedAt: new Date(),
-          },
-        },
-        {
-          new: true,
-        }
-      );
+        });
 
-    if (!confirmedResponse) {
-      return res.status(409).json({
-        success: false,
-        message: "Response is no longer eligible for completion",
+      if (!inputifyResponse) {
+        return res.status(404).json({
+          success: false,
+          message:
+            "Inputify response not found or already processed",
+        });
+      }
+
+      // ------------------------------------------------
+      // 6. Verify business ownership
+      // ------------------------------------------------
+      if (
+        String(inputifyResponse.user || "") !==
+        String(survey.business || "")
+      ) {
+        return res.status(403).json({
+          success: false,
+          message:
+            "Response does not belong to this business",
+        });
+      }
+
+      // ------------------------------------------------
+      // 7. STARTED -> COMPLETION_CONFIRMED
+      // ------------------------------------------------
+      const confirmedResponse =
+        await InputifyResponse.findOneAndUpdate(
+          {
+            _id: inputifyResponse._id,
+            rid,
+            status: "STARTED",
+          },
+          {
+            $set: {
+              status: "COMPLETION_CONFIRMED",
+              completionConfirmedAt: new Date(),
+            },
+          },
+          {
+            new: true,
+          }
+        );
+
+      if (!confirmedResponse) {
+        return res.status(409).json({
+          success: false,
+          message:
+            "Response is no longer eligible for completion",
+        });
+      }
+
+      return res.json({
+        success: true,
+        message:
+          "Survey submitted and completion confirmed",
+        RID: rid,
+        status: "COMPLETION_CONFIRMED",
       });
     }
 
     // --------------------------------------------------
-    // 7. Return success
+    // DISQUALIFIED / QUOTA
     // --------------------------------------------------
     return res.json({
       success: true,
-      message: "Survey submitted and completion confirmed",
+      message: "Survey response saved",
       RID: rid,
-      status: "COMPLETION_CONFIRMED",
+      status: responseStatus,
     });
   } catch (err) {
     console.error("submitSurvey error:", err);
@@ -446,7 +465,6 @@ export const submitSurvey = async (req, res) => {
     });
   }
 };
-
 export const getSurveyResponses = async (req, res) => {
   try {
     const survey = await Survey.findById(req.params.surveyId);
