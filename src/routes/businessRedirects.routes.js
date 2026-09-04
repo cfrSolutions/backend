@@ -2834,11 +2834,24 @@ if (!validSession) {
     // TARGET GROUP QF REDIRECT
     // =================================================
 
-    let redirectUrl =
-      targetGroup.redirects?.quotaFull?.url ||
-      project.vendorLinks?.[0]?.quotaFull ||
-      "https://inputify.io/quota-full";
+    // let redirectUrl =
+    //   targetGroup.redirects?.quotaFull?.url ||
+    //   project.vendorLinks?.[0]?.quotaFull ||
+    //   "https://inputify.io/quota-full";
+    // =================================================
+// INTERNAL QF URL
+// =================================================
 
+const internalQuotaUrl =
+  targetGroup.redirects?.quotaFull?.url;
+
+// =================================================
+// FINAL EXTERNAL QUOTA FULL URL
+// =================================================
+
+let redirectUrl =
+  project.vendorLinks?.[0]?.quotaFull ||
+  "https://inputify.io/quota-full";
     // =================================================
     // PASS RID
     // =================================================
