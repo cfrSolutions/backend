@@ -2653,6 +2653,25 @@ router.put(
         group.sector = sector;
       }
 
+      // -----------------------------------------
+// OVER QUOTA ACTION
+// -----------------------------------------
+
+if (overQuotaAction !== undefined) {
+  if (
+    !["QUOTA", "DISQUALIFIED"].includes(
+      overQuotaAction
+    )
+  ) {
+    return res.status(400).json({
+      message: "Invalid over quota action",
+    });
+  }
+
+  group.overQuotaAction =
+    overQuotaAction;
+}
+
       if (
         targetCompletes !== undefined &&
         targetCompletes !== ""
@@ -3047,6 +3066,9 @@ if (group.responseIdentifier === undefined) {
 
           targetCompletes:
             group.targetCompletes,
+
+          overQuotaAction:
+  group.overQuotaAction,
 
           loi: group.loi,
           incidence:
