@@ -1722,6 +1722,10 @@ setResponseSessionCookie(
 //   }
 // });
 
+// =====================================================
+// COMPLETE - TARGET GROUP SPECIFIC
+// =====================================================
+
 
 
 router.post(
@@ -1730,10 +1734,12 @@ router.post(
     try {
       const {
         RID,
+        projectId,
+        targetGroupId,
       } = req.body;
 
       // =================================================
-      // VALIDATE RID
+      // VALIDATE INPUT
       // =================================================
 
       if (!RID) {
@@ -1743,8 +1749,7 @@ router.post(
         });
       }
 
-      const rid =
-        String(RID).trim();
+      const rid = String(RID).trim();
 
       if (!RID_REGEX.test(rid)) {
         return res.status(400).json({
@@ -1753,22 +1758,64 @@ router.post(
         });
       }
 
+      if (!projectId) {
+        return res.status(400).json({
+          success: false,
+          message: "Missing projectId",
+        });
+      }
+
+      if (!targetGroupId) {
+        return res.status(400).json({
+          success: false,
+          message: "Missing targetGroupId",
+        });
+      }
+
       // =================================================
       // VERIFY SERVER-TO-SERVER SECRET
       // =================================================
 
       const providedSecret =
-        req.headers[
-          "x-inputify-completion-secret"
-        ];
+        req.headers["x-inputify-completion-secret"];
 
       const expectedSecret =
         process.env.INPUTIFY_COMPLETION_SECRET;
 
       if (
         !providedSecret ||
-        !expectedSecret ||
-        providedSecret !== expectedSecret
+        !expectedSecret
+      ) {
+        console.error(
+          "Completion secret is not configured"
+        );
+
+        return res.status(500).json({
+          success: false,
+          message:
+            "Completion confirmation is not configured",
+        });
+      }
+
+      const providedBuffer =
+        Buffer.from(
+          String(providedSecret),
+          "utf8"
+        );
+
+      const expectedBuffer =
+        Buffer.from(
+          String(expectedSecret),
+          "utf8"
+        );
+
+      if (
+        providedBuffer.length !==
+          expectedBuffer.length ||
+        !crypto.timingSafeEqual(
+          providedBuffer,
+          expectedBuffer
+        )
       ) {
         return res.status(403).json({
           success: false,
@@ -1777,22 +1824,51 @@ router.post(
       }
 
       // =================================================
-      // ONLY STARTED CAN BE CONFIRMED
+      // FIND EXACT PROJECT
+      // =================================================
+
+      const project =
+        await Project.findById(projectId);
+
+      if (!project) {
+        return res.status(404).json({
+          success: false,
+          message: "Project not found",
+        });
+      }
+
+      // =================================================
+      // FIND EXACT TARGET GROUP
+      // =================================================
+
+      const targetGroup =
+        project.targetGroups.id(
+          targetGroupId
+        );
+
+      if (!targetGroup) {
+        return res.status(404).json({
+          success: false,
+          message: "Target group not found",
+        });
+      }
+
+      // =================================================
+      // ATOMIC:
+      // STARTED → COMPLETION_CONFIRMED
       // =================================================
 
       const response =
         await SurveyResponse.findOneAndUpdate(
           {
+            project: project._id,
+            targetGroup: targetGroup._id,
             rid,
-
-            // VERY IMPORTANT
             status: "STARTED",
           },
           {
             $set: {
-              status:
-                "COMPLETION_CONFIRMED",
-
+              status: "COMPLETION_CONFIRMED",
               completionConfirmedAt:
                 new Date(),
             },
@@ -1802,18 +1878,28 @@ router.post(
           }
         );
 
+      // =================================================
+      // RESPONSE NOT FOUND / ALREADY FINALIZED
+      // =================================================
+
       if (!response) {
         return res.status(409).json({
           success: false,
           message:
-            "Response is not eligible for confirmation",
+            "Response is not in STARTED state",
         });
       }
+
+      // =================================================
+      // SUCCESS
+      // =================================================
 
       return res.status(200).json({
         success: true,
         message:
-          "Completion confirmed",
+          "Survey completion confirmed",
+        RID: response.rid,
+        status: response.status,
       });
 
     } catch (err) {
@@ -1920,9 +2006,6 @@ if (!validSession) {
     // CHECK CURRENT STATUS
     // =================================================
 
-    console.log("RID:", RID);
-console.log("Response status:", response.status);
-
     if (response.status === "COMPLETED") {
       return res.status(409).send(
         "Response already completed"
@@ -1938,11 +2021,20 @@ console.log("Response status:", response.status);
       );
     }
 
-    if (response.status !== "COMPLETION_CONFIRMED") {
-      return res.status(409).send(
-        "Response is not eligible for completion"
-      );
-    }
+    // if (response.status !== "STARTED") {
+    //   return res.status(409).send(
+    //     "Response is not active"
+    //   );
+    // }
+
+    if (
+  response.status !==
+  "COMPLETION_CONFIRMED"
+) {
+  return res.status(409).send(
+    "Response is not eligible for completion"
+  );
+}
 
     // =================================================
     // ATOMIC RESPONSE TRANSITION
