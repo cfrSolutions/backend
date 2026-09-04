@@ -1722,9 +1722,114 @@ setResponseSessionCookie(
 //   }
 // });
 
-// =====================================================
-// COMPLETE - TARGET GROUP SPECIFIC
-// =====================================================
+
+
+router.post(
+  "/confirm-completion",
+  async (req, res) => {
+    try {
+      const {
+        RID,
+      } = req.body;
+
+      // =================================================
+      // VALIDATE RID
+      // =================================================
+
+      if (!RID) {
+        return res.status(400).json({
+          success: false,
+          message: "Missing RID",
+        });
+      }
+
+      const rid =
+        String(RID).trim();
+
+      if (!RID_REGEX.test(rid)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid RID",
+        });
+      }
+
+      // =================================================
+      // VERIFY SERVER-TO-SERVER SECRET
+      // =================================================
+
+      const providedSecret =
+        req.headers[
+          "x-inputify-completion-secret"
+        ];
+
+      const expectedSecret =
+        process.env.INPUTIFY_COMPLETION_SECRET;
+
+      if (
+        !providedSecret ||
+        !expectedSecret ||
+        providedSecret !== expectedSecret
+      ) {
+        return res.status(403).json({
+          success: false,
+          message: "Unauthorized",
+        });
+      }
+
+      // =================================================
+      // ONLY STARTED CAN BE CONFIRMED
+      // =================================================
+
+      const response =
+        await SurveyResponse.findOneAndUpdate(
+          {
+            rid,
+
+            // VERY IMPORTANT
+            status: "STARTED",
+          },
+          {
+            $set: {
+              status:
+                "COMPLETION_CONFIRMED",
+
+              completionConfirmedAt:
+                new Date(),
+            },
+          },
+          {
+            new: true,
+          }
+        );
+
+      if (!response) {
+        return res.status(409).json({
+          success: false,
+          message:
+            "Response is not eligible for confirmation",
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message:
+          "Completion confirmed",
+      });
+
+    } catch (err) {
+      console.error(
+        "CONFIRM COMPLETION ERROR:",
+        err
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Unable to confirm completion",
+      });
+    }
+  }
+);
 
 router.get("/c", async (req, res) => {
   try {
