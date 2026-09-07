@@ -1028,6 +1028,146 @@ function validateResponseSession(
   return true;
 }
 
+function sendSessionExpiredPage(res) {
+  return res.status(403).send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+      />
+
+      <title>Session Expired</title>
+
+      <style>
+        * {
+          box-sizing: border-box;
+        }
+
+        body {
+          margin: 0;
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #f4f7fb;
+          font-family:
+            Inter,
+            -apple-system,
+            BlinkMacSystemFont,
+            "Segoe UI",
+            sans-serif;
+          color: #1f2937;
+        }
+
+        .container {
+          width: 100%;
+          max-width: 500px;
+          padding: 24px;
+        }
+
+        .card {
+          background: #ffffff;
+          border-radius: 18px;
+          padding: 42px 32px;
+          text-align: center;
+          box-shadow:
+            0 10px 35px rgba(0, 0, 0, 0.08);
+        }
+
+        .icon {
+          width: 72px;
+          height: 72px;
+          margin: 0 auto 24px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #fff3cd;
+          font-size: 34px;
+        }
+
+        h1 {
+          margin: 0 0 12px;
+          font-size: 26px;
+          font-weight: 700;
+        }
+
+        p {
+          margin: 0 auto;
+          max-width: 390px;
+          color: #6b7280;
+          font-size: 16px;
+          line-height: 1.6;
+        }
+
+        .message {
+          margin-top: 24px;
+          padding: 14px 16px;
+          border-radius: 10px;
+          background: #f8fafc;
+          color: #64748b;
+          font-size: 14px;
+        }
+
+        .brand {
+          margin-top: 28px;
+          font-size: 14px;
+          font-weight: 600;
+          color: #64748b;
+        }
+
+        @media (max-width: 480px) {
+          .container {
+            padding: 16px;
+          }
+
+          .card {
+            padding: 34px 22px;
+          }
+
+          h1 {
+            font-size: 23px;
+          }
+        }
+      </style>
+    </head>
+
+    <body>
+      <div class="container">
+        <div class="card">
+
+          <div class="icon">
+            ⏱
+          </div>
+
+          <h1>
+            Session Expired
+          </h1>
+
+          <p>
+            Your survey session has expired or is no longer valid.
+            Please return to the survey invitation and start again.
+          </p>
+
+          <div class="message">
+            For your security, this survey response can no longer
+            be completed from this session.
+          </div>
+
+          <div class="brand">
+            Inputify
+          </div>
+
+        </div>
+      </div>
+    </body>
+    </html>
+  `);
+}
+
 
 function destroyResponseSession(req) {
   const sessionId =
@@ -1917,10 +2057,13 @@ const validSession =
     targetGroup
   );
 
+// if (!validSession) {
+//   return res.status(403).send(
+//     "Invalid or expired survey session"
+//   );
+// }
 if (!validSession) {
-  return res.status(403).send(
-    "Invalid or expired survey session"
-  );
+  return sendSessionExpiredPage(res);
 }
     // =================================================
     // CHECK CURRENT STATUS
@@ -2347,10 +2490,13 @@ const validSession =
     targetGroup
   );
 
+// if (!validSession) {
+//   return res.status(403).send(
+//     "Invalid or expired survey session"
+//   );
+// }
 if (!validSession) {
-  return res.status(403).send(
-    "Invalid or expired survey session"
-  );
+  return sendSessionExpiredPage(res);
 }
 
     // =================================================
@@ -2774,10 +2920,13 @@ const validSession =
     targetGroup
   );
 
+// if (!validSession) {
+//   return res.status(403).send(
+//     "Invalid or expired survey session"
+//   );
+// }
 if (!validSession) {
-  return res.status(403).send(
-    "Invalid or expired survey session"
-  );
+  return sendSessionExpiredPage(res);
 }
 
     // =================================================
