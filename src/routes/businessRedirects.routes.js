@@ -2550,7 +2550,7 @@ const RESPONSE_SESSION_COOKIE =
   "__Host-inputify_sid";
 
 const RESPONSE_SESSION_TTL =
-  1000 * 60 * 60; // 1 hour
+  1000 * 60 * 60 * 24; // 1 day
 
 const RESPONSE_SESSION_IDLE_TTL =
   1000 * 60 * 20;
@@ -4463,7 +4463,7 @@ if (!validSession) {
 if (response.status === "QUOTA_FULL") {
 
   let redirectUrl =
-  targetGroup.redirects?.disqualified?.url ||
+  targetGroup.redirects?.quotaFull?.url ||
     project.vendorLinks?.[0]?.quotaFull ||
     "https://inputify.io/quota-full";
 
@@ -4665,6 +4665,37 @@ if (response.status === "QUOTA_FULL") {
 //   }
 // }, 1000 * 60 * 10);
 
+// setInterval(() => {
+//   const now = Date.now();
+
+//   for (const sid in global.sessions) {
+//     const session = global.sessions[sid];
+
+//     if (!session) {
+//       delete global.sessions[sid];
+//       continue;
+//     }
+
+//     // Maximum session lifetime
+//     if (
+//       now - session.createdAt >
+//       RESPONSE_SESSION_TTL
+//     ) {
+//       delete global.sessions[sid];
+//       continue;
+//     }
+
+//     // Inactivity timeout
+//     if (
+//       session.lastActivityAt &&
+//       now - session.lastActivityAt >
+//       RESPONSE_SESSION_IDLE_TTL
+//     ) {
+//       delete global.sessions[sid];
+//     }
+//   }
+// }, 1000 * 60 * 10);
+
 setInterval(() => {
   const now = Date.now();
 
@@ -4676,7 +4707,20 @@ setInterval(() => {
       continue;
     }
 
-    // Maximum session lifetime
+    // Finalized sessions
+    if (session.status === "FINALIZED") {
+      if (
+        session.finalizedAt &&
+        now - session.finalizedAt >
+          FINALIZED_SESSION_TTL
+      ) {
+        delete global.sessions[sid];
+      }
+
+      continue;
+    }
+
+    // Active sessions
     if (
       now - session.createdAt >
       RESPONSE_SESSION_TTL
@@ -4685,7 +4729,6 @@ setInterval(() => {
       continue;
     }
 
-    // Inactivity timeout
     if (
       session.lastActivityAt &&
       now - session.lastActivityAt >
