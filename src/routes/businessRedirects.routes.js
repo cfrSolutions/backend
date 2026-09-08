@@ -2646,6 +2646,13 @@ function validateResponseSession(
     return false;
   }
 
+  if (
+  session.responseId !==
+  String(response._id)
+) {
+  return false;
+}
+
   // Session expired
   const now = Date.now();
   if (
@@ -3902,9 +3909,27 @@ router.get("/dq", async (req, res) => {
       );
     }
 
+    const validSession =
+  validateResponseSession(
+    req,
+    response,
+    project,
+    targetGroup
+  );
+
+// if (!validSession) {
+//   return res.status(403).send(
+//     "Invalid or expired survey session"
+//   );
+// }
+if (!validSession) {
+  return sendSessionExpiredPage(res);
+}
+
     if (response.status === "DISQUALIFIED") {
 
   let redirectUrl =
+   targetGroup.redirects?.disqualified?.url ||
     project.vendorLinks?.[0]?.disqualified ||
     "https://inputify.io/disqualified";
 
@@ -3938,22 +3963,7 @@ router.get("/dq", async (req, res) => {
 // VERIFY RESPONSE SESSION
 // =================================================
 
-const validSession =
-  validateResponseSession(
-    req,
-    response,
-    project,
-    targetGroup
-  );
 
-// if (!validSession) {
-//   return res.status(403).send(
-//     "Invalid or expired survey session"
-//   );
-// }
-if (!validSession) {
-  return sendSessionExpiredPage(res);
-}
 
     // =================================================
     // CHECK CURRENT STATUS
@@ -4334,11 +4344,27 @@ router.get("/qf", async (req, res) => {
       );
     }
 
-    
+    const validSession =
+  validateResponseSession(
+    req,
+    response,
+    project,
+    targetGroup
+  );
+
+// if (!validSession) {
+//   return res.status(403).send(
+//     "Invalid or expired survey session"
+//   );
+// }
+if (!validSession) {
+  return sendSessionExpiredPage(res);
+}
 
 if (response.status === "QUOTA_FULL") {
 
   let redirectUrl =
+  targetGroup.redirects?.disqualified?.url ||
     project.vendorLinks?.[0]?.quotaFull ||
     "https://inputify.io/quota-full";
 
@@ -4368,22 +4394,7 @@ if (response.status === "QUOTA_FULL") {
 // VERIFY RESPONSE SESSION
 // =================================================
 
-const validSession =
-  validateResponseSession(
-    req,
-    response,
-    project,
-    targetGroup
-  );
 
-// if (!validSession) {
-//   return res.status(403).send(
-//     "Invalid or expired survey session"
-//   );
-// }
-if (!validSession) {
-  return sendSessionExpiredPage(res);
-}
 
     // =================================================
     // CHECK CURRENT STATUS
@@ -4541,14 +4552,45 @@ if (!validSession) {
   }
 });
 
+// setInterval(() => {
+//   const now = Date.now();
+
+//   for (const sid in global.sessions) {
+//     const session = global.sessions[sid];
+
+//     // Remove after 1 hour
+//     if (now - session.createdAt > 1000 * 60 * 60) {
+//       delete global.sessions[sid];
+//     }
+//   }
+// }, 1000 * 60 * 10);
+
 setInterval(() => {
   const now = Date.now();
 
   for (const sid in global.sessions) {
     const session = global.sessions[sid];
 
-    // Remove after 1 hour
-    if (now - session.createdAt > 1000 * 60 * 60) {
+    if (!session) {
+      delete global.sessions[sid];
+      continue;
+    }
+
+    // Maximum session lifetime
+    if (
+      now - session.createdAt >
+      RESPONSE_SESSION_TTL
+    ) {
+      delete global.sessions[sid];
+      continue;
+    }
+
+    // Inactivity timeout
+    if (
+      session.lastActivityAt &&
+      now - session.lastActivityAt >
+      RESPONSE_SESSION_IDLE_TTL
+    ) {
       delete global.sessions[sid];
     }
   }
