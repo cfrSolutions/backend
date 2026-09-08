@@ -188,7 +188,7 @@ router.get("/", authMiddleware, async (req, res) => {
     return res.status(200).json(profile);
 
   } catch (error) {
-    console.error("GET PROFILE ERROR:", error);
+   
 
     return res.status(500).json({
       success: false,
@@ -292,7 +292,7 @@ router.put("/", authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error("UPDATE PROFILE ERROR:", error);
+    
 
     return res.status(500).json({
       success: false,
