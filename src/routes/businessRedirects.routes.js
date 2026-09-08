@@ -2403,6 +2403,23 @@ function getSecurityFingerprint(req) {
 }
 
 global.sessions = global.sessions || {};
+function markResponseSessionFinalized(req) {
+  const sessionId = getSessionId(req);
+
+  if (!sessionId) {
+    return;
+  }
+
+  const session = global.sessions[sessionId];
+
+  if (!session) {
+    return;
+  }
+
+  session.status = "FINALIZED";
+  session.finalizedAt = Date.now();
+  session.lastActivityAt = Date.now();
+}
 
 const TERMINAL_STATUSES = [
   "COMPLETED",
@@ -2945,6 +2962,8 @@ const responseTokenHash =
         group.redirects?.start?.token === tk
     );
 
+    
+
     if (!targetGroup) {
       console.error(
         "TARGET GROUP NOT FOUND FOR START TOKEN:",
@@ -2953,6 +2972,84 @@ const responseTokenHash =
 
       return res.status(404).send("Invalid link");
     }
+
+    // =================================================
+// CHECK EXISTING BROWSER SESSION
+// =================================================
+
+const existingSessionId = getSessionId(req);
+
+if (existingSessionId) {
+  const existingSession =
+    global.sessions[existingSessionId];
+
+  if (existingSession) {
+
+    // Make sure session belongs to this
+    // exact project + target group
+    if (
+      existingSession.projectId ===
+        String(project._id) &&
+      existingSession.targetGroupId ===
+        String(targetGroup._id)
+    ) {
+
+      const now = Date.now();
+
+      // Session maximum lifetime
+      if (
+        now - existingSession.createdAt >
+        RESPONSE_SESSION_TTL
+      ) {
+        delete global.sessions[existingSessionId];
+      }
+
+      // Session idle timeout
+      else if (
+        existingSession.lastActivityAt &&
+        now - existingSession.lastActivityAt >
+        RESPONSE_SESSION_IDLE_TTL
+      ) {
+        delete global.sessions[existingSessionId];
+      }
+
+      else {
+
+        const existingResponse =
+          await SurveyResponse.findById(
+            existingSession.responseId
+          );
+
+        if (existingResponse) {
+
+          // -----------------------------------------
+          // ALREADY FINALIZED
+          // -----------------------------------------
+
+          if (
+            existingResponse.status === "COMPLETED" ||
+            existingResponse.status === "DISQUALIFIED" ||
+            existingResponse.status === "QUOTA_FULL"
+          ) {
+            return sendSessionExpiredPage(res);
+          }
+
+          // -----------------------------------------
+          // STILL ACTIVE
+          // -----------------------------------------
+
+          if (
+            existingResponse.status === "STARTED"
+          ) {
+            return res.status(409).send(
+              "Survey session is already active."
+            );
+          }
+        }
+      }
+    }
+  }
+}
 
     // =================================================
     // GET TARGET GROUP LIVE SURVEY URL
@@ -3583,7 +3680,8 @@ if (!validSession) {
       );
     }
 
-    destroyResponseSession(req);
+    // destroyResponseSession(req);
+    markResponseSessionFinalized(req);
 
     // =================================================
     // INCREMENT TARGET GROUP COUNTERS
@@ -4019,7 +4117,8 @@ if (!validSession) {
       );
     }
 
-    destroyResponseSession(req);
+    // destroyResponseSession(req);
+    markResponseSessionFinalized(req);
 
     // =================================================
     // INCREMENT TARGET GROUP COUNTERS
@@ -4450,7 +4549,8 @@ if (response.status === "QUOTA_FULL") {
       );
     }
 
-    destroyResponseSession(req);
+    // destroyResponseSession(req);
+    markResponseSessionFinalized(req);
 
     // =================================================
     // INCREMENT TARGET GROUP COUNTERS
