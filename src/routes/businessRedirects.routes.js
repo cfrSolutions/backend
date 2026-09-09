@@ -3223,43 +3223,89 @@ if (
   // REDIRECT
   // -----------------------------------------------
 
-  const base =
-    process.env.BACKEND_URL;
+  // const base =
+  //   process.env.BACKEND_URL;
 
-  const redirectToken =
-    overQuotaAction === "QUOTA"
-      ? targetGroup.redirects?.quotaFull?.token
-      : targetGroup.redirects?.disqualified?.token;
+  // const redirectToken =
+  //   overQuotaAction === "QUOTA"
+  //     ? targetGroup.redirects?.quotaFull?.token
+  //     : targetGroup.redirects?.disqualified?.token;
 
-  const redirectPath =
-    overQuotaAction === "QUOTA"
-      ? "/api/redirect/qf"
-      : "/api/redirect/dq";
+  // const redirectPath =
+  //   overQuotaAction === "QUOTA"
+  //     ? "/api/redirect/qf"
+  //     : "/api/redirect/dq";
 
-  if (!redirectToken) {
-    return res.status(500).send(
-      "Redirect URL is not configured"
-    );
+  // if (!redirectToken) {
+  //   return res.status(500).send(
+  //     "Redirect URL is not configured"
+  //   );
+  // }
+
+  // const redirectUrl =
+  //   `${base}${redirectPath}` +
+  //   `?tk=${redirectToken}` +
+  //   `&RID=${encodeURIComponent(rid)}`;
+
+  // console.log(
+  //   "TARGET GROUP FULL:",
+  //   {
+  //     targetGroupId: targetGroup._id,
+  //     targetCompletes,
+  //     currentCompletes,
+  //     overQuotaAction,
+  //     rid,
+  //     redirectUrl,
+  //   }
+  // );
+
+  // return res.redirect(redirectUrl);
+
+  // -----------------------------------------------
+// DIRECT FINAL REDIRECT
+// -----------------------------------------------
+
+let redirectUrl;
+
+if (overQuotaAction === "QUOTA") {
+  redirectUrl =
+    targetGroup.redirects?.quotaFull?.url ||
+    project.vendorLinks?.[0]?.quotaFull ||
+    "https://inputify.io/quota-full";
+} else {
+  redirectUrl =
+    targetGroup.redirects?.disqualified?.url ||
+    project.vendorLinks?.[0]?.disqualified ||
+    "https://inputify.io/disqualified";
+}
+
+// -----------------------------------------------
+// PASS RID
+// -----------------------------------------------
+
+try {
+  const url = new URL(redirectUrl);
+
+  url.searchParams.set("RID", rid);
+
+  redirectUrl = url.toString();
+} catch {
+  // Keep original URL
+}
+
+console.log(
+  "TARGET GROUP FULL - DIRECT FINAL REDIRECT:",
+  {
+    targetGroupId: targetGroup._id,
+    targetCompletes,
+    currentCompletes,
+    overQuotaAction,
+    rid,
+    redirectUrl,
   }
+);
 
-  const redirectUrl =
-    `${base}${redirectPath}` +
-    `?tk=${redirectToken}` +
-    `&RID=${encodeURIComponent(rid)}`;
-
-  console.log(
-    "TARGET GROUP FULL:",
-    {
-      targetGroupId: targetGroup._id,
-      targetCompletes,
-      currentCompletes,
-      overQuotaAction,
-      rid,
-      redirectUrl,
-    }
-  );
-
-  return res.redirect(redirectUrl);
+return res.redirect(redirectUrl);
 }
 
     // =================================================
