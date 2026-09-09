@@ -2432,9 +2432,7 @@ const RID_REGEX = /^[A-Za-z0-9_-]{3,128}$/;
 function getRid(req) {
   const rid =
     req.query.RID ||
-    req.query.rid ||
-    req.query.PID ||
-    req.query.pid;
+    req.query.rid;
 
   if (!rid) {
     return null;
@@ -2554,6 +2552,9 @@ const RESPONSE_SESSION_TTL =
 
 const RESPONSE_SESSION_IDLE_TTL =
   1000 * 60 * 20;
+
+const FINALIZED_SESSION_TTL =
+  1000 * 60 * 60 * 24;
 
 function generateSessionId() {
   return crypto
