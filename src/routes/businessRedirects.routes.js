@@ -2427,6 +2427,8 @@ const TERMINAL_STATUSES = [
   "QUOTA_FULL",
 ];
 
+const LOI_MIN_PERCENT = 70;
+
 const RID_REGEX = /^[A-Za-z0-9_-]{3,128}$/;
 
 function getRid(req) {
@@ -2445,6 +2447,61 @@ function getRid(req) {
   }
 
   return value;
+}
+
+// =====================================================
+// LOI VALIDATION HELPER
+// =====================================================
+
+function validateLOI(response, targetGroup) {
+  const expectedLoiMinutes =
+    Number(targetGroup?.loi || 0);
+
+  // If LOI is not configured, don't reject
+  if (
+    expectedLoiMinutes <= 0 ||
+    !response?.startedAt
+  ) {
+    return {
+      valid: true,
+      durationSeconds: 0,
+      minimumSeconds: 0,
+      expectedMinutes: expectedLoiMinutes,
+    };
+  }
+
+  const startedAt =
+    new Date(response.startedAt).getTime();
+
+  const now =
+    Date.now();
+
+  const durationSeconds =
+    Math.max(
+      0,
+      Math.floor(
+        (now - startedAt) / 1000
+      )
+    );
+
+  const minimumSeconds =
+    Math.floor(
+      expectedLoiMinutes *
+      60 *
+      (LOI_MIN_PERCENT / 100)
+    );
+
+  return {
+    valid:
+      durationSeconds >= minimumSeconds,
+
+    durationSeconds,
+
+    minimumSeconds,
+
+    expectedMinutes:
+      expectedLoiMinutes,
+  };
 }
 
 // =====================================================
@@ -3697,6 +3754,206 @@ if (!validSession) {
       );
     }
 
+    // =====================================================
+// LOI VALIDATION
+// =====================================================
+
+const loiCheck =
+  validateLOI(
+    response,
+    targetGroup
+  );
+
+console.log(
+  "LOI CHECK:",
+  {
+    rid: RID,
+    expectedLOIMinutes:
+      loiCheck.expectedMinutes,
+    actualMinutes:
+      (loiCheck.durationSeconds / 60).toFixed(2),
+    minimumMinutes:
+      (loiCheck.minimumSeconds / 60).toFixed(2),
+    minimumPercent:
+      LOI_MIN_PERCENT,
+    valid:
+      loiCheck.valid,
+  }
+);
+
+// =====================================================
+// LOI MISMATCH
+// =====================================================
+
+if (!loiCheck.valid) {
+
+  const updatedResponse =
+    await SurveyResponse.findOneAndUpdate(
+      {
+        _id: response._id,
+        project: project._id,
+        targetGroup: targetGroup._id,
+        rid: RID,
+        status: "STARTED",
+      },
+      {
+        $set: {
+          status: "DISQUALIFIED",
+
+          completedAt:
+            new Date(),
+
+          durationSeconds:
+            loiCheck.durationSeconds,
+
+          fraudStatus:
+            "HIGH_RISK",
+        },
+
+        $push: {
+          fraudFlags: {
+            type: "LOI_MISMATCH",
+
+            score: 100,
+
+            message:
+              `Survey completed too quickly. ` +
+              `Expected LOI: ${loiCheck.expectedMinutes} minutes. ` +
+              `Actual duration: ${(loiCheck.durationSeconds / 60).toFixed(2)} minutes. ` +
+              `Minimum required: ${(loiCheck.minimumSeconds / 60).toFixed(2)} minutes.`,
+
+            detectedAt:
+              new Date(),
+          },
+        },
+      },
+      {
+        new: true,
+      }
+    );
+
+  // Another request already finalized it
+  if (!updatedResponse) {
+    return res.status(409).send(
+      "Response has already been finalized"
+    );
+  }
+
+  // Finalize browser session
+  markResponseSessionFinalized(req);
+
+  // ===================================================
+  // INCREMENT TARGET GROUP DQ
+  // ===================================================
+
+  await Project.updateOne(
+    {
+      _id: project._id,
+      "targetGroups._id":
+        targetGroup._id,
+    },
+    {
+      $inc: {
+        "targetGroups.$.disqualified": 1,
+        "targetGroups.$.totalResponses": 1,
+      },
+    }
+  );
+
+  // ===================================================
+  // INCREMENT PROJECT DQ
+  // ===================================================
+
+  await Project.updateOne(
+    {
+      _id: project._id,
+    },
+    {
+      $inc: {
+        disqualified: 1,
+        totalResponses: 1,
+      },
+    }
+  );
+
+  // ===================================================
+  // POSTBACK
+  // ===================================================
+
+  try {
+    await fetch(
+      `https://api.inputify.io/api/postback` +
+      `?rid=${encodeURIComponent(RID)}` +
+      `&status=SCREENOUT`,
+      {
+        headers: {
+          "X-Inputify-Postback-Secret":
+            process.env.INPUTIFY_POSTBACK_SECRET,
+        },
+      }
+    );
+  } catch (err) {
+    console.error(
+      "LOI mismatch postback failed:",
+      err.message
+    );
+  }
+
+  // ===================================================
+  // DQ REDIRECT
+  // ===================================================
+
+  let redirectUrl =
+    targetGroup
+      .redirects
+      ?.disqualified
+      ?.url ||
+    project
+      .vendorLinks?.[0]
+      ?.disqualified ||
+    "https://inputify.io/disqualified";
+
+  try {
+    const url =
+      new URL(redirectUrl);
+
+    url.searchParams.set(
+      "RID",
+      RID
+    );
+
+    redirectUrl =
+      url.toString();
+
+  } catch {
+    // Keep original URL
+  }
+
+  console.log(
+    "LOI MISMATCH → DISQUALIFIED:",
+    {
+      rid: RID,
+      expectedLOI:
+        loiCheck.expectedMinutes,
+      actualMinutes:
+        (
+          loiCheck.durationSeconds /
+          60
+        ).toFixed(2),
+      minimumMinutes:
+        (
+          loiCheck.minimumSeconds /
+          60
+        ).toFixed(2),
+      redirectUrl,
+    }
+  );
+
+  return res.redirect(
+    redirectUrl
+  );
+}
+
     // =================================================
     // ATOMIC RESPONSE TRANSITION
     // =================================================
@@ -3706,14 +3963,16 @@ if (!validSession) {
         {
           _id: response._id,
           project: project._id,
-      targetGroup: targetGroup._id,
-      rid: RID,
+          targetGroup: targetGroup._id,
+          rid: RID,
           status: "STARTED",
         },
         {
           $set: {
             status: "COMPLETED",
             completedAt: new Date(),
+            durationSeconds:
+          loiCheck.durationSeconds,
           },
         },
         {
