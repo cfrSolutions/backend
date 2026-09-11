@@ -1194,7 +1194,10 @@ router.put(
       // PROJECT STATUS
       // -----------------------------------------
 
-      project.status = "TESTING";
+      // project.status = "TESTING";
+     if (targetGroup.status === "DRAFT") {
+  targetGroup.status = "TESTING";
+}
 
       await project.save();
 
@@ -1210,6 +1213,8 @@ router.put(
 
         targetGroupId:
           targetGroup._id,
+
+        targetGroupStatus: targetGroup.status,
       });
 
     } catch (err) {
@@ -1225,6 +1230,122 @@ router.put(
     }
   }
 );
+
+
+// ============================================================
+// BUSINESS → LAUNCH TARGET GROUP
+// DRAFT → TESTING
+// ============================================================
+
+router.put(
+  "/:projectId/target-group/:targetGroupId/launch",
+  authMiddleware,
+  businessOnly,
+  async (req, res) => {
+    try {
+      const {
+        projectId,
+        targetGroupId,
+      } = req.params;
+
+      const userId =
+        req.user._id ||
+        req.user.id ||
+        req.user.userId;
+
+      if (!userId) {
+        return res.status(401).json({
+          message: "User not found in authentication token",
+        });
+      }
+
+      const project = await Project.findOne({
+        _id: projectId,
+        business: userId,
+      });
+
+      if (!project) {
+        return res.status(404).json({
+          message: "Project not found",
+        });
+      }
+
+      const targetGroup =
+        project.targetGroups.id(targetGroupId);
+
+      if (!targetGroup) {
+        return res.status(404).json({
+          message: "Target group not found",
+        });
+      }
+
+      // -----------------------------------------
+      // VALIDATE
+      // -----------------------------------------
+
+      if (targetGroup.status === "CLOSED") {
+        return res.status(400).json({
+          message:
+            "Closed target groups cannot be launched",
+        });
+      }
+
+      if (targetGroup.status === "LIVE") {
+        return res.status(400).json({
+          message:
+            "Target group is already live",
+        });
+      }
+
+      // -----------------------------------------
+      // REQUIRE SURVEY LINKS
+      // -----------------------------------------
+
+      if (
+        !targetGroup.surveyLinks?.test ||
+        !targetGroup.surveyLinks?.live
+      ) {
+        return res.status(400).json({
+          message:
+            "Test and live survey links are required before launch",
+        });
+      }
+
+      // -----------------------------------------
+      // DRAFT → TESTING
+      // -----------------------------------------
+
+      targetGroup.status = "TESTING";
+
+      await project.save();
+
+      return res.json({
+        message:
+          "Target group launched and moved to TESTING",
+
+        projectId: project._id,
+
+        targetGroupId:
+          targetGroup._id,
+
+        status:
+          targetGroup.status,
+      });
+
+    } catch (err) {
+      console.error(
+        "LAUNCH TARGET GROUP ERROR:",
+        err
+      );
+
+      return res.status(500).json({
+        message:
+          "Failed to launch target group",
+      });
+    }
+  }
+);
+
 
 // ADMIN → GO LIVE
 router.put("/admin/project/:id/go-live", authMiddleware, adminOnly, async (req, res) => {
@@ -1247,6 +1368,121 @@ router.put("/admin/project/:id/go-live", authMiddleware, adminOnly, async (req, 
       });
   }
 });
+
+// ============================================================
+// BUSINESS → TARGET GROUP GO LIVE
+// TESTING → LIVE
+// ============================================================
+
+router.put(
+  "/:projectId/target-group/:targetGroupId/go-live",
+  authMiddleware,
+  businessOnly,
+  async (req, res) => {
+    try {
+      const {
+        projectId,
+        targetGroupId,
+      } = req.params;
+
+      const userId =
+        req.user._id ||
+        req.user.id ||
+        req.user.userId;
+
+      if (!userId) {
+        return res.status(401).json({
+          message:
+            "User not found in authentication token",
+        });
+      }
+
+      const project =
+        await Project.findOne({
+          _id: projectId,
+          business: userId,
+        });
+
+      if (!project) {
+        return res.status(404).json({
+          message: "Project not found",
+        });
+      }
+
+      const targetGroup =
+        project.targetGroups.id(
+          targetGroupId
+        );
+
+      if (!targetGroup) {
+        return res.status(404).json({
+          message:
+            "Target group not found",
+        });
+      }
+
+      // -----------------------------------------
+      // VALIDATE STATUS
+      // -----------------------------------------
+
+      if (
+        targetGroup.status !== "TESTING"
+      ) {
+        return res.status(400).json({
+          message:
+            "Only TESTING target groups can be moved to LIVE",
+        });
+      }
+
+      // -----------------------------------------
+      // REQUIRE LIVE SURVEY
+      // -----------------------------------------
+
+      if (
+        !targetGroup.surveyLinks?.live
+      ) {
+        return res.status(400).json({
+          message:
+            "Live survey link is required",
+        });
+      }
+
+      // -----------------------------------------
+      // GO LIVE
+      // -----------------------------------------
+
+      targetGroup.status = "LIVE";
+
+      await project.save();
+
+      return res.json({
+        message:
+          "Target group moved to LIVE",
+
+        projectId:
+          project._id,
+
+        targetGroupId:
+          targetGroup._id,
+
+        status:
+          targetGroup.status,
+      });
+
+    } catch (err) {
+      console.error(
+        "TARGET GROUP GO LIVE ERROR:",
+        err
+      );
+
+      return res.status(500).json({
+        message:
+          "Failed to move target group live",
+      });
+    }
+  }
+);
+
 
 // router.post(
 //   "/calculate-cpi", authMiddleware, businessOnly,
