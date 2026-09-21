@@ -2172,9 +2172,17 @@ if (
 
         status: "DRAFT",
         completes: 0,
-  disqualified: 0,
-  quotaFull: 0,
-  totalResponses: 0,
+        disqualified: 0,
+        quotaFull: 0,
+        totalResponses: 0,
+
+        vendorLinks: {
+         vendorName: "",
+         capture: "",
+         complete: "",
+         disqualified: "",
+         quotaFull: "",
+        },
 
   // ============================
   // NEW UNIQUE REDIRECTS

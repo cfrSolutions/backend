@@ -349,7 +349,7 @@ router.get("/projects", authMiddleware, async (req, res) => {
   }
 });
 
-router.put("/project/:id/move-testing", authMiddleware, async(req, res)=>{
+router.put("/project/:id/move-testing", authMiddleware, adminOnly, async(req, res)=>{
   try{
     const project = await Project.findById(req.params.id);
     if(!project) return res.status(404).send("Project not found");
@@ -363,19 +363,196 @@ router.put("/project/:id/move-testing", authMiddleware, async(req, res)=>{
   }
 });
 
-router.put("/project/:id/go-live", authMiddleware, async (req, res)=>{
+// =====================================================
+// ADMIN → TARGET GROUP MOVE TO TESTING
+// =====================================================
+
+router.put(
+  "/project/:projectId/target-group/:targetGroupId/move-testing",
+  authMiddleware, adminOnly,
+  async (req, res) => {
+    try {
+      if (
+        !["ADMIN", "SUPERADMIN"].includes(
+          req.user.role
+        )
+      ) {
+        return res.status(403).json({
+          message: "Access denied",
+        });
+      }
+
+      const {
+        projectId,
+        targetGroupId,
+      } = req.params;
+
+      const project =
+        await Project.findById(projectId);
+
+      if (!project) {
+        return res.status(404).json({
+          message: "Project not found",
+        });
+      }
+
+      const targetGroup =
+        project.targetGroups.id(
+          targetGroupId
+        );
+
+      if (!targetGroup) {
+        return res.status(404).json({
+          message: "Target group not found",
+        });
+      }
+
+      if (targetGroup.status === "LIVE") {
+        return res.status(400).json({
+          message:
+            "Live target groups cannot be moved back to testing",
+        });
+      }
+
+      targetGroup.status = "TESTING";
+
+      await project.save();
+
+      return res.json({
+        success: true,
+        message:
+          "Target group moved to TESTING",
+        targetGroupId:
+          targetGroup._id,
+        status:
+          targetGroup.status,
+      });
+
+    } catch (err) {
+     
+
+      return res.status(500).json({
+        message:
+          "Failed to move target group to testing",
+      });
+    }
+  }
+);
+
+router.put("/project/:id/go-live", authMiddleware, adminOnly, async (req, res)=>{
   try{
     const project = await Project.findById(req.params.id);
     if(!project) return res.status(404).send("Project not found");
     project.status = "LIVE";
     await project.save();
-    res.send({message: "Proect is LIVE"});
+    res.send({message: "Project is LIVE"});
   }
   catch(err){
     // console.log(err);
-    res.status(500).send("Sever error");
+    res.status(500).send("Server error");
   }
 });
+
+// =====================================================
+// ADMIN → TARGET GROUP GO LIVE
+// =====================================================
+
+router.put(
+  "/project/:projectId/target-group/:targetGroupId/go-live",
+  authMiddleware, adminOnly,
+  async (req, res) => {
+    try {
+      if (
+        !["ADMIN", "SUPERADMIN"].includes(
+          req.user.role
+        )
+      ) {
+        return res.status(403).json({
+          message: "Access denied",
+        });
+      }
+
+      const {
+        projectId,
+        targetGroupId,
+      } = req.params;
+
+      const project =
+        await Project.findById(projectId);
+
+      if (!project) {
+        return res.status(404).json({
+          message: "Project not found",
+        });
+      }
+
+      const targetGroup =
+        project.targetGroups.id(
+          targetGroupId
+        );
+
+      if (!targetGroup) {
+        return res.status(404).json({
+          message: "Target group not found",
+        });
+      }
+
+      // -----------------------------------------
+      // ONLY TESTING → LIVE
+      // -----------------------------------------
+
+      if (
+        targetGroup.status !== "TESTING"
+      ) {
+        return res.status(400).json({
+          message:
+            "Only TESTING target groups can go LIVE",
+        });
+      }
+
+      // -----------------------------------------
+      // REQUIRE LIVE SURVEY
+      // -----------------------------------------
+
+      if (
+        !targetGroup.surveyLinks?.live
+      ) {
+        return res.status(400).json({
+          message:
+            "Live survey link is required",
+        });
+      }
+
+      targetGroup.status = "LIVE";
+
+      await project.save();
+
+      return res.json({
+        success: true,
+
+        message:
+          "Target group moved to LIVE",
+
+        targetGroupId:
+          targetGroup._id,
+
+        status:
+          targetGroup.status,
+      });
+
+    } catch (err) {
+      console.error(
+        "TARGET GROUP GO LIVE ERROR:",
+        err
+      );
+
+      return res.status(500).json({
+        message:
+          "Failed to move target group live",
+      });
+    }
+  }
+);
 
 
 router.put(
@@ -436,6 +613,136 @@ router.put(
         message: err.message,
       });
 
+    }
+  }
+);
+
+// =====================================================
+// ADMIN → TARGET GROUP VENDOR LINKS
+// =====================================================
+
+router.put(
+  "/project/:projectId/target-group/:targetGroupId/vendor-links",
+  authMiddleware,
+  async (req, res) => {
+    try {
+      // -----------------------------------------
+      // ROLE CHECK
+      // -----------------------------------------
+
+      if (
+        !["ADMIN", "SUPERADMIN"].includes(
+          req.user.role
+        )
+      ) {
+        return res.status(403).json({
+          message: "Access denied",
+        });
+      }
+
+      // -----------------------------------------
+      // GET IDS
+      // -----------------------------------------
+
+      const {
+        projectId,
+        targetGroupId,
+      } = req.params;
+
+      // -----------------------------------------
+      // FIND PROJECT
+      // -----------------------------------------
+
+      const project =
+        await Project.findById(projectId);
+
+      if (!project) {
+        return res.status(404).json({
+          message: "Project not found",
+        });
+      }
+
+      // -----------------------------------------
+      // FIND TARGET GROUP
+      // -----------------------------------------
+
+      const targetGroup =
+        project.targetGroups.id(
+          targetGroupId
+        );
+
+      if (!targetGroup) {
+        return res.status(404).json({
+          message: "Target group not found",
+        });
+      }
+
+      // -----------------------------------------
+      // GET INPUT
+      // -----------------------------------------
+
+      const {
+        vendorName,
+        capture,
+        complete,
+        disqualified,
+        quotaFull,
+      } = req.body;
+
+      // -----------------------------------------
+      // SAVE
+      // -----------------------------------------
+
+      targetGroup.vendorLinks = {
+        vendorName:
+          String(vendorName || "").trim(),
+
+        capture:
+          String(capture || "").trim(),
+
+        complete:
+          String(complete || "").trim(),
+
+        disqualified:
+          String(disqualified || "").trim(),
+
+        quotaFull:
+          String(quotaFull || "").trim(),
+      };
+
+      // -----------------------------------------
+      // SAVE PROJECT
+      // -----------------------------------------
+
+      await project.save();
+
+      // -----------------------------------------
+      // RESPONSE
+      // -----------------------------------------
+
+      return res.json({
+        success: true,
+
+        message:
+          "Target group vendor links saved",
+
+        targetGroupId:
+          targetGroup._id,
+
+        vendorLinks:
+          targetGroup.vendorLinks,
+      });
+
+    } catch (err) {
+      console.error(
+        "TARGET GROUP VENDOR LINKS ERROR:",
+        err
+      );
+
+      return res.status(500).json({
+        message:
+          "Failed to save target group vendor links",
+      });
     }
   }
 );
