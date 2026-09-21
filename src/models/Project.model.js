@@ -88,6 +88,11 @@ const ProjectSchema = new mongoose.Schema({
         default: 0, 
         min: 0,
     },
+    targetCompletes: {
+    type: Number,
+    default: 0,
+    min: 0,
+},
     // targetCompletes: { type: Number, required: true },
     disqualified: { type: Number, default: 0, min: 0 },
     quotaFull: { type: Number, default: 0, min: 0 },

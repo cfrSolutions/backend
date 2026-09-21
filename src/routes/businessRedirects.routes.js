@@ -4010,17 +4010,70 @@ if (!loiCheck.valid) {
     // ALSO UPDATE PROJECT TOTAL
     // =================================================
 
-    await Project.updateOne(
-      {
-        _id: project._id,
+    // await Project.updateOne(
+    //   {
+    //     _id: project._id,
+    //   },
+    //   {
+    //     $inc: {
+    //       completes: 1,
+    //       totalResponses: 1,
+    //     },
+    //   }
+    // );
+    // =================================================
+// ALSO UPDATE PROJECT TOTAL
+// =================================================
+
+const updatedProject = await Project.findOneAndUpdate(
+  {
+    _id: project._id,
+  },
+  {
+    $inc: {
+      completes: 1,
+      totalResponses: 1,
+    },
+  },
+  {
+    new: true,
+  }
+);
+
+// =================================================
+// CLOSE PROJECT WHEN PROJECT QUOTA IS REACHED
+// =================================================
+
+if (
+  updatedProject &&
+  Number(updatedProject.targetCompletes) > 0 &&
+  Number(updatedProject.completes) >=
+    Number(updatedProject.targetCompletes) &&
+  updatedProject.status !== "CLOSED"
+) {
+  await Project.updateOne(
+    {
+      _id: updatedProject._id,
+      status: { $ne: "CLOSED" },
+    },
+    {
+      $set: {
+        status: "CLOSED",
       },
-      {
-        $inc: {
-          completes: 1,
-          totalResponses: 1,
-        },
-      }
-    );
+    }
+  );
+
+  // console.log(
+  //   "PROJECT CLOSED - TARGET COMPLETES REACHED:",
+  //   {
+  //     projectId: updatedProject._id,
+  //     targetCompletes:
+  //       updatedProject.targetCompletes,
+  //     completes:
+  //       updatedProject.completes,
+  //   }
+  // );
+}
 
     // =================================================
     // POSTBACK
