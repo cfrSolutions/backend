@@ -4063,16 +4063,16 @@ if (
     }
   );
 
-  // console.log(
-  //   "PROJECT CLOSED - TARGET COMPLETES REACHED:",
-  //   {
-  //     projectId: updatedProject._id,
-  //     targetCompletes:
-  //       updatedProject.targetCompletes,
-  //     completes:
-  //       updatedProject.completes,
-  //   }
-  // );
+  console.log(
+    "PROJECT CLOSED - TARGET COMPLETES REACHED:",
+    {
+      projectId: updatedProject._id,
+      targetCompletes:
+        updatedProject.targetCompletes,
+      completes:
+        updatedProject.completes,
+    }
+  );
 }
 
     // =================================================
