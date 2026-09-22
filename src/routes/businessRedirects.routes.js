@@ -4025,6 +4025,12 @@ if (!loiCheck.valid) {
 // ALSO UPDATE PROJECT TOTAL
 // =================================================
 
+console.log("PROJECT COMPLETE UPDATE:", {
+  projectId: project._id,
+  beforeTargetCompletes: project.targetCompletes,
+  beforeCompletes: project.completes,
+});
+
 const updatedProject = await Project.findOneAndUpdate(
   {
     _id: project._id,
@@ -4039,6 +4045,16 @@ const updatedProject = await Project.findOneAndUpdate(
     new: true,
   }
 );
+
+console.log("PROJECT AFTER COMPLETE:", {
+  projectId: updatedProject?._id,
+  targetCompletes:
+    updatedProject?.targetCompletes,
+  completes:
+    updatedProject?.completes,
+  status:
+    updatedProject?.status,
+});
 
 // =================================================
 // CLOSE PROJECT WHEN PROJECT QUOTA IS REACHED
