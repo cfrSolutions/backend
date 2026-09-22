@@ -3529,6 +3529,32 @@ router.delete(
       }
 
       // -----------------------------------------
+// PREVENT DELETING ACTIVE TARGET GROUPS
+// -----------------------------------------
+
+if (group.status === "LIVE") {
+  return res.status(400).json({
+    message: "Live target groups cannot be deleted",
+  });
+}
+
+// -----------------------------------------
+// PREVENT DELETING GROUPS WITH RESPONSES
+// -----------------------------------------
+
+if (
+  Number(group.completes || 0) > 0 ||
+  Number(group.disqualified || 0) > 0 ||
+  Number(group.quotaFull || 0) > 0 ||
+  Number(group.totalResponses || 0) > 0
+) {
+  return res.status(400).json({
+    message:
+      "Target groups with survey responses cannot be deleted",
+  });
+}
+
+      // -----------------------------------------
       // DELETE TARGET GROUP
       // -----------------------------------------
 
