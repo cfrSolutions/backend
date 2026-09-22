@@ -3477,5 +3477,118 @@ router.get(
   }
 );
 
+// ============================================================
+// DELETE TARGET GROUP
+// ============================================================
+
+router.delete(
+  "/:projectId/target-group/:targetGroupId",
+  authMiddleware,
+  businessOnly,
+  async (req, res) => {
+    try {
+      const userId =
+        req.user._id ||
+        req.user.id ||
+        req.user.userId;
+
+      if (!userId) {
+        return res.status(401).json({
+          message: "User not found in authentication token",
+        });
+      }
+
+      // -----------------------------------------
+      // FIND PROJECT
+      // -----------------------------------------
+
+      const project = await Project.findOne({
+        _id: req.params.projectId,
+        business: userId,
+      });
+
+      if (!project) {
+        return res.status(404).json({
+          message: "Project not found",
+        });
+      }
+
+      // -----------------------------------------
+      // FIND TARGET GROUP
+      // -----------------------------------------
+
+      const group =
+        project.targetGroups.id(
+          req.params.targetGroupId
+        );
+
+      if (!group) {
+        return res.status(404).json({
+          message: "Target group not found",
+        });
+      }
+
+      // -----------------------------------------
+      // DELETE TARGET GROUP
+      // -----------------------------------------
+
+      group.deleteOne();
+
+      // -----------------------------------------
+      // RECALCULATE PROJECT TARGET
+      // -----------------------------------------
+
+      project.targetCompletes =
+        project.targetGroups.reduce(
+          (sum, targetGroup) =>
+            sum +
+            (Number(targetGroup.targetCompletes) || 0),
+          0
+        );
+
+      // -----------------------------------------
+      // UPDATE PROJECT STATUS
+      // -----------------------------------------
+
+      if (
+        Number(project.completes || 0) >=
+        Number(project.targetCompletes || 0)
+      ) {
+        project.status = "CLOSED";
+      } else if (
+        project.status === "CLOSED"
+      ) {
+        const hasLiveTargetGroup =
+          project.targetGroups.some(
+            (targetGroup) =>
+              targetGroup.status === "LIVE"
+          );
+
+        project.status = hasLiveTargetGroup
+          ? "LIVE"
+          : "DRAFT";
+      }
+
+      await project.save();
+
+      return res.json({
+        message: "Target group deleted successfully",
+        project: {
+          _id: project._id,
+          targetCompletes: project.targetCompletes,
+          completes: project.completes,
+          status: project.status,
+        },
+      });
+
+    } catch (err) {
+
+      return res.status(500).json({
+        message: "Failed to delete target group",
+      });
+    }
+  }
+);
+
 
 export default router;
