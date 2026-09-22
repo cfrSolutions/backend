@@ -2215,6 +2215,13 @@ if (
   responseIdentifier: "",
       });
 
+      project.targetCompletes =
+  project.targetGroups.reduce(
+    (sum, group) =>
+      sum + (Number(group.targetCompletes) || 0),
+    0
+  );
+
       await project.save();
 
       const group =
@@ -2938,6 +2945,13 @@ if (overQuotaAction !== undefined) {
 
         group.targetCompletes = value;
       }
+
+      project.targetCompletes =
+  project.targetGroups.reduce(
+    (sum, targetGroup) =>
+      sum + (Number(targetGroup.targetCompletes) || 0),
+    0
+  );
 
       if (
         loi !== undefined &&
