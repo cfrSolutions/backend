@@ -2363,6 +2363,8 @@ import crypto from "crypto";
 import express from "express";
 import Project from "../models/Project.model.js";
 import SurveyResponse from "../models/SurveyResponse.model.js";
+import { generateProjectInvoice } from "../services/invoice.service.js";
+
 const router = express.Router();
 
 const SECURITY_SECRET =
@@ -4060,14 +4062,45 @@ console.log("PROJECT AFTER COMPLETE:", {
 // CLOSE PROJECT WHEN PROJECT QUOTA IS REACHED
 // =================================================
 
+// if (
+//   updatedProject &&
+//   Number(updatedProject.targetCompletes) > 0 &&
+//   Number(updatedProject.completes) >=
+//     Number(updatedProject.targetCompletes) &&
+//   updatedProject.status !== "CLOSED"
+// ) {
+//   await Project.updateOne(
+//     {
+//       _id: updatedProject._id,
+//       status: { $ne: "CLOSED" },
+//     },
+//     {
+//       $set: {
+//         status: "CLOSED",
+//       },
+//     }
+//   );
+
+//   // console.log(
+//   //   "PROJECT CLOSED - TARGET COMPLETES REACHED:",
+//   //   {
+//   //     projectId: updatedProject._id,
+//   //     targetCompletes:
+//   //       updatedProject.targetCompletes,
+//   //     completes:
+//   //       updatedProject.completes,
+//   //   }
+//   // );
+// }
+
+
 if (
   updatedProject &&
   Number(updatedProject.targetCompletes) > 0 &&
-  Number(updatedProject.completes) >=
-    Number(updatedProject.targetCompletes) &&
+  Number(updatedProject.completes) >= Number(updatedProject.targetCompletes) &&
   updatedProject.status !== "CLOSED"
 ) {
-  await Project.updateOne(
+  const closedProject = await Project.findOneAndUpdate(
     {
       _id: updatedProject._id,
       status: { $ne: "CLOSED" },
@@ -4076,19 +4109,26 @@ if (
       $set: {
         status: "CLOSED",
       },
+    },
+    {
+      new: true,
     }
   );
 
-  console.log(
-    "PROJECT CLOSED - TARGET COMPLETES REACHED:",
-    {
-      projectId: updatedProject._id,
-      targetCompletes:
-        updatedProject.targetCompletes,
-      completes:
-        updatedProject.completes,
+  if (closedProject) {
+    try {
+      await generateProjectInvoice(closedProject._id);
+
+      // console.log(
+      //   `Invoice automatically generated for project ${closedProject._id}`
+      // );
+    } catch (invoiceError) {
+      console.error(
+        `Project closed but invoice generation failed for ${closedProject._id}:`,
+        invoiceError
+      );
     }
-  );
+  }
 }
 
     // =================================================
