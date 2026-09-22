@@ -307,7 +307,7 @@ if (
 
         sector,
         market,
-        
+        targetCompletes,
         overQuotaAction,
         ageFrom,
         ageTo,
@@ -613,15 +613,78 @@ router.put("/:id/survey-links", authMiddleware, businessOnly, async(req, res)=>{
 
 
 
-const upload = multer({ storage: multer.memoryStorage(), limits: {
-    fileSize: 5 * 1024 * 1024
-  } });
+// const upload = multer({ storage: multer.memoryStorage(), limits: {
+//     fileSize: 5 * 1024 * 1024
+//   } });
+
+function clientKeyUploadErrorHandler(err, req, res, next) {
+  if (err instanceof multer.MulterError) {
+    if (err.code === "LIMIT_FILE_SIZE") {
+      return res.status(400).json({
+        message:
+          "Client key file must be smaller than 5 MB",
+      });
+    }
+
+    return res.status(400).json({
+      message: "Invalid file upload",
+    });
+  }
+
+  if (err) {
+    return res.status(400).json({
+      message: err.message || "Invalid client key file",
+    });
+  }
+
+  next();
+}
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+  },
+
+  fileFilter: (req, file, cb) => {
+    const allowedMimeTypes = [
+      "application/json",
+      "text/plain",
+      "application/octet-stream",
+    ];
+
+    const allowedExtensions = [
+      ".json",
+      ".txt",
+      ".key",
+    ];
+
+    const extension = file.originalname
+      .toLowerCase()
+      .slice(file.originalname.lastIndexOf("."));
+
+    if (
+      !allowedMimeTypes.includes(file.mimetype) ||
+      !allowedExtensions.includes(extension)
+    ) {
+      return cb(
+        new Error(
+          "Invalid client key file type"
+        )
+      );
+    }
+
+    cb(null, true);
+  },
+});
 
 router.put(
   "/:id/upload-keys",
   authMiddleware,
   businessOnly,
   upload.single("file"),
+  clientKeyUploadErrorHandler,
   async (req, res) => {
     try {
       const userId = req.user._id || req.user.id || req.user.userId;
@@ -1269,6 +1332,12 @@ router.put(
           message: "Project not found",
         });
       }
+
+      if (project.status === "CLOSED") {
+  return res.status(400).json({
+    message: "Closed projects cannot launch target groups",
+  });
+}
 
       const targetGroup =
         project.targetGroups.id(targetGroupId);
@@ -2866,6 +2935,12 @@ router.put(
             "Target group not found",
         });
       }
+
+      if (group.status === "LIVE") {
+  return res.status(400).json({
+    message: "Live target groups cannot be modified",
+  });
+}
 
       // -----------------------------------------
       // FRONTEND ALLOWED FIELDS
