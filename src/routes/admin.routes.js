@@ -407,12 +407,12 @@ router.put(
         });
       }
 
-      if (targetGroup.status === "LIVE") {
-        return res.status(400).json({
-          message:
-            "Live target groups cannot be moved back to testing",
-        });
-      }
+      // if (targetGroup.status === "LIVE") {
+      //   return res.status(400).json({
+      //     message:
+      //       "Live target groups cannot be moved back to testing",
+      //   });
+      // }
 
       targetGroup.status = "TESTING";
 
