@@ -22,4 +22,12 @@ router.post(
 
 );
 
+router.get(
+  "/project/:projectId",
+  authMiddleware,
+  businessOnly,
+  getProjectInvoice
+);
+
+
 export default router;
