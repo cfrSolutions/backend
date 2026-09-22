@@ -307,7 +307,7 @@ if (
 
         sector,
         market,
-        targetCompletes,
+        
         overQuotaAction,
         ageFrom,
         ageTo,
