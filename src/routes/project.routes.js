@@ -2216,13 +2216,26 @@ if (
       });
 
       project.targetCompletes =
-  project.targetGroups.reduce(
+      project.targetGroups.reduce(
     (sum, group) =>
       sum + (Number(group.targetCompletes) || 0),
     0
   );
 
+  if (project.status === "CLOSED") {
+  const hasLiveTargetGroup =
+    project.targetGroups.some(
+      (group) => group.status === "LIVE"
+    );
+
+  project.status = hasLiveTargetGroup
+    ? "LIVE"
+    : "DRAFT";
+}
+
       await project.save();
+
+
 
       const group =
         project.targetGroups[
