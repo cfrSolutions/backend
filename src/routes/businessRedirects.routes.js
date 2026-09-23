@@ -2405,8 +2405,8 @@ function getSecurityFingerprint(req) {
 }
 
 global.sessions = global.sessions || {};
-function markResponseSessionFinalized(req) {
-  const sessionId = getSessionId(req);
+function markResponseSessionFinalized(req, mode) {
+  const sessionId = getSessionId(req, mode);
 
   if (!sessionId) {
     return;
@@ -2603,8 +2603,14 @@ function getResponseToken(req) {
 // SECURE RESPONSE SESSION
 // =====================================================
 
-const RESPONSE_SESSION_COOKIE =
-  "__Host-inputify_sid";
+// const RESPONSE_SESSION_COOKIE =
+//   "__Host-inputify_sid";
+
+const TEST_RESPONSE_SESSION_COOKIE =
+  "__Host-inputify_test_sid";
+
+const LIVE_RESPONSE_SESSION_COOKIE =
+  "__Host-inputify_live_sid";
 
 const RESPONSE_SESSION_TTL =
   1000 * 60 * 60 * 24; // 1 day
@@ -2629,6 +2635,7 @@ function createResponseSession({
   rid,
   ipHash,
   userAgentHash,
+  mode,
 }) {
   const sessionId =
     generateSessionId();
@@ -2638,6 +2645,7 @@ function createResponseSession({
     projectId: String(projectId),
     targetGroupId: String(targetGroupId),
     rid: String(rid),
+    mode,
     ipHash,
     userAgentHash,
 
@@ -2648,33 +2656,32 @@ function createResponseSession({
   return sessionId;
 }
 
+function getSessionCookieName(mode) {
+  return mode === "LIVE"
+    ? LIVE_RESPONSE_SESSION_COOKIE
+    : TEST_RESPONSE_SESSION_COOKIE;
+}
 
-function getSessionId(req) {
-  const cookieHeader =
-    req.headers.cookie || "";
+function getSessionId(req, mode) {
+  const cookieHeader = req.headers.cookie || "";
 
-  const cookies =
-    cookieHeader
-      .split(";")
-      .map((item) => item.trim());
+  const cookies = cookieHeader
+    .split(";")
+    .map((item) => item.trim());
+
+  const cookieName = getSessionCookieName(mode);
 
   for (const cookie of cookies) {
-    const separator =
-      cookie.indexOf("=");
+    const separator = cookie.indexOf("=");
 
     if (separator === -1) {
       continue;
     }
 
-    const name =
-      cookie.slice(0, separator);
+    const name = cookie.slice(0, separator);
+    const value = cookie.slice(separator + 1);
 
-    const value =
-      cookie.slice(separator + 1);
-
-    if (
-      name === RESPONSE_SESSION_COOKIE
-    ) {
+    if (name === cookieName) {
       return decodeURIComponent(value);
     }
   }
@@ -2682,13 +2689,50 @@ function getSessionId(req) {
   return null;
 }
 
+// function getSessionId(req) {
+//   const cookieHeader =
+//     req.headers.cookie || "";
+
+//   const cookies =
+//     cookieHeader
+//       .split(";")
+//       .map((item) => item.trim());
+
+//   for (const cookie of cookies) {
+//     const separator =
+//       cookie.indexOf("=");
+
+//     if (separator === -1) {
+//       continue;
+//     }
+
+//     const name =
+//       cookie.slice(0, separator);
+
+//     const value =
+//       cookie.slice(separator + 1);
+
+//     if (
+//       name === RESPONSE_SESSION_COOKIE
+//     ) {
+//       return decodeURIComponent(value);
+//     }
+//   }
+
+//   return null;
+// }
+
 
 function setResponseSessionCookie(
   res,
-  sessionId
+  sessionId,
+  mode
 ) {
+  const cookieName =
+    getSessionCookieName(mode);
+
   const parts = [
-    `${RESPONSE_SESSION_COOKIE}=${encodeURIComponent(sessionId)}`,
+    `${cookieName}=${encodeURIComponent(sessionId)}`,
     "Path=/",
     "HttpOnly",
     "SameSite=Lax",
@@ -2702,6 +2746,25 @@ function setResponseSessionCookie(
   );
 }
 
+// function setResponseSessionCookie(
+//   res,
+//   sessionId
+// ) {
+//   const parts = [
+//     `${RESPONSE_SESSION_COOKIE}=${encodeURIComponent(sessionId)}`,
+//     "Path=/",
+//     "HttpOnly",
+//     "SameSite=Lax",
+//     "Max-Age=3600",
+//     "Secure",
+//   ];
+
+//   res.setHeader(
+//     "Set-Cookie",
+//     parts.join("; ")
+//   );
+// }
+
 
 function validateResponseSession(
   req,
@@ -2709,19 +2772,35 @@ function validateResponseSession(
   project,
   targetGroup
 ) {
-  const sessionId =
-    getSessionId(req);
+  const currentMode =
+  targetGroup.status === "TESTING"
+    ? "TESTING"
+    : targetGroup.status === "LIVE"
+      ? "LIVE"
+      : null;
+
+const sessionId =
+  getSessionId(req, currentMode);
 
   if (!sessionId) {
     return false;
   }
 
   const session =
-    global.sessions[sessionId];
+  global.sessions[sessionId];
 
-  if (!session) {
-    return false;
-  }
+if (!session) {
+  return false;
+}
+
+if (
+  !currentMode ||
+  session.mode !== currentMode
+) {
+  return false;
+}
+
+  
 
   if (
   session.responseId !==
@@ -3030,6 +3109,19 @@ const responseTokenHash =
         tk
       );
 
+      const surveyMode =
+  targetGroup.status === "TESTING"
+    ? "TESTING"
+    : targetGroup.status === "LIVE"
+      ? "LIVE"
+      : null;
+
+      if (!surveyMode) {
+  return res.status(400).send(
+    "Survey is not available"
+  );
+}
+
       return res.status(404).send("Invalid link");
     }
 
@@ -3037,13 +3129,16 @@ const responseTokenHash =
 // CHECK EXISTING BROWSER SESSION
 // =================================================
 
-const existingSessionId = getSessionId(req);
+const existingSessionId = getSessionId(req, surveyMode);
 
 if (existingSessionId) {
   const existingSession =
     global.sessions[existingSessionId];
 
   if (existingSession) {
+     if (existingSession.mode !== surveyMode) {
+    return sendSessionExpiredPage(res);
+  }
 
     // Make sure session belongs to this
     // exact project + target group
@@ -3413,11 +3508,13 @@ const sessionId =
     rid,
     ipHash,
     userAgentHash,
+    mode: surveyMode,
   });
 
 setResponseSessionCookie(
   res,
-  sessionId
+  sessionId,
+  surveyMode,
 );
 
     // console.log(
@@ -3483,10 +3580,10 @@ setResponseSessionCookie(
     );
 
   } catch (err) {
-    console.error(
-      "TARGET GROUP START ROUTE ERROR:",
-      err
-    );
+    // console.error(
+    //   "TARGET GROUP START ROUTE ERROR:",
+    //   err
+    // );
 
     return res.status(500).send(
       "Unable to start survey"
@@ -3842,7 +3939,12 @@ if (!loiCheck.valid) {
   }
 
   // Finalize browser session
-  markResponseSessionFinalized(req);
+  markResponseSessionFinalized(
+  req,
+  targetGroup.status === "LIVE"
+    ? "LIVE"
+    : "TESTING"
+);
 
   // ===================================================
   // INCREMENT TARGET GROUP DQ
@@ -3989,7 +4091,12 @@ if (!loiCheck.valid) {
     }
 
     // destroyResponseSession(req);
-    markResponseSessionFinalized(req);
+  markResponseSessionFinalized(
+  req,
+  targetGroup.status === "LIVE"
+    ? "LIVE"
+    : "TESTING"
+);
 
     // =================================================
     // INCREMENT TARGET GROUP COUNTERS
@@ -4533,7 +4640,12 @@ if (!validSession) {
     }
 
     // destroyResponseSession(req);
-    markResponseSessionFinalized(req);
+   markResponseSessionFinalized(
+  req,
+  targetGroup.status === "LIVE"
+    ? "LIVE"
+    : "TESTING"
+);
 
     // =================================================
     // INCREMENT TARGET GROUP COUNTERS
@@ -4965,7 +5077,12 @@ if (response.status === "QUOTA_FULL") {
     }
 
     // destroyResponseSession(req);
-    markResponseSessionFinalized(req);
+    markResponseSessionFinalized(
+  req,
+  targetGroup.status === "LIVE"
+    ? "LIVE"
+    : "TESTING"
+);
 
     // =================================================
     // INCREMENT TARGET GROUP COUNTERS
