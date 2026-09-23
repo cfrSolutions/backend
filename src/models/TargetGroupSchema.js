@@ -229,6 +229,11 @@ responseIdentifier: {
     min: 0,
   },
 
+  everLive: {
+  type: Boolean,
+  default: false,
+},
+
   // ============================
   // TARGET GROUP REDIRECTS
   // ============================

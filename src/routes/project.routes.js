@@ -1519,10 +1519,18 @@ router.put(
       // -----------------------------------------
       // GO LIVE
       // -----------------------------------------
-      targetGroup.completes = 0;
-      targetGroup.disqualified = 0;
-      targetGroup.quotaFull = 0;
+      // targetGroup.completes = 0;
+      // targetGroup.disqualified = 0;
+      // targetGroup.quotaFull = 0;
+      if (!targetGroup.everLive) {
+        targetGroup.completes = 0;
+        targetGroup.disqualified = 0;
+        targetGroup.quotaFull = 0;
+        targetGroup.totalResponses = 0;
+      }
 
+     // Mark that this target group has now been LIVE
+      targetGroup.everLive = true;
       targetGroup.status = "LIVE";
 
       await project.save();
