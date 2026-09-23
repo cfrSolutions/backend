@@ -98,10 +98,13 @@ export async function downloadProjectInvoicePdf(
        GET PROJECT
     ========================================= */
 
-    const project =
-      await Project.findById(
-        projectId
-      );
+   const project =
+  await Project.findById(
+    projectId
+  ).populate(
+    "business",
+    "company name email emailAddress phone phoneNumber location address"
+  );
 
     if (!project) {
       return res.status(404).json({

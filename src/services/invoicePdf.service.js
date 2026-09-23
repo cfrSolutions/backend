@@ -2,8 +2,8 @@ import puppeteer from "puppeteer";
 
 /* =====================================================
    ESCAPE HTML
-   Prevent invoice/project data from becoming HTML
 ===================================================== */
+
 function escapeHtml(value = "") {
   return String(value)
     .replace(/&/g, "&amp;")
@@ -16,20 +16,17 @@ function escapeHtml(value = "") {
 /* =====================================================
    FORMAT MONEY
 ===================================================== */
-function formatCurrency(value) {
+
+function formatMoney(value) {
   const amount = Number(value) || 0;
 
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
+  return `₹${amount.toFixed(2)}`;
 }
 
 /* =====================================================
    FORMAT DATE
 ===================================================== */
+
 function formatDate(value) {
   if (!value) {
     return "-";
@@ -51,6 +48,7 @@ function formatDate(value) {
 /* =====================================================
    GENERATE INVOICE PDF
 ===================================================== */
+
 export async function generateInvoicePdf(
   invoice,
   project
@@ -58,95 +56,113 @@ export async function generateInvoicePdf(
   let browser;
 
   try {
-    /* ===============================================
-       INVOICE ITEMS
-    =============================================== */
+    /* =================================================
+       BUSINESS INFORMATION
+    ================================================= */
+
+    const business =
+      project?.business &&
+      typeof project.business === "object"
+        ? project.business
+        : {};
+
+    const businessName =
+      business?.company ||
+      business?.name ||
+      project?.company ||
+      "Business Name";
+
+    const businessEmail =
+      business?.email ||
+      business?.emailAddress ||
+      "-";
+
+    const businessPhone =
+      business?.phone ||
+      business?.phoneNumber ||
+      "-";
+
+    const businessAddress =
+      business?.location ||
+      business?.address ||
+      "-";
+
+    /* =================================================
+       CALCULATIONS
+    ================================================= */
+
+    const subtotal =
+      Number(invoice?.subtotal) || 0;
+
+    const gstRate =
+      Number(invoice?.gstRate) || 0;
+
+    const gstAmount =
+      invoice?.gstAmount !== undefined
+        ? Number(invoice.gstAmount) || 0
+        : subtotal * (gstRate / 100);
+
+    const total =
+      invoice?.total !== undefined
+        ? Number(invoice.total) || 0
+        : subtotal + gstAmount;
+
+    const invoiceDate =
+      formatDate(invoice?.issuedAt);
+
+    /* =================================================
+       ITEMS
+    ================================================= */
 
     const items = Array.isArray(invoice?.items)
       ? invoice.items
       : [];
 
     const itemRows = items
-      .map((item, index) => {
-        const cpi =
+      .map((item) => {
+        const quantity =
+          Number(item?.targetCompletes) || 0;
+
+        const rate =
           Number(item?.cpi) || 0;
 
-        const targetCompletes =
-          Number(
-            item?.targetCompletes
-          ) || 0;
-
-        const totalCost =
-          Number(
-            item?.totalCost
-          ) || 0;
+        const itemTotal =
+          Number(item?.totalCost) || 0;
 
         return `
           <tr>
-            <td class="center">
-              ${index + 1}
+            <td class="description-cell">
+              <div class="item-name">
+                ${escapeHtml(
+                  item?.targetGroupName ||
+                    "Target Group"
+                )}
+              </div>
+
+              <div class="item-type">
+                Target Group
+              </div>
             </td>
 
-            <td>
-              ${escapeHtml(
-                item?.targetGroupName ||
-                  "Target Group"
-              )}
+            <td class="quantity-cell">
+              ${quantity}
             </td>
 
-            <td class="right">
-              ${targetCompletes}
+            <td class="money-cell">
+              ${formatMoney(rate)}
             </td>
 
-            <td class="right">
-              ${formatCurrency(cpi)}
-            </td>
-
-            <td class="right">
-              ${formatCurrency(
-                totalCost
-              )}
+            <td class="money-cell total-cell">
+              ${formatMoney(itemTotal)}
             </td>
           </tr>
         `;
       })
       .join("");
 
-    /* ===============================================
-       TOTALS
-
-       Your Invoice model currently stores:
-       subtotal
-       total
-
-       No GST is being added here.
-    =============================================== */
-
-    const subtotal =
-      Number(invoice?.subtotal) || 0;
-
-    const total =
-      Number(invoice?.total) ||
-      subtotal;
-
-    /* ===============================================
-       PROJECT INFORMATION
-    =============================================== */
-
-    const projectName =
-      project?.projectName ||
-      project?.name ||
-      project?.title ||
-      "Project";
-
-    const projectId =
-      project?._id
-        ? String(project._id)
-        : "-";
-
-    /* ===============================================
+    /* =================================================
        HTML
-    =============================================== */
+    ================================================= */
 
     const html = `
 <!DOCTYPE html>
@@ -185,12 +201,14 @@ export async function generateInvoicePdf(
     margin: 0;
     padding: 0;
 
+    width: 100%;
+
     font-family:
       Arial,
       Helvetica,
       sans-serif;
 
-    color: #111827;
+    color: #1e293b;
 
     background: #ffffff;
   }
@@ -200,6 +218,10 @@ export async function generateInvoicePdf(
     print-color-adjust: exact;
   }
 
+  /* =========================================
+     PAGE
+  ========================================= */
+
   .invoice {
     width: 210mm;
     min-height: 297mm;
@@ -208,71 +230,75 @@ export async function generateInvoicePdf(
 
     background: #ffffff;
 
-    position: relative;
+    display: flex;
+    flex-direction: column;
   }
 
-  /* ==============================
-     TOP BAR
-  ============================== */
+  /* =========================================
+     BLUE BARS
+  ========================================= */
 
-  .top-bar {
-    height: 14px;
-    background: #2563eb;
+  .top-bar,
+  .bottom-bar {
+    height: 10mm;
+
+    background: #164B84;
+
+    flex-shrink: 0;
   }
 
-  /* ==============================
+  /* =========================================
      CONTENT
-  ============================== */
+  ========================================= */
 
   .content {
+    flex: 1;
+
+    min-height: 277mm;
+
     padding:
-      42px
-      48px
-      48px;
+      9mm
+      12mm
+      8mm;
+
+    display: flex;
+    flex-direction: column;
   }
 
-  /* ==============================
+  /* =========================================
      HEADER
-  ============================== */
+  ========================================= */
 
   .header {
     display: flex;
 
-    justify-content:
-      space-between;
+    justify-content: space-between;
+    align-items: flex-start;
 
-    align-items:
-      flex-start;
-
-    gap: 40px;
-
-    margin-bottom: 45px;
+    gap: 20px;
   }
 
-  .brand-name {
-    margin: 0 0 8px;
+  .brand {
+    margin: 0;
 
-    font-size: 30px;
+    color: #164B84;
+
+    font-size: 23px;
+    line-height: 1;
 
     font-weight: 800;
 
-    letter-spacing: -1px;
-
-    color: #111827;
-  }
-
-  .brand-accent {
-    color: #2563eb;
+    letter-spacing: -0.7px;
   }
 
   .brand-description {
-    margin: 0;
+    margin-top: 7px;
 
-    color: #6b7280;
+    color: #64748B;
 
-    font-size: 13px;
+    font-size: 10px;
 
-    line-height: 1.6;
+    font-weight: 500;
   }
 
   .invoice-heading {
@@ -280,266 +306,415 @@ export async function generateInvoicePdf(
   }
 
   .invoice-title {
-    margin: 0 0 12px;
+    margin: 0;
 
-    font-size: 34px;
+    color: #164B84;
+
+    font-size: 29px;
 
     font-weight: 800;
 
-    color: #111827;
-
-    letter-spacing: 1px;
+    letter-spacing: -0.7px;
   }
 
-  .invoice-number {
-    color: #2563eb;
+  .gstin {
+    margin-top: 5px;
 
-    font-size: 14px;
+    color: #64748B;
 
-    font-weight: 700;
+    font-size: 10px;
   }
 
-  /* ==============================
-     INFO BOXES
-  ============================== */
+  /* =========================================
+     TWO COLUMN SECTIONS
+  ========================================= */
 
-  .info-grid {
+  .two-column {
     display: grid;
 
     grid-template-columns:
       1fr
       1fr;
 
-    gap: 20px;
-
-    margin-bottom: 35px;
+    gap: 35px;
   }
 
-  .info-box {
-    border: 1px solid #e5e7eb;
-
-    border-radius: 10px;
-
-    padding: 18px;
-
-    background: #f9fafb;
+  .billing-section {
+    margin-top: 12mm;
   }
 
-  .info-title {
-    margin-bottom: 12px;
-
-    color: #6b7280;
-
-    font-size: 11px;
-
-    font-weight: 700;
-
-    text-transform: uppercase;
-
-    letter-spacing: 1px;
+  .contact-section {
+    margin-top: 9mm;
   }
 
-  .info-value {
-    margin-bottom: 6px;
+  .section-title {
+    margin: 0;
 
-    font-size: 14px;
-
-    font-weight: 700;
-
-    color: #111827;
-  }
-
-  .info-small {
-    margin-top: 5px;
-
-    color: #6b7280;
+    color: #164B84;
 
     font-size: 12px;
 
-    line-height: 1.6;
+    font-weight: 600;
   }
 
-  /* ==============================
+  .business-name {
+    margin-top: 5px;
+
+    color: #1E293B;
+
+    font-size: 12px;
+
+    font-weight: 600;
+  }
+
+  .business-address {
+    margin-top: 4px;
+
+    color: #64748B;
+
+    font-size: 11px;
+
+    line-height: 1.45;
+  }
+
+  /* =========================================
+     INVOICE DETAILS
+  ========================================= */
+
+  .invoice-details {
+    display: grid;
+
+    grid-template-columns:
+      auto
+      auto;
+
+    justify-content: end;
+
+    column-gap: 18px;
+    row-gap: 5px;
+
+    font-size: 11px;
+  }
+
+  .detail-label {
+    color: #64748B;
+
+    text-align: right;
+  }
+
+  .detail-value {
+    color: #64748B;
+
+    font-weight: 600;
+
+    text-align: right;
+  }
+
+  /* =========================================
+     CONTACT + PAYMENT
+  ========================================= */
+
+  .info-line {
+    margin-top: 5px;
+
+    color: #475569;
+
+    font-size: 11px;
+  }
+
+  .info-line + .info-line {
+    margin-top: 4px;
+  }
+
+  /* =========================================
      TABLE
-  ============================== */
+  ========================================= */
 
   .table-wrapper {
-    margin-top: 10px;
+    margin-top: 10mm;
   }
 
   table {
     width: 100%;
 
-    border-collapse:
-      collapse;
+    border-collapse: collapse;
 
-    table-layout:
-      fixed;
+    table-layout: fixed;
   }
 
   thead {
-    display:
-      table-header-group;
+    display: table-header-group;
   }
 
   tr {
-    break-inside:
-      avoid;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
 
-    page-break-inside:
-      avoid;
+  thead tr {
+    border-top:
+      1.5px solid #164B84;
+
+    border-bottom:
+      1.5px solid #164B84;
   }
 
   th {
     padding:
-      13px
-      10px;
+      8px
+      0;
 
-    background: #2563eb;
+    color: #334155;
 
-    color: #ffffff;
+    font-size: 10px;
 
-    font-size: 11px;
+    font-weight: 600;
+  }
 
-    font-weight: 700;
+  th:nth-child(1) {
+    width: 48%;
 
     text-align: left;
+  }
 
-    text-transform:
-      uppercase;
+  th:nth-child(2) {
+    width: 14%;
+
+    text-align: center;
+  }
+
+  th:nth-child(3) {
+    width: 19%;
+
+    text-align: right;
+  }
+
+  th:nth-child(4) {
+    width: 19%;
+
+    text-align: right;
+  }
+
+  tbody tr {
+    border-bottom:
+      1px solid #F1F5F9;
   }
 
   td {
     padding:
-      15px
-      10px;
-
-    border-bottom:
-      1px solid #e5e7eb;
-
-    font-size: 12px;
-
-    color: #374151;
-
-    vertical-align:
-      middle;
-
-    word-break:
-      break-word;
-  }
-
-  th:nth-child(1),
-  td:nth-child(1) {
-    width: 8%;
-  }
-
-  th:nth-child(2),
-  td:nth-child(2) {
-    width: 36%;
-  }
-
-  th:nth-child(3),
-  td:nth-child(3) {
-    width: 18%;
-  }
-
-  th:nth-child(4),
-  td:nth-child(4) {
-    width: 18%;
-  }
-
-  th:nth-child(5),
-  td:nth-child(5) {
-    width: 20%;
-  }
-
-  .right {
-    text-align: right;
-  }
-
-  .center {
-    text-align: center;
-  }
-
-  /* ==============================
-     TOTAL
-  ============================== */
-
-  .summary {
-    width: 310px;
-
-    margin-left: auto;
-
-    margin-top: 30px;
-  }
-
-  .summary-row {
-    display: flex;
-
-    justify-content:
-      space-between;
-
-    align-items:
-      center;
-
-    padding:
-      10px
+      11px
       0;
-
-    font-size: 13px;
-
-    color: #4b5563;
-  }
-
-  .summary-total {
-    margin-top: 8px;
-
-    padding:
-      16px
-      14px;
-
-    background: #eff6ff;
-
-    border-radius: 8px;
-
-    color: #111827;
-
-    font-size: 17px;
-
-    font-weight: 800;
-  }
-
-  /* ==============================
-     FOOTER
-  ============================== */
-
-  .footer {
-    margin-top: 60px;
-
-    padding-top: 20px;
-
-    border-top:
-      1px solid #e5e7eb;
-
-    text-align: center;
-
-    color: #9ca3af;
 
     font-size: 11px;
 
-    line-height: 1.6;
+    vertical-align: top;
   }
 
-  .bottom-bar {
-    position: absolute;
+  .description-cell {
+    text-align: left;
+  }
 
-    left: 0;
-    right: 0;
-    bottom: 0;
+  .item-name {
+    color: #1E293B;
 
-    height: 10px;
+    font-size: 12px;
 
-    background: #2563eb;
+    font-weight: 500;
+  }
+
+  .item-type {
+    margin-top: 4px;
+
+    color: #94A3B8;
+
+    font-size: 10px;
+  }
+
+  .quantity-cell {
+    color: #475569;
+
+    text-align: center;
+  }
+
+  .money-cell {
+    color: #475569;
+
+    text-align: right;
+  }
+
+  .total-cell {
+    color: #1E293B;
+
+    font-weight: 600;
+  }
+
+  /* =========================================
+     PUSH BOTTOM CONTENT DOWN
+  ========================================= */
+
+  .bottom-content {
+    margin-top: auto;
+  }
+
+  /* =========================================
+     TOTALS
+  ========================================= */
+
+  .totals-wrapper {
+    display: flex;
+
+    justify-content: flex-end;
+  }
+
+  .totals {
+    width: 82mm;
+  }
+
+  .total-row {
+    display: flex;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    color: #475569;
+
+    font-size: 11px;
+  }
+
+  .total-row + .total-row {
+    margin-top: 7px;
+  }
+
+  .total-value {
+    color: #1E293B;
+
+    font-weight: 500;
+  }
+
+  .grand-total {
+    margin-top: 10px;
+
+    padding:
+      8px
+      0;
+
+    display: flex;
+
+    justify-content: space-between;
+    align-items: center;
+
+    gap: 20px;
+
+    border-top:
+      1.5px solid #164B84;
+
+    border-bottom:
+      1.5px solid #164B84;
+
+    color: #1E293B;
+
+    font-size: 13px;
+
+    font-weight: 600;
+  }
+
+  .grand-total-value {
+    color: #0F172A;
+
+    font-size: 17px;
+
+    font-weight: 700;
+  }
+
+  /* =========================================
+     TERMS + SIGNATURE
+  ========================================= */
+
+  .terms-signature {
+    margin-top: 9mm;
+
+    display: grid;
+
+    grid-template-columns:
+      1fr
+      1fr;
+
+    gap: 35px;
+  }
+
+  .terms-title {
+    color: #334155;
+
+    font-size: 11px;
+
+    font-weight: 600;
+  }
+
+  .terms-text {
+    margin-top: 5px;
+
+    max-width: 320px;
+
+    color: #64748B;
+
+    font-size: 9px;
+
+    line-height: 1.7;
+  }
+
+  .signature {
+    text-align: right;
+  }
+
+  .signature-label {
+    color: #64748B;
+
+    font-size: 9px;
+  }
+
+  .signature-name {
+    margin-top: 7px;
+
+    color: #164B84;
+
+    font-family:
+      Georgia,
+      "Times New Roman",
+      serif;
+
+    font-size: 20px;
+
+    font-style: italic;
+  }
+
+  /* =========================================
+     FOOTER
+  ========================================= */
+
+  .footer {
+    margin-top: 8mm;
+
+    padding:
+      7px
+      0;
+
+    display: flex;
+
+    justify-content: space-between;
+    align-items: center;
+
+    gap: 20px;
+
+    border-top:
+      1.5px solid #164B84;
+
+    border-bottom:
+      1.5px solid #164B84;
+
+    color: #164B84;
+
+    font-size: 9px;
   }
 
 </style>
@@ -550,27 +725,28 @@ export async function generateInvoicePdf(
 
 <div class="invoice">
 
+  <!-- TOP BLUE BAR -->
+
   <div class="top-bar"></div>
+
 
   <div class="content">
 
-    <!-- =========================
+    <!-- =========================================
          HEADER
-    ========================== -->
+    ========================================== -->
 
     <div class="header">
 
       <div>
 
-        <h1 class="brand-name">
-          Input<span
-            class="brand-accent"
-          >ify</span>
+        <h1 class="brand">
+          INPUTIFY
         </h1>
 
-        <p class="brand-description">
-          Survey & Market Research Platform
-        </p>
+        <div class="brand-description">
+          Survey &amp; Research Platform
+        </div>
 
       </div>
 
@@ -581,10 +757,10 @@ export async function generateInvoicePdf(
           INVOICE
         </h2>
 
-        <div class="invoice-number">
+        <div class="gstin">
+          GSTIN:
           ${escapeHtml(
-            invoice?.invoiceNumber ||
-              "-"
+            invoice?.gstin || "—"
           )}
         </div>
 
@@ -593,61 +769,54 @@ export async function generateInvoicePdf(
     </div>
 
 
-    <!-- =========================
-         INFO
-    ========================== -->
+    <!-- =========================================
+         BILLING
+    ========================================== -->
 
-    <div class="info-grid">
+    <div class="two-column billing-section">
 
-      <div class="info-box">
+      <div>
 
-        <div class="info-title">
-          Project
+        <div class="section-title">
+          Bill To:
         </div>
 
-        <div class="info-value">
+        <div class="business-name">
           ${escapeHtml(
-            projectName
+            businessName
           )}
         </div>
 
-        <div class="info-small">
-          Project ID:
+        <div class="business-address">
           ${escapeHtml(
-            projectId
+            businessAddress
           )}
         </div>
 
       </div>
 
 
-      <div class="info-box">
+      <div class="invoice-details">
 
-        <div class="info-title">
-          Invoice Details
+        <div class="detail-label">
+          Invoice Number
         </div>
 
-        <div class="info-value">
+        <div class="detail-value">
           ${escapeHtml(
             invoice?.invoiceNumber ||
               "-"
           )}
         </div>
 
-        <div class="info-small">
-          Issued:
-          ${escapeHtml(
-            formatDate(
-              invoice?.issuedAt
-            )
-          )}
+
+        <div class="detail-label">
+          Invoice Date
         </div>
 
-        <div class="info-small">
-          Status:
+        <div class="detail-value">
           ${escapeHtml(
-            invoice?.status ||
-              "-"
+            invoiceDate
           )}
         </div>
 
@@ -656,9 +825,65 @@ export async function generateInvoicePdf(
     </div>
 
 
-    <!-- =========================
+    <!-- =========================================
+         CONTACT + PAYMENT
+    ========================================== -->
+
+    <div class="two-column contact-section">
+
+      <div>
+
+        <div class="section-title">
+          Contact information
+        </div>
+
+        <div class="info-line">
+          Email:
+          ${escapeHtml(
+            businessEmail
+          )}
+        </div>
+
+        <div class="info-line">
+          Phone:
+          ${escapeHtml(
+            businessPhone
+          )}
+        </div>
+
+      </div>
+
+
+      <div>
+
+        <div class="section-title">
+          Payment information
+        </div>
+
+        <div class="info-line">
+          Bank Name:
+          ${escapeHtml(
+            invoice?.bankName ||
+              "—"
+          )}
+        </div>
+
+        <div class="info-line">
+          Account Number:
+          ${escapeHtml(
+            invoice?.accountNumber ||
+              "—"
+          )}
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- =========================================
          ITEMS
-    ========================== -->
+    ========================================== -->
 
     <div class="table-wrapper">
 
@@ -668,29 +893,26 @@ export async function generateInvoicePdf(
 
           <tr>
 
-            <th class="center">
-              #
+            <th>
+              Item Description
             </th>
 
             <th>
-              Target Group
+              Quantity
             </th>
 
-            <th class="right">
-              Target
+            <th>
+              Rate
             </th>
 
-            <th class="right">
-              CPI
-            </th>
-
-            <th class="right">
-              Amount
+            <th>
+              Total
             </th>
 
           </tr>
 
         </thead>
+
 
         <tbody>
 
@@ -700,8 +922,11 @@ export async function generateInvoicePdf(
               <tr>
 
                 <td
-                  colspan="5"
-                  class="center"
+                  colspan="4"
+                  style="
+                    text-align:center;
+                    color:#64748B;
+                  "
                 >
                   No invoice items
                 </td>
@@ -717,82 +942,143 @@ export async function generateInvoicePdf(
     </div>
 
 
-    <!-- =========================
-         SUMMARY
-    ========================== -->
+    <!-- =========================================
+         BOTTOM CONTENT
+    ========================================== -->
 
-    <div class="summary">
+    <div class="bottom-content">
 
-      <div class="summary-row">
 
-        <span>
-          Subtotal
-        </span>
+      <!-- TOTALS -->
 
-        <strong>
-          ${formatCurrency(
-            subtotal
-          )}
-        </strong>
+      <div class="totals-wrapper">
+
+        <div class="totals">
+
+          <div class="total-row">
+
+            <span>
+              Subtotal:
+            </span>
+
+            <span class="total-value">
+              ${formatMoney(
+                subtotal
+              )}
+            </span>
+
+          </div>
+
+
+          <div class="total-row">
+
+            <span>
+              GST (${gstRate}%):
+            </span>
+
+            <span class="total-value">
+              ${formatMoney(
+                gstAmount
+              )}
+            </span>
+
+          </div>
+
+
+          <div class="grand-total">
+
+            <span>
+              Total Amount Due:
+            </span>
+
+            <span class="grand-total-value">
+              ${formatMoney(
+                total
+              )}
+            </span>
+
+          </div>
+
+        </div>
 
       </div>
 
 
-      <div
-        class="
-          summary-row
-          summary-total
-        "
-      >
+      <!-- TERMS + SIGNATURE -->
+
+      <div class="terms-signature">
+
+        <div>
+
+          <div class="terms-title">
+            Terms and Conditions
+          </div>
+
+          <div class="terms-text">
+            Payment is due as per the agreed project
+            terms. Please contact Inputify for any
+            questions regarding this invoice.
+          </div>
+
+        </div>
+
+
+        <div class="signature">
+
+          <div class="signature-label">
+            Authorized Signatory
+          </div>
+
+          <div class="signature-name">
+            Inputify
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- FOOTER -->
+
+      <div class="footer">
 
         <span>
-          Total
+          hello@inputify.io
         </span>
 
         <span>
-          ${formatCurrency(
-            total
+          inputify.io
+        </span>
+
+        <span>
+          Phone:
+          ${escapeHtml(
+            businessPhone
           )}
         </span>
 
       </div>
-
-    </div>
-
-
-    <!-- =========================
-         FOOTER
-    ========================== -->
-
-    <div class="footer">
-
-      This invoice was generated
-      electronically by Inputify.
-
-      <br />
-
-      Currency:
-      ${escapeHtml(
-        invoice?.currency ||
-          "USD"
-      )}
 
     </div>
 
   </div>
 
+
+  <!-- BOTTOM BLUE BAR -->
+
   <div class="bottom-bar"></div>
 
 </div>
+
 
 </body>
 
 </html>
     `;
 
-    /* ===============================================
+    /* =================================================
        START CHROME
-    =============================================== */
+    ================================================= */
 
     browser =
       await puppeteer.launch({
@@ -808,9 +1094,9 @@ export async function generateInvoicePdf(
     const page =
       await browser.newPage();
 
-    /* ===============================================
+    /* =================================================
        LOAD HTML
-    =============================================== */
+    ================================================= */
 
     await page.setContent(
       html,
@@ -824,19 +1110,17 @@ export async function generateInvoicePdf(
       "print"
     );
 
-    /* ===============================================
+    /* =================================================
        GENERATE PDF
-    =============================================== */
+    ================================================= */
 
     const pdfBuffer =
       await page.pdf({
         format: "A4",
 
-        printBackground:
-          true,
+        printBackground: true,
 
-        preferCSSPageSize:
-          true,
+        preferCSSPageSize: true,
 
         margin: {
           top: "0mm",
@@ -853,6 +1137,5 @@ export async function generateInvoicePdf(
     if (browser) {
       await browser.close();
     }
-
   }
 }
