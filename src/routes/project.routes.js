@@ -1519,6 +1519,9 @@ router.put(
       // -----------------------------------------
       // GO LIVE
       // -----------------------------------------
+      targetGroup.completes = 0;
+      targetGroup.disqualified = 0;
+      targetGroup.quotaFull = 0;
 
       targetGroup.status = "LIVE";
 
