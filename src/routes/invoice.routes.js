@@ -1,6 +1,6 @@
 import express from "express";
 import { authMiddleware } from "../middleware/auth.middleware.js";
-import { generateInvoiceForProject, getProjectInvoice } from "../controllers/invoice.controller.js";
+import { generateInvoiceForProject, getProjectInvoice, downloadProjectInvoicePdf } from "../controllers/invoice.controller.js";
 import { businessOnly } from "../middleware/business.middleware.js";
 
 const router = express.Router();
@@ -29,5 +29,11 @@ router.get(
   getProjectInvoice
 );
 
+router.get(
+  "/project/:projectId/pdf",
+  authMiddleware,
+  businessOnly,
+  downloadProjectInvoicePdf
+);
 
 export default router;
