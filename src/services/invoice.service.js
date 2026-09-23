@@ -75,7 +75,7 @@ export async function generateProjectInvoice(projectId) {
 
     total: subtotal,
 
-    currency: "INR",
+    currency: "USD",
 
     issuedAt: new Date(),
   });
