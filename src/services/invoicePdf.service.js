@@ -51,7 +51,8 @@ function formatDate(value) {
 
 export async function generateInvoicePdf(
   invoice,
-  project
+  project,
+  businessProfile
 ) {
   let browser;
 
@@ -61,32 +62,54 @@ export async function generateInvoicePdf(
     ================================================= */
 
     const business =
-      project?.business &&
-      typeof project.business === "object"
-        ? project.business
-        : {};
+  project?.business &&
+  typeof project.business === "object"
+    ? project.business
+    : {};
 
-    const businessName =
-      business?.company ||
-      business?.name ||
-      project?.company ||
-      "Business Name";
 
-    const businessEmail =
-      business?.email ||
-      business?.emailAddress ||
-      "-";
+/* =========================================
+   BUSINESS NAME
+========================================= */
 
-    const businessPhone =
-      business?.phone ||
-      business?.phoneNumber ||
-      "-";
+const businessName =
+  businessProfile?.company ||
+  businessProfile?.name ||
+  "Business Name";
 
-    const businessAddress =
-      business?.location ||
-      business?.address ||
-      "-";
 
+/* =========================================
+   EMAIL COMES FROM USER
+========================================= */
+
+const businessEmail =
+  business?.email ||
+  "-";
+
+
+/* =========================================
+   PHONE COMES FROM BUSINESS PROFILE
+========================================= */
+
+const businessPhone =
+  businessProfile?.phone ||
+  "-";
+
+
+/* =========================================
+   ADDRESS COMES FROM BUSINESS PROFILE
+========================================= */
+
+const businessAddress =
+  [
+    businessProfile?.location,
+    businessProfile?.country,
+    businessProfile?.postalCode,
+  ]
+    .filter(Boolean)
+    .join(", ") ||
+  "-";
+  
     /* =================================================
        CALCULATIONS
     ================================================= */

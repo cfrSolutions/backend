@@ -1,6 +1,6 @@
 import { generateProjectInvoice } from "../services/invoice.service.js";
 import {generateInvoicePdf} from "../services/invoicePdf.service.js";
-
+import BusinessProfile from "../models/BusinessProfile.model.js";
 import Invoice from "../models/Invoice.model.js";
 import Project from "../models/Project.model.js";
 
@@ -55,6 +55,15 @@ export async function getProjectInvoice(req, res) {
       });
     }
 
+    const project = await Project.findById(projectId)
+      .populate("business", "email");
+
+    if (!project) {
+      return res.status(404).json({
+        message: "Project not found",
+      });
+    }
+
     const invoice = await Invoice.findOne({
       project: projectId,
     });
@@ -65,9 +74,26 @@ export async function getProjectInvoice(req, res) {
       });
     }
 
+    const businessProfile =
+      await BusinessProfile.findOne({
+        userId: project.business?._id,
+      }).select(
+        "name company phone country location postalCode"
+      );
+
     return res.status(200).json({
       success: true,
       invoice,
+
+      business: {
+        email: project.business?.email || "",
+        name: businessProfile?.name || "",
+        company: businessProfile?.company || "",
+        phone: businessProfile?.phone || "",
+        country: businessProfile?.country || "",
+        location: businessProfile?.location || "",
+        postalCode: businessProfile?.postalCode || "",
+      },
     });
   } catch (error) {
     console.error("Get invoice error:", error);
@@ -103,7 +129,7 @@ export async function downloadProjectInvoicePdf(
     projectId
   ).populate(
     "business",
-    "company name email emailAddress phone phoneNumber location address"
+    "email"
   );
 
     if (!project) {
@@ -113,7 +139,16 @@ export async function downloadProjectInvoicePdf(
       });
     }
 
+    /* =========================================
+   GET BUSINESS PROFILE
+========================================= */
 
+const businessProfile =
+  await BusinessProfile.findOne({
+    userId: project.business?._id,
+  }).select(
+    "name company phone country location postalCode"
+  );
     /* =========================================
        CLOSED PROJECT ONLY
     ========================================= */
@@ -149,11 +184,12 @@ export async function downloadProjectInvoicePdf(
        GENERATE PDF
     ========================================= */
 
-    const pdfBuffer =
-      await generateInvoicePdf(
-        invoice,
-        project
-      );
+   const pdfBuffer =
+  await generateInvoicePdf(
+    invoice,
+    project,
+    businessProfile
+  );
 
 
     /* =========================================
