@@ -3096,34 +3096,40 @@ const responseTokenHash =
     // FIND EXACT TARGET GROUP
     // =================================================
 
-    const targetGroup = project.targetGroups.find(
-      (group) =>
-        group.redirects?.start?.token === tk
-    );
+   // =================================================
+// FIND EXACT TARGET GROUP
+// =================================================
 
-    
+const targetGroup = project.targetGroups.find(
+  (group) =>
+    group.redirects?.start?.token === tk
+);
 
-    if (!targetGroup) {
-      console.error(
-        "TARGET GROUP NOT FOUND FOR START TOKEN:",
-        tk
-      );
+if (!targetGroup) {
+  console.error(
+    "TARGET GROUP NOT FOUND FOR START TOKEN:",
+    tk
+  );
 
-      const surveyMode =
+  return res.status(404).send("Invalid link");
+}
+
+// =================================================
+// DETERMINE SURVEY MODE
+// =================================================
+
+const surveyMode =
   targetGroup.status === "TESTING"
     ? "TESTING"
     : targetGroup.status === "LIVE"
       ? "LIVE"
       : null;
 
-      if (!surveyMode) {
+if (!surveyMode) {
   return res.status(400).send(
     "Survey is not available"
   );
 }
-
-      return res.status(404).send("Invalid link");
-    }
 
     // =================================================
 // CHECK EXISTING BROWSER SESSION
