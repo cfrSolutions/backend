@@ -309,6 +309,104 @@ export async function getProjectInvoice(req, res) {
   }
 }
 
+export async function getInvoiceById(req, res) {
+  try {
+    const { invoiceId } = req.params;
+
+    const userId =
+      getAuthenticatedUserId(req);
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
+    }
+
+    if (
+      !mongoose.Types.ObjectId.isValid(
+        invoiceId
+      )
+    ) {
+      return res.status(400).json({
+        message: "Invalid invoice ID",
+      });
+    }
+
+    const invoice =
+      await Invoice.findById(invoiceId);
+
+    if (!invoice) {
+      return res.status(404).json({
+        message: "Invoice not found",
+      });
+    }
+
+    // SECURITY:
+    // Invoice's project must belong
+    // to logged-in business.
+    const project =
+      await Project.findOne({
+        _id: invoice.project,
+        business: userId,
+      }).populate(
+        "business",
+        "email"
+      );
+
+    if (!project) {
+      return res.status(404).json({
+        message: "Invoice not found",
+      });
+    }
+
+    const businessProfile =
+      await BusinessProfile.findOne({
+        userId,
+      }).select(
+        "name company phone country location postalCode"
+      );
+
+    return res.status(200).json({
+      success: true,
+
+      invoice,
+
+      business: {
+        email:
+          project.business?.email || "",
+
+        name:
+          businessProfile?.name || "",
+
+        company:
+          businessProfile?.company || "",
+
+        phone:
+          businessProfile?.phone || "",
+
+        country:
+          businessProfile?.country || "",
+
+        location:
+          businessProfile?.location || "",
+
+        postalCode:
+          businessProfile?.postalCode || "",
+      },
+    });
+  } catch (error) {
+    console.error(
+      "Get invoice by ID error:",
+      error
+    );
+
+    return res.status(500).json({
+      message:
+        "Failed to fetch invoice",
+    });
+  }
+}
+
 // export async function downloadProjectInvoicePdf(
 //   req,
 //   res
