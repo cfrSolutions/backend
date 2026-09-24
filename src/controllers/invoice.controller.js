@@ -14,13 +14,23 @@ export async function generateInvoiceForProject(req, res) {
       });
     }
 
-    const invoice = await generateProjectInvoice(projectId);
+   const invoice =
+  await generateProjectInvoice(projectId);
 
-    return res.status(200).json({
-      success: true,
-      message: "Invoice generated successfully",
-      invoice,
-    });
+if (!invoice) {
+  return res.status(200).json({
+    success: true,
+    message:
+      "No new target groups require invoicing",
+    invoice: null,
+  });
+}
+
+return res.status(200).json({
+  success: true,
+  message: "Invoice generated successfully",
+  invoice,
+});
   } catch (error) {
     console.error("Generate invoice error:", error);
 
@@ -64,9 +74,14 @@ export async function getProjectInvoice(req, res) {
       });
     }
 
+    // const invoice = await Invoice.findOne({
+    //   project: projectId,
+    // });
     const invoice = await Invoice.findOne({
-      project: projectId,
-    });
+  project: projectId,
+}).sort({
+  createdAt: -1,
+});
 
     if (!invoice) {
       return res.status(404).json({
@@ -167,10 +182,16 @@ const businessProfile =
        GET INVOICE
     ========================================= */
 
+    // const invoice =
+    //   await Invoice.findOne({
+    //     project: projectId,
+    //   });
     const invoice =
-      await Invoice.findOne({
-        project: projectId,
-      });
+  await Invoice.findOne({
+    project: projectId,
+  }).sort({
+    createdAt: -1,
+  });
 
     if (!invoice) {
       return res.status(404).json({

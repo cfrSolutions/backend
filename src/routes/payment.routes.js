@@ -14,14 +14,14 @@ import { businessOnly } from "../middleware/business.middleware.js";
 const router = express.Router();
 
 router.post(
-  "/invoice/:projectId/order",
+  "/invoice/:invoiceId/order",
   authMiddleware,
   businessOnly,
   createPaymentOrder
 );
 
 router.post(
-  "/invoice/:projectId/verify",
+  "/invoice/:invoiceId/verify",
   authMiddleware,
   businessOnly,
   verifyPayment
