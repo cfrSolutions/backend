@@ -77,17 +77,16 @@ export async function createPaymentOrder(req, res) {
 
     // 5. Create Razorpay order
     const order = await razorpay.orders.create({
-      amount,
-      currency,
+  amount,
+  currency: "USD",
+  receipt: invoice.invoiceNumber,
 
-      receipt: invoice.invoiceNumber,
-
-      notes: {
-        projectId: project._id.toString(),
-        invoiceId: invoice._id.toString(),
-        invoiceNumber: invoice.invoiceNumber,
-      },
-    });
+  notes: {
+    projectId: project._id.toString(),
+    invoiceId: invoice._id.toString(),
+    invoiceNumber: invoice.invoiceNumber,
+  },
+});
 
     // 6. Return ONLY safe checkout information
     return res.status(201).json({
