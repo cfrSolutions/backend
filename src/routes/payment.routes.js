@@ -8,9 +8,7 @@ import {
   authMiddleware,
 } from "../middleware/auth.middleware.js";
 
-import {
-  businessOnly,
-} from "../middleware/role.middleware.js";
+import { businessOnly } from "../middleware/business.middleware.js";
 
 const router = express.Router();
 
