@@ -86,7 +86,7 @@ if (currency !== "USD") {
     // 5. Create Razorpay order
     const order = await razorpay.orders.create({
   amount,
-  currency,
+  currency: "USD",
   receipt: invoice.invoiceNumber,
 
   notes: {
