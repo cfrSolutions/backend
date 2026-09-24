@@ -1,44 +1,131 @@
+import mongoose from "mongoose";
 import { generateProjectInvoice } from "../services/invoice.service.js";
 import {generateInvoicePdf} from "../services/invoicePdf.service.js";
 import BusinessProfile from "../models/BusinessProfile.model.js";
 import Invoice from "../models/Invoice.model.js";
 import Project from "../models/Project.model.js";
 
+function getAuthenticatedUserId(req) {
+  return (
+    req.user?._id ||
+    req.user?.userId ||
+    req.user?.id ||
+    null
+  );
+}
+
+// export async function generateInvoiceForProject(req, res) {
+//   try {
+//     const { projectId } = req.params;
+
+//     if (!projectId) {
+//       return res.status(400).json({
+//         message: "Project ID is required",
+//       });
+//     }
+
+//    const invoice =
+//   await generateProjectInvoice(projectId);
+
+// if (!invoice) {
+//   return res.status(200).json({
+//     success: true,
+//     message:
+//       "No new target groups require invoicing",
+//     invoice: null,
+//   });
+// }
+
+// return res.status(200).json({
+//   success: true,
+//   message: "Invoice generated successfully",
+//   invoice,
+// });
+//   } catch (error) {
+//     console.error("Generate invoice error:", error);
+
+//     if (error.message === "Project not found") {
+//       return res.status(404).json({
+//         message: error.message,
+//       });
+//     }
+
+//     if (
+//       error.message ===
+//       "Invoice can only be generated for a closed project"
+//     ) {
+//       return res.status(400).json({
+//         message: error.message,
+//       });
+//     }
+
+//     return res.status(500).json({
+//       message: "Failed to generate invoice",
+//     });
+//   }
+// }
+
 export async function generateInvoiceForProject(req, res) {
   try {
     const { projectId } = req.params;
 
-    if (!projectId) {
+    const userId =
+      getAuthenticatedUserId(req);
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
+    }
+
+    if (
+      !mongoose.Types.ObjectId.isValid(
+        projectId
+      )
+    ) {
       return res.status(400).json({
-        message: "Project ID is required",
+        message: "Invalid project ID",
       });
     }
 
-   const invoice =
-  await generateProjectInvoice(projectId);
+    // SECURITY:
+    // Project must belong to logged-in business
+    const project = await Project.findOne({
+      _id: projectId,
+      business: userId,
+    }).select("_id status");
 
-if (!invoice) {
-  return res.status(200).json({
-    success: true,
-    message:
-      "No new target groups require invoicing",
-    invoice: null,
-  });
-}
-
-return res.status(200).json({
-  success: true,
-  message: "Invoice generated successfully",
-  invoice,
-});
-  } catch (error) {
-    console.error("Generate invoice error:", error);
-
-    if (error.message === "Project not found") {
+    if (!project) {
       return res.status(404).json({
-        message: error.message,
+        message: "Project not found",
       });
     }
+
+    const invoice =
+      await generateProjectInvoice(
+        project._id
+      );
+
+    if (!invoice) {
+      return res.status(200).json({
+        success: true,
+        message:
+          "No new target groups require invoicing",
+        invoice: null,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message:
+        "Invoice generated successfully",
+      invoice,
+    });
+  } catch (error) {
+    console.error(
+      "Generate invoice error:",
+      error
+    );
 
     if (
       error.message ===
@@ -50,23 +137,108 @@ return res.status(200).json({
     }
 
     return res.status(500).json({
-      message: "Failed to generate invoice",
+      message:
+        "Failed to generate invoice",
     });
   }
 }
+
+// export async function getProjectInvoice(req, res) {
+//   try {
+//     const { projectId } = req.params;
+
+//     if (!projectId) {
+//       return res.status(400).json({
+//         message: "Project ID is required",
+//       });
+//     }
+
+//     const project = await Project.findById(projectId)
+//       .populate("business", "email");
+
+//     if (!project) {
+//       return res.status(404).json({
+//         message: "Project not found",
+//       });
+//     }
+
+//     // const invoice = await Invoice.findOne({
+//     //   project: projectId,
+//     // });
+//     const invoice = await Invoice.findOne({
+//   project: projectId,
+// }).sort({
+//   createdAt: -1,
+// });
+
+//     if (!invoice) {
+//       return res.status(404).json({
+//         message: "Invoice not found",
+//       });
+//     }
+
+//     const businessProfile =
+//       await BusinessProfile.findOne({
+//         userId: project.business?._id,
+//       }).select(
+//         "name company phone country location postalCode"
+//       );
+
+//     return res.status(200).json({
+//       success: true,
+//       invoice,
+
+//       business: {
+//         email: project.business?.email || "",
+//         name: businessProfile?.name || "",
+//         company: businessProfile?.company || "",
+//         phone: businessProfile?.phone || "",
+//         country: businessProfile?.country || "",
+//         location: businessProfile?.location || "",
+//         postalCode: businessProfile?.postalCode || "",
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Get invoice error:", error);
+
+//     return res.status(500).json({
+//       message: "Failed to fetch invoice",
+//     });
+//   }
+// }
 
 export async function getProjectInvoice(req, res) {
   try {
     const { projectId } = req.params;
 
-    if (!projectId) {
-      return res.status(400).json({
-        message: "Project ID is required",
+    const userId =
+      getAuthenticatedUserId(req);
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized",
       });
     }
 
-    const project = await Project.findById(projectId)
-      .populate("business", "email");
+    if (
+      !mongoose.Types.ObjectId.isValid(
+        projectId
+      )
+    ) {
+      return res.status(400).json({
+        message: "Invalid project ID",
+      });
+    }
+
+    // SECURITY:
+    // Only logged-in owner's project
+    const project = await Project.findOne({
+      _id: projectId,
+      business: userId,
+    }).populate(
+      "business",
+      "email"
+    );
 
     if (!project) {
       return res.status(404).json({
@@ -74,14 +246,14 @@ export async function getProjectInvoice(req, res) {
       });
     }
 
-    // const invoice = await Invoice.findOne({
-    //   project: projectId,
-    // });
-    const invoice = await Invoice.findOne({
-  project: projectId,
-}).sort({
-  createdAt: -1,
-});
+    // Invoice is now safe because ownership
+    // was verified through the project
+    const invoice =
+      await Invoice.findOne({
+        project: project._id,
+      }).sort({
+        createdAt: -1,
+      });
 
     if (!invoice) {
       return res.status(404).json({
@@ -91,33 +263,203 @@ export async function getProjectInvoice(req, res) {
 
     const businessProfile =
       await BusinessProfile.findOne({
-        userId: project.business?._id,
+        userId: userId,
       }).select(
         "name company phone country location postalCode"
       );
 
     return res.status(200).json({
       success: true,
+
       invoice,
 
       business: {
-        email: project.business?.email || "",
-        name: businessProfile?.name || "",
-        company: businessProfile?.company || "",
-        phone: businessProfile?.phone || "",
-        country: businessProfile?.country || "",
-        location: businessProfile?.location || "",
-        postalCode: businessProfile?.postalCode || "",
+        email:
+          project.business?.email || "",
+
+        name:
+          businessProfile?.name || "",
+
+        company:
+          businessProfile?.company || "",
+
+        phone:
+          businessProfile?.phone || "",
+
+        country:
+          businessProfile?.country || "",
+
+        location:
+          businessProfile?.location || "",
+
+        postalCode:
+          businessProfile?.postalCode || "",
       },
     });
   } catch (error) {
-    console.error("Get invoice error:", error);
+    console.error(
+      "Get invoice error:",
+      error
+    );
 
     return res.status(500).json({
-      message: "Failed to fetch invoice",
+      message:
+        "Failed to fetch invoice",
     });
   }
 }
+
+// export async function downloadProjectInvoicePdf(
+//   req,
+//   res
+// ) {
+//   try {
+//     const { projectId } =
+//       req.params;
+
+//     if (!projectId) {
+//       return res.status(400).json({
+//         message:
+//           "Project ID is required",
+//       });
+//     }
+
+
+//     /* =========================================
+//        GET PROJECT
+//     ========================================= */
+
+//    const project =
+//   await Project.findById(
+//     projectId
+//   ).populate(
+//     "business",
+//     "email"
+//   );
+
+//     if (!project) {
+//       return res.status(404).json({
+//         message:
+//           "Project not found",
+//       });
+//     }
+
+//     /* =========================================
+//    GET BUSINESS PROFILE
+// ========================================= */
+
+// const businessProfile =
+//   await BusinessProfile.findOne({
+//     userId: project.business?._id,
+//   }).select(
+//     "name company phone country location postalCode"
+//   );
+//     /* =========================================
+//        CLOSED PROJECT ONLY
+//     ========================================= */
+
+//     if (
+//       project.status !== "CLOSED"
+//     ) {
+//       return res.status(400).json({
+//         message:
+//           "Invoice is only available for closed projects",
+//       });
+//     }
+
+
+//     /* =========================================
+//        GET INVOICE
+//     ========================================= */
+
+//     // const invoice =
+//     //   await Invoice.findOne({
+//     //     project: projectId,
+//     //   });
+//     const invoice =
+//   await Invoice.findOne({
+//     project: projectId,
+//   }).sort({
+//     createdAt: -1,
+//   });
+
+//     if (!invoice) {
+//       return res.status(404).json({
+//         message:
+//           "Invoice not found",
+//       });
+//     }
+
+
+//     /* =========================================
+//        GENERATE PDF
+//     ========================================= */
+
+//    const pdfBuffer =
+//   await generateInvoicePdf(
+//     invoice,
+//     project,
+//     businessProfile
+//   );
+
+
+//     /* =========================================
+//        SAFE FILE NAME
+//     ========================================= */
+
+//     const invoiceNumber =
+//       invoice.invoiceNumber ||
+//       `invoice-${projectId}`;
+
+//     const safeInvoiceNumber =
+//       String(invoiceNumber)
+//         .replace(
+//           /[^a-zA-Z0-9-_]/g,
+//           "_"
+//         );
+
+
+//     /* =========================================
+//        RESPONSE HEADERS
+//     ========================================= */
+
+//     res.setHeader(
+//       "Content-Type",
+//       "application/pdf"
+//     );
+
+//     res.setHeader(
+//       "Content-Disposition",
+//       `attachment; filename="${safeInvoiceNumber}.pdf"`
+//     );
+
+//     res.setHeader(
+//       "Cache-Control",
+//       "private, no-store"
+//     );
+
+
+//     /* =========================================
+//        SEND PDF
+//     ========================================= */
+
+//     return res.send(
+//       Buffer.from(pdfBuffer)
+//     );
+
+//   } catch (error) {
+
+//     console.error(
+//       "Download invoice PDF error:",
+//       error
+//     );
+
+//     return res.status(500).json({
+//       message:
+//         "Failed to generate invoice PDF",
+//     });
+//   }
+// }
 
 export async function downloadProjectInvoicePdf(
   req,
@@ -127,46 +469,41 @@ export async function downloadProjectInvoicePdf(
     const { projectId } =
       req.params;
 
-    if (!projectId) {
-      return res.status(400).json({
-        message:
-          "Project ID is required",
+    const userId =
+      getAuthenticatedUserId(req);
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized",
       });
     }
 
+    if (
+      !mongoose.Types.ObjectId.isValid(
+        projectId
+      )
+    ) {
+      return res.status(400).json({
+        message: "Invalid project ID",
+      });
+    }
 
-    /* =========================================
-       GET PROJECT
-    ========================================= */
-
-   const project =
-  await Project.findById(
-    projectId
-  ).populate(
-    "business",
-    "email"
-  );
+    // SECURITY:
+    // Project must belong to logged-in business
+    const project =
+      await Project.findOne({
+        _id: projectId,
+        business: userId,
+      }).populate(
+        "business",
+        "email"
+      );
 
     if (!project) {
       return res.status(404).json({
-        message:
-          "Project not found",
+        message: "Project not found",
       });
     }
-
-    /* =========================================
-   GET BUSINESS PROFILE
-========================================= */
-
-const businessProfile =
-  await BusinessProfile.findOne({
-    userId: project.business?._id,
-  }).select(
-    "name company phone country location postalCode"
-  );
-    /* =========================================
-       CLOSED PROJECT ONLY
-    ========================================= */
 
     if (
       project.status !== "CLOSED"
@@ -177,61 +514,42 @@ const businessProfile =
       });
     }
 
-
-    /* =========================================
-       GET INVOICE
-    ========================================= */
-
-    // const invoice =
-    //   await Invoice.findOne({
-    //     project: projectId,
-    //   });
     const invoice =
-  await Invoice.findOne({
-    project: projectId,
-  }).sort({
-    createdAt: -1,
-  });
+      await Invoice.findOne({
+        project: project._id,
+      }).sort({
+        createdAt: -1,
+      });
 
     if (!invoice) {
       return res.status(404).json({
-        message:
-          "Invoice not found",
+        message: "Invoice not found",
       });
     }
 
+    const businessProfile =
+      await BusinessProfile.findOne({
+        userId: userId,
+      }).select(
+        "name company phone country location postalCode"
+      );
 
-    /* =========================================
-       GENERATE PDF
-    ========================================= */
-
-   const pdfBuffer =
-  await generateInvoicePdf(
-    invoice,
-    project,
-    businessProfile
-  );
-
-
-    /* =========================================
-       SAFE FILE NAME
-    ========================================= */
+    const pdfBuffer =
+      await generateInvoicePdf(
+        invoice,
+        project,
+        businessProfile
+      );
 
     const invoiceNumber =
       invoice.invoiceNumber ||
       `invoice-${projectId}`;
 
     const safeInvoiceNumber =
-      String(invoiceNumber)
-        .replace(
-          /[^a-zA-Z0-9-_]/g,
-          "_"
-        );
-
-
-    /* =========================================
-       RESPONSE HEADERS
-    ========================================= */
+      String(invoiceNumber).replace(
+        /[^a-zA-Z0-9-_]/g,
+        "_"
+      );
 
     res.setHeader(
       "Content-Type",
@@ -248,17 +566,20 @@ const businessProfile =
       "private, no-store"
     );
 
+    res.setHeader(
+      "Pragma",
+      "no-cache"
+    );
 
-    /* =========================================
-       SEND PDF
-    ========================================= */
+    res.setHeader(
+      "X-Content-Type-Options",
+      "nosniff"
+    );
 
     return res.send(
       Buffer.from(pdfBuffer)
     );
-
   } catch (error) {
-
     console.error(
       "Download invoice PDF error:",
       error
@@ -273,10 +594,12 @@ const businessProfile =
 
 export async function getBusinessInvoices(req, res) {
   try {
+    // const userId =
+    //   req.user?._id ||
+    //   req.user?.userId ||
+    //   req.user?.id;
     const userId =
-      req.user?._id ||
-      req.user?.userId ||
-      req.user?.id;
+  getAuthenticatedUserId(req);
 
     if (!userId) {
       return res.status(401).json({
