@@ -1,8 +1,25 @@
 import puppeteer from "puppeteer";
-import inputifyLogo from "../assets/inputify.png";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 /* =====================================================
    ESCAPE HTML
 ===================================================== */
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const logoPath = path.join(
+  __dirname,
+  "../assets/inputify.png"
+);
+
+const logoBase64 = fs
+  .readFileSync(logoPath)
+  .toString("base64");
+
+const inputifyLogo =
+  `data:image/png;base64,${logoBase64}`;
+
 
 function escapeHtml(value = "") {
   return String(value)
@@ -313,6 +330,14 @@ const businessAddress =
 
     letter-spacing: -0.7px;
   }
+
+  .brand-logo {
+  display: block;
+  height: 38px;
+  width: auto;
+  max-width: 170px;
+  object-fit: contain;
+}
 
   .brand-description {
     margin-top: 7px;
@@ -764,12 +789,11 @@ const businessAddress =
       <div>
 
        
-        <img
-          class="brand"
-          src={inputifyLogo}
-          alt="Inputify"
-          className="h-10 w-auto object-contain"
-        />
+     <img
+  src="${inputifyLogo}"
+  alt="Inputify"
+  class="brand-logo"
+/>
 
         <div class="brand-description">
           Survey &amp; Research Platform
