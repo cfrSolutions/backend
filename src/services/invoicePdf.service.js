@@ -1,5 +1,5 @@
 import puppeteer from "puppeteer";
-
+import inputifyLogo from "../assets/inputify.png";
 /* =====================================================
    ESCAPE HTML
 ===================================================== */
