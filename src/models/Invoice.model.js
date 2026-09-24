@@ -39,9 +39,18 @@ const invoiceSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Project",
       required: true,
-      unique: true,
+      // unique: true,
       index: true,
     },
+
+    targetGroups: {
+  type: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+    }
+  ],
+  default: [],
+},
 
     invoiceNumber: {
       type: String,
