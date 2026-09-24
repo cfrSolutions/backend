@@ -34,6 +34,7 @@ import surveyBuilderRoutes  from "./src/routes/surveyBuilder.routes.js";
 import postbackRoutes from "./src/routes/postback.routes.js";
 import businessProfileRoutes from "./src/routes/businessProfile.routes.js";
 import invoiceRoutes from "./src/routes/invoice.routes.js";
+import paymentRoutes from "./src/routes/payment.routes.js";
 
 //import businessRoutes from "./src/routes/business.routes.js";
 
@@ -162,6 +163,7 @@ app.use("/api/survey-builder", surveyBuilderRoutes );
 app.use("/api/postback", postbackRoutes);
 app.use("/api/business/profile", businessProfileRoutes);
 app.use("/api/invoices", invoiceRoutes);
+app.use("/api/payments", paymentRoutes);
 
 /* -------------------- SOCKET SERVER -------------------- */
 
