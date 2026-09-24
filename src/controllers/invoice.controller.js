@@ -270,3 +270,58 @@ const businessProfile =
     });
   }
 }
+
+export async function getBusinessInvoices(req, res) {
+  try {
+    const userId =
+      req.user?._id ||
+      req.user?.userId ||
+      req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
+    }
+
+    // Get only projects belonging to logged-in business
+    const projects = await Project.find({
+      business: userId,
+    }).select("_id name");
+
+    const projectIds = projects.map(
+      (project) => project._id
+    );
+
+    const invoices = await Invoice.find({
+      project: { $in: projectIds },
+    })
+      .populate("project", "name")
+      .sort({ createdAt: -1 });
+
+    const outstanding = invoices.filter(
+      (invoice) =>
+        invoice.status === "GENERATED" ||
+        invoice.status === "PENDING"
+    );
+
+    const paid = invoices.filter(
+      (invoice) => invoice.status === "PAID"
+    );
+
+    return res.status(200).json({
+      success: true,
+      outstanding,
+      paid,
+    });
+  } catch (error) {
+    console.error(
+      "Get business invoices error:",
+      error
+    );
+
+    return res.status(500).json({
+      message: "Failed to fetch invoices",
+    });
+  }
+}
