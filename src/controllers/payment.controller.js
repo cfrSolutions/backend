@@ -1,49 +1,32 @@
+import mongoose from "mongoose";
 import crypto from "crypto";
 import Invoice from "../models/Invoice.model.js";
 import Project from "../models/Project.model.js";
 import razorpay from "../config/razorpay.js";
 
+function getAuthenticatedUserId(req) {
+  return (
+    req.user?._id ||
+    req.user?.userId ||
+    req.user?.id ||
+    null
+  );
+}
+
+
 // export async function createPaymentOrder(req, res) {
 //   try {
-//     const { projectId } = req.params;
+//     const { invoiceId } = req.params;
 
-//     if (!projectId) {
+//     if (!invoiceId) {
 //       return res.status(400).json({
 //         success: false,
-//         message: "Project ID is required",
+//         message: "Invoice ID is required",
 //       });
 //     }
 
-//     // 1. Find project
-//     const project = await Project.findById(projectId);
-
-//     if (!project) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "Project not found",
-//       });
-//     }
-
-//     // 2. Make sure logged-in business owns this project
-//     const userId =
-//       req.user?.userId ||
-//       req.user?._id ||
-//       req.user?.id;
-
-//     if (
-//       !userId ||
-//       project.business.toString() !== userId.toString()
-//     ) {
-//       return res.status(403).json({
-//         success: false,
-//         message: "You are not allowed to pay this invoice",
-//       });
-//     }
-
-//     // 3. Find invoice from DB
-//     const invoice = await Invoice.findOne({
-//       project: projectId,
-//     });
+//     // 1. Find exact invoice
+//     const invoice = await Invoice.findById(invoiceId);
 
 //     if (!invoice) {
 //       return res.status(404).json({
@@ -52,7 +35,37 @@ import razorpay from "../config/razorpay.js";
 //       });
 //     }
 
-//     // 4. Don't create payment for already-paid invoice
+//     // 2. Find project belonging to this invoice
+//     const project = await Project.findById(
+//       invoice.project
+//     );
+
+//     if (!project) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Project not found",
+//       });
+//     }
+
+//     // 3. Verify logged-in business owns project
+//     const userId =
+//       req.user?.userId ||
+//       req.user?._id ||
+//       req.user?.id;
+
+//     if (
+//       !userId ||
+//       project.business.toString() !==
+//         userId.toString()
+//     ) {
+//       return res.status(403).json({
+//         success: false,
+//         message:
+//           "You are not allowed to pay this invoice",
+//       });
+//     }
+
+//     // 4. Already paid
 //     if (invoice.status === "PAID") {
 //       return res.status(400).json({
 //         success: false,
@@ -62,7 +75,10 @@ import razorpay from "../config/razorpay.js";
 
 //     const total = Number(invoice.total);
 
-//     if (!Number.isFinite(total) || total <= 0) {
+//     if (
+//       !Number.isFinite(total) ||
+//       total <= 0
+//     ) {
 //       return res.status(400).json({
 //         success: false,
 //         message: "Invalid invoice amount",
@@ -70,33 +86,42 @@ import razorpay from "../config/razorpay.js";
 //     }
 
 //     const currency = String(
-//   invoice.currency || ""
-// ).toUpperCase();
+//       invoice.currency || ""
+//     ).toUpperCase();
 
-// if (currency !== "USD") {
-//   return res.status(400).json({
-//     success: false,
-//     message: "Invoice currency must be USD",
-//   });
-// }
+//     if (currency !== "USD") {
+//       return res.status(400).json({
+//         success: false,
+//         message:
+//           "Invoice currency must be USD",
+//       });
+//     }
 
-//     // Razorpay expects smallest currency subunit.
-//     const amount = Math.round(total * 100);
+//     // Razorpay expects smallest currency subunit
+//     const amount = Math.round(
+//       total * 100
+//     );
 
-//     // 5. Create Razorpay order
-//     const order = await razorpay.orders.create({
-//   amount,
-//   currency: "USD",
-//   receipt: invoice.invoiceNumber,
+//     // 5. Create Razorpay order for THIS invoice
+//     const order =
+//       await razorpay.orders.create({
+//         amount,
+//         currency: "USD",
+//         receipt: invoice.invoiceNumber,
 
-//   notes: {
-//     projectId: project._id.toString(),
-//     invoiceId: invoice._id.toString(),
-//     invoiceNumber: invoice.invoiceNumber,
-//   },
-// });
+//         notes: {
+//           projectId:
+//             project._id.toString(),
 
-//     // 6. Return ONLY safe checkout information
+//           invoiceId:
+//             invoice._id.toString(),
+
+//           invoiceNumber:
+//             invoice.invoiceNumber,
+//         },
+//       });
+
+//     // 6. Safe checkout information only
 //     return res.status(201).json({
 //       success: true,
 
@@ -106,8 +131,10 @@ import razorpay from "../config/razorpay.js";
 //         currency: order.currency,
 //       },
 
-//       keyId: process.env.RAZORPAY_KEY_ID,
+//       keyId:
+//         process.env.RAZORPAY_KEY_ID,
 //     });
+
 //   } catch (error) {
 //     console.error(
 //       "CREATE RAZORPAY ORDER ERROR:",
@@ -116,7 +143,8 @@ import razorpay from "../config/razorpay.js";
 
 //     return res.status(500).json({
 //       success: false,
-//       message: "Failed to create payment order",
+//       message:
+//         "Failed to create payment order",
 //     });
 //   }
 // }
@@ -125,15 +153,30 @@ export async function createPaymentOrder(req, res) {
   try {
     const { invoiceId } = req.params;
 
-    if (!invoiceId) {
-      return res.status(400).json({
+    const userId =
+      getAuthenticatedUserId(req);
+
+    if (!userId) {
+      return res.status(401).json({
         success: false,
-        message: "Invoice ID is required",
+        message: "Unauthorized",
       });
     }
 
-    // 1. Find exact invoice
-    const invoice = await Invoice.findById(invoiceId);
+    if (
+      !mongoose.Types.ObjectId.isValid(
+        invoiceId
+      )
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid invoice ID",
+      });
+    }
+
+    // Find invoice
+    const invoice =
+      await Invoice.findById(invoiceId);
 
     if (!invoice) {
       return res.status(404).json({
@@ -142,45 +185,39 @@ export async function createPaymentOrder(req, res) {
       });
     }
 
-    // 2. Find project belonging to this invoice
-    const project = await Project.findById(
-      invoice.project
-    );
+    // SECURITY:
+    // The invoice's project MUST belong
+    // to the authenticated business.
+    const project =
+      await Project.findOne({
+        _id: invoice.project,
+        business: userId,
+      }).select("_id business status");
 
     if (!project) {
       return res.status(404).json({
         success: false,
-        message: "Project not found",
+        message: "Invoice not found",
       });
     }
 
-    // 3. Verify logged-in business owns project
-    const userId =
-      req.user?.userId ||
-      req.user?._id ||
-      req.user?.id;
-
+    // Only payable invoice states
     if (
-      !userId ||
-      project.business.toString() !==
-        userId.toString()
+      !["GENERATED", "PENDING"].includes(
+        invoice.status
+      )
     ) {
-      return res.status(403).json({
-        success: false,
-        message:
-          "You are not allowed to pay this invoice",
-      });
-    }
-
-    // 4. Already paid
-    if (invoice.status === "PAID") {
       return res.status(400).json({
         success: false,
-        message: "Invoice is already paid",
+        message:
+          invoice.status === "PAID"
+            ? "Invoice is already paid"
+            : "Invoice cannot be paid",
       });
     }
 
-    const total = Number(invoice.total);
+    const total =
+      Number(invoice.total);
 
     if (
       !Number.isFinite(total) ||
@@ -192,9 +229,10 @@ export async function createPaymentOrder(req, res) {
       });
     }
 
-    const currency = String(
-      invoice.currency || ""
-    ).toUpperCase();
+    const currency =
+      String(
+        invoice.currency || ""
+      ).toUpperCase();
 
     if (currency !== "USD") {
       return res.status(400).json({
@@ -204,31 +242,139 @@ export async function createPaymentOrder(req, res) {
       });
     }
 
-    // Razorpay expects smallest currency subunit
-    const amount = Math.round(
-      total * 100
+    const amount =
+      Math.round(total * 100);
+
+    // const order =
+    //   await razorpay.orders.create({
+    //     amount,
+    //     currency: "USD",
+    //     receipt: invoice.invoiceNumber,
+
+    //     notes: {
+    //       projectId:
+    //         project._id.toString(),
+
+    //       invoiceId:
+    //         invoice._id.toString(),
+
+    //       invoiceNumber:
+    //         invoice.invoiceNumber,
+    //     },
+    //   });
+    // =====================================================
+// SECURITY:
+// REUSE EXISTING RAZORPAY ORDER WHEN POSSIBLE
+// =====================================================
+
+if (invoice.razorpayOrderId) {
+  try {
+    const existingOrder =
+      await razorpay.orders.fetch(
+        invoice.razorpayOrderId
+      );
+
+    const existingAmount =
+      Number(existingOrder.amount);
+
+    const existingCurrency =
+      String(
+        existingOrder.currency || ""
+      ).toUpperCase();
+
+    const existingStatus =
+      String(
+        existingOrder.status || ""
+      ).toLowerCase();
+
+    // Reuse only if the existing order still
+    // represents this exact invoice amount/currency
+    // and has not already been paid.
+    if (
+      existingAmount === amount &&
+      existingCurrency === "USD" &&
+      existingStatus !== "paid"
+    ) {
+      return res.status(200).json({
+        success: true,
+
+        order: {
+          id: existingOrder.id,
+          amount: existingOrder.amount,
+          currency: existingOrder.currency,
+        },
+
+        keyId:
+          process.env.RAZORPAY_KEY_ID,
+      });
+    }
+
+  } catch (error) {
+    console.error(
+      "FETCH EXISTING RAZORPAY ORDER ERROR:",
+      error
     );
 
-    // 5. Create Razorpay order for THIS invoice
-    const order =
-      await razorpay.orders.create({
-        amount,
-        currency: "USD",
-        receipt: invoice.invoiceNumber,
+    return res.status(500).json({
+      success: false,
+      message:
+        "Failed to validate existing payment order",
+    });
+  }
+}
 
-        notes: {
-          projectId:
-            project._id.toString(),
 
-          invoiceId:
-            invoice._id.toString(),
+// =====================================================
+// CREATE NEW ORDER
+// =====================================================
 
-          invoiceNumber:
-            invoice.invoiceNumber,
-        },
-      });
+const order =
+  await razorpay.orders.create({
+    amount,
+    currency: "USD",
+    receipt: invoice.invoiceNumber,
 
-    // 6. Safe checkout information only
+    notes: {
+      projectId:
+        project._id.toString(),
+
+      invoiceId:
+        invoice._id.toString(),
+
+      invoiceNumber:
+        invoice.invoiceNumber,
+    },
+  });
+
+
+// =====================================================
+// BIND ORDER TO INVOICE
+// =====================================================
+
+invoice.razorpayOrderId =
+  order.id;
+
+await invoice.save();
+
+
+return res.status(201).json({
+  success: true,
+
+  order: {
+    id: order.id,
+    amount: order.amount,
+    currency: order.currency,
+  },
+
+  keyId:
+    process.env.RAZORPAY_KEY_ID,
+});
+
+      invoice.razorpayOrderId =
+  order.id;
+
+await invoice.save();
+
     return res.status(201).json({
       success: true,
 
@@ -238,15 +384,13 @@ export async function createPaymentOrder(req, res) {
         currency: order.currency,
       },
 
+      // Public Razorpay key.
+      // Secret is NEVER returned.
       keyId:
         process.env.RAZORPAY_KEY_ID,
     });
-
   } catch (error) {
-    console.error(
-      "CREATE RAZORPAY ORDER ERROR:",
-      error
-    );
+    
 
     return res.status(500).json({
       success: false,
@@ -291,6 +435,27 @@ export async function verifyPayment(req, res) {
       });
     }
 
+    
+if (!invoice.razorpayOrderId) {
+  return res.status(400).json({
+    success: false,
+    message:
+      "No payment order exists for this invoice",
+  });
+}
+
+
+if (
+  invoice.razorpayOrderId !==
+  razorpay_order_id
+) {
+  return res.status(400).json({
+    success: false,
+    message:
+      "Payment order does not belong to this invoice",
+  });
+}
+
     // 3. Find project belonging to invoice
     const project =
       await Project.findById(
@@ -322,14 +487,44 @@ export async function verifyPayment(req, res) {
       });
     }
 
-    if (invoice.status === "PAID") {
-      return res.status(200).json({
-        success: true,
-        message:
-          "Invoice is already paid",
-        invoice,
-      });
-    }
+    // if (invoice.status === "PAID") {
+    //   return res.status(200).json({
+    //     success: true,
+    //     message:
+    //       "Invoice is already paid",
+    //     invoice,
+    //   });
+    // }
+    // =====================================================
+// SECURITY:
+// IDEMPOTENT PAYMENT VERIFICATION
+// =====================================================
+
+if (invoice.status === "PAID") {
+
+  // Same payment being verified again.
+  // Safe to return success.
+  if (
+    invoice.razorpayPaymentId &&
+    invoice.razorpayPaymentId ===
+      razorpay_payment_id
+  ) {
+    return res.status(200).json({
+      success: true,
+      message:
+        "Payment already verified",
+      invoice,
+    });
+  }
+
+  // Invoice is already paid using another payment.
+  // Do not allow another payment to modify it.
+  return res.status(409).json({
+    success: false,
+    message:
+      "Invoice has already been paid",
+  });
+}
 
     // 5. Generate expected Razorpay signature
     const body =
@@ -419,25 +614,45 @@ export async function verifyPayment(req, res) {
     }
 
     // 9. Successful payment only
-    if (
-      ![
-        "captured",
-        "authorized",
-      ].includes(
-        String(
-          payment.status
-        ).toLowerCase()
-      )
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Payment is not successful",
-      });
-    }
+    // if (
+    //   ![
+    //     "captured",
+    //     "authorized",
+    //   ].includes(
+    //     String(
+    //       payment.status
+    //     ).toLowerCase()
+    //   )
+    // ) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message:
+    //       "Payment is not successful",
+    //   });
+    // }
 
+    // 9. SECURITY:
+// Invoice becomes PAID only after Razorpay
+// confirms that the payment is CAPTURED.
+const paymentStatus =
+  String(
+    payment.status || ""
+  ).toLowerCase();
+
+if (paymentStatus !== "captured") {
+  return res.status(400).json({
+    success: false,
+    message:
+      "Payment has not been captured",
+  });
+}
     // 10. Mark ONLY this invoice as paid
     invoice.status = "PAID";
+    invoice.razorpayPaymentId =
+  razorpay_payment_id;
+
+invoice.paidAt =
+  new Date();
 
     await invoice.save();
 

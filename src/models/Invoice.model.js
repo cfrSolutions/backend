@@ -100,6 +100,21 @@ const invoiceSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    razorpayOrderId: {
+  type: String,
+  default: null,
+  index: true,
+},
+
+razorpayPaymentId: {
+  type: String,
+  default: null,
+},
+
+paidAt: {
+  type: Date,
+  default: null,
+},
   },
   {
     timestamps: true,
