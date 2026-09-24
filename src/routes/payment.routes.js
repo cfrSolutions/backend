@@ -2,6 +2,7 @@ import express from "express";
 
 import {
   createPaymentOrder,
+  verifyPayment,
 } from "../controllers/payment.controller.js";
 
 import {
@@ -17,6 +18,13 @@ router.post(
   authMiddleware,
   businessOnly,
   createPaymentOrder
+);
+
+router.post(
+  "/invoice/:projectId/verify",
+  authMiddleware,
+  businessOnly,
+  verifyPayment
 );
 
 export default router;
