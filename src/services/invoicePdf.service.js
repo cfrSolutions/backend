@@ -763,9 +763,13 @@ const businessAddress =
 
       <div>
 
-        <h1 class="brand">
-          INPUTIFY
-        </h1>
+       
+        <img
+          class="brand"
+          src={inputifyLogo}
+          alt="Inputify"
+          className="h-10 w-auto object-contain"
+        />
 
         <div class="brand-description">
           Survey &amp; Research Platform
@@ -1075,9 +1079,7 @@ const businessAddress =
 
         <span>
           Phone:
-          ${escapeHtml(
-            businessPhone
-          )}
+          7506966099
         </span>
 
       </div>
