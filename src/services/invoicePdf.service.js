@@ -333,7 +333,7 @@ const businessAddress =
 
   .brand-logo {
   display: block;
-  height: 50px;
+  height: 80px;
   width: auto;
   max-width: 170px;
   object-fit: contain;
@@ -358,7 +358,7 @@ const businessAddress =
 
     color: #FE8A00;
 
-    font-size: 29px;
+    font-size: 23px;
 
     font-weight: 800;
 
