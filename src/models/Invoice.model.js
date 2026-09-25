@@ -115,6 +115,15 @@ paidAt: {
   type: Date,
   default: null,
 },
+paymentOrderCreating: {
+  type: Boolean,
+  default: false,
+},
+
+paymentOrderLockAt: {
+  type: Date,
+  default: null,
+},
   },
   {
     timestamps: true,

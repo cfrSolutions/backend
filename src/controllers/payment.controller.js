@@ -425,11 +425,70 @@ if (invoice.razorpayOrderId) {
   }
 }
 
+
+// =====================================================
+// SECURITY:
+// ATOMIC PAYMENT ORDER CREATION LOCK
+// =====================================================
+
+const lockTime = new Date();
+
+const lockedInvoice =
+  await Invoice.findOneAndUpdate(
+    {
+      _id: invoice._id,
+
+      status: "GENERATED",
+
+      razorpayOrderId: null,
+
+      $or: [
+        {
+          paymentOrderCreating: false,
+        },
+        {
+          paymentOrderCreating: {
+            $exists: false,
+          },
+        },
+        {
+          paymentOrderLockAt: {
+            $lt: new Date(
+              Date.now() - 2 * 60 * 1000
+            ),
+          },
+        },
+      ],
+    },
+
+    {
+      $set: {
+        paymentOrderCreating: true,
+        paymentOrderLockAt: lockTime,
+      },
+    },
+
+    {
+      new: true,
+    }
+  );
+
+if (!lockedInvoice) {
+  return res.status(409).json({
+    success: false,
+    code: "PAYMENT_ORDER_IN_PROGRESS",
+    message:
+      "Payment order is already being created. Please try again.",
+  });
+}
+
 // =====================================================
 // CREATE NEW ORDER
 // =====================================================
 
-const order =
+let order;
+try {
+order =
   await razorpay.orders.create({
     amount,
     currency: "USD",
@@ -446,18 +505,75 @@ const order =
         invoice.invoiceNumber,
     },
   });
+  } catch (error) {
+  await Invoice.updateOne(
+    {
+      _id: lockedInvoice._id,
+      paymentOrderCreating: true,
+      paymentOrderLockAt: lockTime,
+      razorpayOrderId: null,
+    },
+    {
+      $set: {
+        paymentOrderCreating: false,
+        paymentOrderLockAt: null,
+      },
+    }
+  );
 
+  throw error;
+}
 
 // =====================================================
 // BIND ORDER TO INVOICE
 // =====================================================
 
-invoice.razorpayOrderId =
-  order.id;
+// invoice.razorpayOrderId =
+//   order.id;
 
-invoice.status = "PENDING";
+// invoice.status = "PENDING";
 
-await invoice.save();
+// await invoice.save();
+const boundInvoice =
+  await Invoice.findOneAndUpdate(
+    {
+      _id: lockedInvoice._id,
+      paymentOrderCreating: true,
+      paymentOrderLockAt: lockTime,
+      razorpayOrderId: null,
+      status: "GENERATED",
+    },
+    {
+      $set: {
+        razorpayOrderId: order.id,
+        status: "PENDING",
+
+        paymentOrderCreating: false,
+        paymentOrderLockAt: null,
+      },
+    },
+    {
+      new: true,
+    }
+  );
+
+if (!boundInvoice) {
+  console.error(
+    "RAZORPAY ORDER CREATED BUT INVOICE BIND FAILED:",
+    {
+      invoiceId:
+        lockedInvoice._id.toString(),
+      orderId: order.id,
+    }
+  );
+
+  return res.status(409).json({
+    success: false,
+    code: "PAYMENT_ORDER_BIND_FAILED",
+    message:
+      "Payment order could not be safely attached to the invoice.",
+  });
+}
 
 
 return res.status(201).json({
