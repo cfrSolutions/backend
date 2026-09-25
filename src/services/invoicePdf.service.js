@@ -440,7 +440,7 @@ const businessAddress =
 
     column-gap: 18px;
     row-gap: 5px;
-
+    font-weight: 600;
     font-size: 11px;
   }
 
@@ -448,6 +448,7 @@ const businessAddress =
     color: #64748B;
 
     text-align: right;
+    font-weight: 600;
   }
 
   .detail-value {
@@ -468,10 +469,13 @@ const businessAddress =
     color: #475569;
 
     font-size: 11px;
+    font-weight: 600;
+
   }
 
   .info-line + .info-line {
     margin-top: 4px;
+    font-weight: 600;
   }
 
   /* =========================================
