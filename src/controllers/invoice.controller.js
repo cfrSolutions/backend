@@ -690,6 +690,125 @@ export async function downloadProjectInvoicePdf(
   }
 }
 
+export async function downloadInvoicePdfById(
+  req,
+  res
+) {
+  try {
+    const { invoiceId } = req.params;
+
+    const userId =
+      getAuthenticatedUserId(req);
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
+    }
+
+    if (
+      !mongoose.Types.ObjectId.isValid(
+        invoiceId
+      )
+    ) {
+      return res.status(400).json({
+        message: "Invalid invoice ID",
+      });
+    }
+
+    // Get EXACT invoice
+    const invoice =
+      await Invoice.findById(invoiceId);
+
+    if (!invoice) {
+      return res.status(404).json({
+        message: "Invoice not found",
+      });
+    }
+
+    // SECURITY:
+    // Invoice project must belong
+    // to logged-in business
+    const project =
+      await Project.findOne({
+        _id: invoice.project,
+        business: userId,
+      }).populate(
+        "business",
+        "email"
+      );
+
+    if (!project) {
+      return res.status(404).json({
+        message: "Invoice not found",
+      });
+    }
+
+    const businessProfile =
+      await BusinessProfile.findOne({
+        userId,
+      }).select(
+        "name company phone country location postalCode"
+      );
+
+    const pdfBuffer =
+      await generateInvoicePdf(
+        invoice,
+        project,
+        businessProfile
+      );
+
+    const invoiceNumber =
+      invoice.invoiceNumber ||
+      `invoice-${invoice._id}`;
+
+    const safeInvoiceNumber =
+      String(invoiceNumber).replace(
+        /[^a-zA-Z0-9-_]/g,
+        "_"
+      );
+
+    res.setHeader(
+      "Content-Type",
+      "application/pdf"
+    );
+
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${safeInvoiceNumber}.pdf"`
+    );
+
+    res.setHeader(
+      "Cache-Control",
+      "private, no-store"
+    );
+
+    res.setHeader(
+      "Pragma",
+      "no-cache"
+    );
+
+    res.setHeader(
+      "X-Content-Type-Options",
+      "nosniff"
+    );
+
+    return res.send(
+      Buffer.from(pdfBuffer)
+    );
+  } catch (error) {
+    console.error(
+      "Download invoice PDF by ID error:",
+      error
+    );
+
+    return res.status(500).json({
+      message:
+        "Failed to generate invoice PDF",
+    });
+  }
+}
+
 export async function getBusinessInvoices(req, res) {
   try {
     // const userId =
