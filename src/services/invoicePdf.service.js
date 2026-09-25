@@ -282,7 +282,7 @@ const businessAddress =
   .bottom-bar {
     height: 10mm;
 
-    background: #164B84;
+    background: #FE8A00;
 
     flex-shrink: 0;
   }
@@ -321,7 +321,7 @@ const businessAddress =
   .brand {
     margin: 0;
 
-    color: #164B84;
+    color: #FE8A00;
 
     font-size: 23px;
     line-height: 1;
@@ -333,7 +333,7 @@ const businessAddress =
 
   .brand-logo {
   display: block;
-  height: 38px;
+  height: 50px;
   width: auto;
   max-width: 170px;
   object-fit: contain;
@@ -356,7 +356,7 @@ const businessAddress =
   .invoice-title {
     margin: 0;
 
-    color: #164B84;
+    color: #FE8A00;
 
     font-size: 29px;
 
@@ -398,7 +398,7 @@ const businessAddress =
   .section-title {
     margin: 0;
 
-    color: #164B84;
+    color: #FE8A00;
 
     font-size: 12px;
 
@@ -501,10 +501,10 @@ const businessAddress =
 
   thead tr {
     border-top:
-      1.5px solid #164B84;
+      1.5px solid #FE8A00;
 
     border-bottom:
-      1.5px solid #164B84;
+      1.5px solid #FE8A00;
   }
 
   th {
@@ -655,10 +655,10 @@ const businessAddress =
     gap: 20px;
 
     border-top:
-      1.5px solid #164B84;
+      1.5px solid #FE8A00;
 
     border-bottom:
-      1.5px solid #164B84;
+      1.5px solid #FE8A00;
 
     color: #1E293B;
 
@@ -724,7 +724,7 @@ const businessAddress =
   .signature-name {
     margin-top: 7px;
 
-    color: #164B84;
+    color: #FE8A00;
 
     font-family:
       Georgia,
@@ -755,12 +755,12 @@ const businessAddress =
     gap: 20px;
 
     border-top:
-      1.5px solid #164B84;
+      1.5px solid #FE8A00;
 
     border-bottom:
-      1.5px solid #164B84;
+      1.5px solid #FE8A00;
 
-    color: #164B84;
+    color: #FE8A00;
 
     font-size: 9px;
   }
