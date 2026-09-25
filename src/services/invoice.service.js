@@ -220,20 +220,28 @@ export async function generateProjectInvoice(projectId) {
   // 4. FIND CURRENT UNPAID INVOICE
   // =====================================================
 
+  // const unpaidInvoice =
+  //   await Invoice.findOne({
+  //     project: project._id,
+
+  //     status: {
+  //       $in: [
+  //         "GENERATED",
+  //         "PENDING",
+  //       ],
+  //     },
+  //   }).sort({
+  //     createdAt: -1,
+  //   });
+
   const unpaidInvoice =
-    await Invoice.findOne({
-      project: project._id,
-
-      status: {
-        $in: [
-          "GENERATED",
-          "PENDING",
-        ],
-      },
-    }).sort({
-      createdAt: -1,
-    });
-
+  await Invoice.findOne({
+    project: project._id,
+    status: "GENERATED",
+    razorpayOrderId: null,
+  }).sort({
+    createdAt: -1,
+  });
   // =====================================================
   // 5. IF UNPAID EXISTS → ADD TO SAME INVOICE
   // =====================================================

@@ -358,6 +358,28 @@ if (invoice.razorpayOrderId) {
       });
     }
 
+    if (
+  existingAmount !== amount ||
+  existingCurrency !== "USD"
+) {
+  console.error(
+    "PAYMENT ORDER INTEGRITY ERROR:",
+    {
+      invoiceId:
+        invoice._id.toString(),
+      orderId:
+        invoice.razorpayOrderId,
+    }
+  );
+
+  return res.status(409).json({
+    success: false,
+    code: "PAYMENT_ORDER_MISMATCH",
+    message:
+      "The payment order no longer matches this invoice. Please contact support.",
+  });
+}
+
     // ==========================================
     // REUSE EXISTING UNPAID ORDER
     // ==========================================
@@ -432,6 +454,8 @@ const order =
 
 invoice.razorpayOrderId =
   order.id;
+
+invoice.status = "PENDING";
 
 await invoice.save();
 
