@@ -267,6 +267,62 @@ export async function createPaymentOrder(req, res) {
 // REUSE EXISTING RAZORPAY ORDER WHEN POSSIBLE
 // =====================================================
 
+// if (invoice.razorpayOrderId) {
+//   try {
+//     const existingOrder =
+//       await razorpay.orders.fetch(
+//         invoice.razorpayOrderId
+//       );
+
+//     const existingAmount =
+//       Number(existingOrder.amount);
+
+//     const existingCurrency =
+//       String(
+//         existingOrder.currency || ""
+//       ).toUpperCase();
+
+//     const existingStatus =
+//       String(
+//         existingOrder.status || ""
+//       ).toLowerCase();
+
+//     // Reuse only if the existing order still
+//     // represents this exact invoice amount/currency
+//     // and has not already been paid.
+//     if (
+//       existingAmount === amount &&
+//       existingCurrency === "USD" &&
+//       existingStatus !== "paid"
+//     ) {
+//       return res.status(200).json({
+//         success: true,
+
+//         order: {
+//           id: existingOrder.id,
+//           amount: existingOrder.amount,
+//           currency: existingOrder.currency,
+//         },
+
+//         keyId:
+//           process.env.RAZORPAY_KEY_ID,
+//       });
+//     }
+
+//   } catch (error) {
+//     console.error(
+//       "FETCH EXISTING RAZORPAY ORDER ERROR:",
+//       error
+//     );
+
+//     return res.status(500).json({
+//       success: false,
+//       message:
+//         "Failed to validate existing payment order",
+//     });
+//   }
+// }
+
 if (invoice.razorpayOrderId) {
   try {
     const existingOrder =
@@ -287,27 +343,51 @@ if (invoice.razorpayOrderId) {
         existingOrder.status || ""
       ).toLowerCase();
 
-    // Reuse only if the existing order still
-    // represents this exact invoice amount/currency
-    // and has not already been paid.
+    // ==========================================
+    // SECURITY:
+    // NEVER create another order when Razorpay
+    // says this invoice's order is already paid.
+    // ==========================================
+
+    if (existingStatus === "paid") {
+      return res.status(409).json({
+        success: false,
+        code: "PAYMENT_ALREADY_RECEIVED",
+        message:
+          "Payment has already been received and is being verified.",
+      });
+    }
+
+    // ==========================================
+    // REUSE EXISTING UNPAID ORDER
+    // ==========================================
+
     if (
       existingAmount === amount &&
-      existingCurrency === "USD" &&
-      existingStatus !== "paid"
+      existingCurrency === "USD"
     ) {
       return res.status(200).json({
         success: true,
 
         order: {
           id: existingOrder.id,
-          amount: existingOrder.amount,
-          currency: existingOrder.currency,
+          amount:
+            existingOrder.amount,
+          currency:
+            existingOrder.currency,
         },
 
         keyId:
           process.env.RAZORPAY_KEY_ID,
       });
     }
+
+    // Do NOT return here.
+    //
+    // If amount/currency changed because another
+    // target group was added to this still-unpaid
+    // invoice, Step 4 will handle the lifecycle
+    // of the stale order safely.
 
   } catch (error) {
     console.error(
@@ -322,7 +402,6 @@ if (invoice.razorpayOrderId) {
     });
   }
 }
-
 
 // =====================================================
 // CREATE NEW ORDER
@@ -370,25 +449,25 @@ return res.status(201).json({
     process.env.RAZORPAY_KEY_ID,
 });
 
-      invoice.razorpayOrderId =
-  order.id;
+//       invoice.razorpayOrderId =
+//   order.id;
 
-await invoice.save();
+// await invoice.save();
 
-    return res.status(201).json({
-      success: true,
+//     return res.status(201).json({
+//       success: true,
 
-      order: {
-        id: order.id,
-        amount: order.amount,
-        currency: order.currency,
-      },
+//       order: {
+//         id: order.id,
+//         amount: order.amount,
+//         currency: order.currency,
+//       },
 
-      // Public Razorpay key.
-      // Secret is NEVER returned.
-      keyId:
-        process.env.RAZORPAY_KEY_ID,
-    });
+//       // Public Razorpay key.
+//       // Secret is NEVER returned.
+//       keyId:
+//         process.env.RAZORPAY_KEY_ID,
+//     });
   } catch (error) {
     
 
@@ -424,6 +503,17 @@ export async function verifyPayment(req, res) {
       });
     }
 
+    if (
+  !mongoose.Types.ObjectId.isValid(
+    invoiceId
+  )
+) {
+  return res.status(400).json({
+    success: false,
+    message: "Invalid invoice ID",
+  });
+}
+
     // 2. Find exact invoice
     const invoice =
       await Invoice.findById(invoiceId);
@@ -457,35 +547,63 @@ if (
 }
 
     // 3. Find project belonging to invoice
-    const project =
-      await Project.findById(
-        invoice.project
-      );
+    // const project =
+    //   await Project.findById(
+    //     invoice.project
+    //   );
 
-    if (!project) {
-      return res.status(404).json({
-        success: false,
-        message: "Project not found",
-      });
-    }
+    // if (!project) {
+    //   return res.status(404).json({
+    //     success: false,
+    //     message: "Project not found",
+    //   });
+    // }
 
-    // 4. Verify ownership
-    const userId =
-      req.user?.userId ||
-      req.user?._id ||
-      req.user?.id;
+    // // 4. Verify ownership
+    // const userId =
+    //   req.user?.userId ||
+    //   req.user?._id ||
+    //   req.user?.id;
 
-    if (
-      !userId ||
-      project.business.toString() !==
-        userId.toString()
-    ) {
-      return res.status(403).json({
-        success: false,
-        message:
-          "You are not allowed to verify this payment",
-      });
-    }
+    // if (
+    //   !userId ||
+    //   project.business.toString() !==
+    //     userId.toString()
+    // ) {
+    //   return res.status(403).json({
+    //     success: false,
+    //     message:
+    //       "You are not allowed to verify this payment",
+    //   });
+    // }
+
+    // =====================================================
+// SECURITY:
+// VERIFY AUTHENTICATED USER OWNS THIS INVOICE'S PROJECT
+// =====================================================
+
+const userId =
+  getAuthenticatedUserId(req);
+
+if (!userId) {
+  return res.status(401).json({
+    success: false,
+    message: "Unauthorized",
+  });
+}
+
+const project =
+  await Project.findOne({
+    _id: invoice.project,
+    business: userId,
+  }).select("_id business");
+
+if (!project) {
+  return res.status(404).json({
+    success: false,
+    message: "Invoice not found",
+  });
+}
 
     // if (invoice.status === "PAID") {
     //   return res.status(200).json({
