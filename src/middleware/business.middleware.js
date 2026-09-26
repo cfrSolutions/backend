@@ -19,7 +19,7 @@ export const businessOnly = (req, res, next) => {
   if (role !== "BUSINESS") {
     return res.status(403).json({
       message: "Access denied",
-      role,
+      
     });
   }
 
